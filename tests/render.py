@@ -1,0 +1,18 @@
+from scenario import *
+scenario=Scenario()
+c=Cube("cube")
+scenario.add(c)
+c.pose.position=Vector3(1,1,1)
+c.pose.rotation=Vector3(0.2,0.1,-0.6)
+c.color=Color(g=1)
+p=Cube("point")
+p.pose.position=c.pose.transform(Vector3(0.5,0.5,0.5))
+p.pose.scale=Vector3(0.1,0.1,0.1)
+p.color=Color(r=1)
+scenario.add(p)
+s=Sphere("s1")
+s.pose.position=Vector3(0,1,1)
+s.color=Color(b=1)
+s.radius=0.4
+scenario.add(s)
+scenario.render()
