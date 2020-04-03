@@ -89,11 +89,13 @@ class Scenario(object):
             cls.server=Server()
         return cls._instance
 
-    def add(self,obj):
-        self.objects.add(obj)
+    def add(self,*objs):
+        for obj in objs:
+            self.objects.add(obj)
 
-    def remove(self,obj):
-        self.objects.remove(obj)
+    def remove(self,*objs):
+        for obj in objs:
+            self.objects.remove(obj)
 
     def step(self,dt=0.01):
         for obj in self.objects:
@@ -140,7 +142,7 @@ class Object3D:
         return json.dumps(self.info())
     
 class Color:
-    def __init__(self,r=0,g=0,b=0,a=1):
+    def __init__(self,r=1,g=1,b=1,a=1):
         if isinstance(r, dict):
             self.r=r["r"]
             self.g=r["g"]
@@ -193,6 +195,12 @@ class XYZ(Object3D):
     def __init__(self):
         Object3D.__init__(self)
         self.type="XYZ"
+        self.line_width=1
+
+    def info(self):
+        ret=Object3D.info(self)
+        ret['linewidth']=self.line_width
+        return ret
 
 class Line(Object3D):
     def __init__(self):

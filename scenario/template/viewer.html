@@ -36,10 +36,6 @@
         gridHelper.rotation.set(Math.PI / 2, 0, 0)
         scene.add(gridHelper, light);
 
-        var axesHelper = new THREE.AxesHelper(5)
-        axesHelper.material.linewidth = 2
-        scene.add(axesHelper)
-
         var controls = new OrbitControls(camera, renderer.domElement);
 
         var animate = function () {
@@ -110,7 +106,7 @@
                 case "Sphere":
                     return Sphere()
                 case "XYZ":
-                    return new THREE.AxesHelper(3)
+                    return new THREE.AxesHelper(1)
                 default:
                     return null
             }
@@ -124,6 +120,7 @@
             obj.scale.set(scale[0],scale[1],scale[2])
             obj.material.color.setRGB(message.color.r,message.color.g,message.color.b)
             obj.material.opacity = message.color.a
+            obj.material.linewidth = message.linewidth
         }
 
         function handleLine(message) {
