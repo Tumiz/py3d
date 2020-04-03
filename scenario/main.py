@@ -1,37 +1,10 @@
 # coding: utf-8
-import torch
-from .webserver import *
-def t_rx(theta):
-    if not isinstance(theta,torch.Tensor):
-        theta=torch.tensor(theta)
-    return torch.tensor([
-        [1,0,0],
-        [0,torch.cos(theta),-torch.sin(theta)],
-        [0,torch.sin(theta),torch.cos(theta)]
-    ])
-def t_ry(beta):
-    if not isinstance(beta,torch.Tensor):
-        beta=torch.tensor(beta)
-    return torch.tensor([
-        [torch.cos(beta),0,torch.sin(beta)],
-        [0,1,0],
-        [-torch.sin(beta),0,torch.cos(beta)]
-    ])
-def t_rz(gamma):
-    if not isinstance(gamma,torch.Tensor):
-        gamma=torch.tensor(gamma)
-    return torch.tensor([
-        [torch.cos(gamma),-torch.sin(gamma),0],
-        [torch.sin(gamma),torch.cos(gamma),0],
-        [0,0,1]
-    ])
-
-def t_r(rotation):#must be a tensor
-    return t_rx(rotation[0]).mm(t_ry(rotation[1])).mm(t_rz(rotation[2]))
+from torch import tensor,sin,cos,Tensor,ones
+from .server import *
 
 class Vector3: 
     def __new__(cls,x=0,y=0,z=0):
-        return torch.Tensor([float(x),float(y),float(z)])
+        return Tensor([float(x),float(y),float(z)])
 
 class Pose:
     def __init__(self,position=Vector3(),rotation=Vector3(),scale=Vector3(1,1,1)):
@@ -39,13 +12,64 @@ class Pose:
         self.rotation=rotation
         self.scale=scale
         
-    def transform(self,loc):#local position
-        p=loc*self.scale
-        r=t_r(self.rotation)
-        p=r.mm(p.view(3,1)).view(3)
-        p+=self.position
-        print(loc,self.scale,self.position,self.rotation,r,p)
-        return p
+    def transform_position(self,loc):#local position
+        tmp=tensor([
+            [loc[0]],
+            [loc[1]],
+            [loc[2]],
+            [1]
+            ])
+        r=self.translation_matrix().mm(self.rotation_x_matrix()).mm(self.rotation_y_matrix()).mm(self.rotation_z_matrix()).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
+        return r
+    
+    def transform_rotation(self,rot):#local rotation
+        tmp=tensor([
+            [rot[0]]
+        ])
+        pass
+
+    def translation_matrix(self):
+        return tensor([
+            [1,0,0,self.position[0]],
+            [0,1,0,self.position[1]],
+            [0,0,1,self.position[2]],
+            [0,0,0,1]
+        ])
+
+    def scaling_matrix(self):
+        return tensor([
+            [self.scale[0],0,0,0],
+            [0,self.scale[1],0,0],
+            [0,0,self.scale[2],0],
+            [0,0,0,1]
+        ])
+    
+    def rotation_x_matrix(self):
+        x=self.rotation[0]
+        return tensor([
+            [1,0,0,0],
+            [0,cos(x),-sin(x),0],
+            [0,sin(x),cos(x),0],
+            [0,0,0,1]
+        ])
+
+    def rotation_y_matrix(self):
+        y=self.rotation[1]
+        return tensor([
+            [cos(y),0,sin(y),0],
+            [0,1,0,0],
+            [-sin(y),0,cos(y),0],
+            [0,0,0,1]
+        ])
+
+    def rotation_z_matrix(self):
+        z=self.rotation[2]
+        return tensor([
+            [cos(z),-sin(z),0,0],
+            [sin(z),cos(z),0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
     
     def info(self):
         return {"position":self.position.tolist(),"rotation":self.rotation.tolist(),"scale":self.scale.tolist()}
@@ -61,34 +85,53 @@ class Scenario(object):
         if cls._instance is None:
             cls._instance=object.__new__(cls)
             cls.t=0
-            cls.objects=dict()
-            cls.ws=WebSocket()
+            cls.objects=set()
+            cls.server=Server()
         return cls._instance
 
     def add(self,obj):
-        self.objects[obj.id]=obj
+        self.objects.add(obj)
+
+    def remove(self,obj):
+        self.objects.remove(obj)
 
     def step(self,dt=0.01):
-        for key,obj in self.objects.items():
-            obj.pose.position+=obj.velocity*dt
-            obj.pose.rotation+=obj.angular_velocity*dt
+        for obj in self.objects:
+            obj.step(dt)
         self.t+=dt
         
     def render(self):
-        for key,obj in self.objects.items():
-            self.ws.send_msg(obj.info())
+        if not self.server.is_alive():
+            self.server.start()
+            self.server.open_web()
+        for obj in self.objects:
+            self.server.send_msg(obj.info())
         
 class Object3D:
-    def __init__(self,name):
-        self.id=name
+    def __init__(self):
+        self.id=id(self)
         self.type=""
         self.pose=Pose()
         self.color=Color()
         self.mass=0
-        self.velocity=Vector3()
-        self.angular_velocity=Vector3()
-        self.local_velocity=Vector3()
-        self.local_angular_velocity=Vector3()
+        self.velocity=None
+        self.angular_velocity=None
+        self.local_velocity=None
+        self.local_angular_velocity=None
+
+    def step(self,dt):
+        if self.local_velocity is not None:
+            self.pose.position=self.pose.transform_position(self.local_velocity*dt)
+            # print('local v',self.pose.position)
+        elif self.velocity is not None:
+            self.pose.position+=self.velocity*dt
+            # print('v',self.pose.position)
+        if self.local_angular_velocity is not None:
+            self.pose.rotation=self.pose.transform_rotation(self.local_angular_velocity*dt)
+            # print('local a',self.pose.rotation,self.local_angular_velocity)
+        elif self.angular_velocity is not None:
+            self.pose.rotation+=self.angular_velocity*dt
+            # print('a',self.pose.rotation,self.angular_velocity)
       
     def info(self):
         return {"id":self.id,"class":self.type,"pose":self.pose.info(),"color":self.color.__dict__}
@@ -119,13 +162,13 @@ class Color:
         return self.__class__.__name__+str(self.__dict__)
         
 class Cube(Object3D):
-    def __init__(self,name):
-        Object3D.__init__(self,name)
+    def __init__(self):
+        Object3D.__init__(self)
         self.type="Cube"
 
 class Sphere(Object3D):
-    def __init__(self,name):
-        Object3D.__init__(self,name)
+    def __init__(self):
+        Object3D.__init__(self)
         self.type="Sphere"
 
     @property
@@ -146,27 +189,14 @@ class Sphere(Object3D):
                 return False
         return False
 
-class Line(Object3D):
-    def __init__(self,points=[]):
+class XYZ(Object3D):
+    def __init__(self):
         Object3D.__init__(self)
-        self._points=points
-        self._width=1
+        self.type="XYZ"
 
-    @property
-    def points(self):
-        return self._points
-
-    @points.setter
-    def points(self,v):
-        self._points=v
-        self._publish(v)
-
-    @property
-    def width(self):
-        return self._width
-
-    @width.setter
-    def width(self,v):
-        self._width=v
-        self._publish(v)
+class Line(Object3D):
+    def __init__(self):
+        Object3D.__init__(self)
+        self.points=[]
+        self.width=1
                 

@@ -17,8 +17,8 @@
 
 <body>
     <script type="module">
-        import * as THREE from './js/three.js';
-        import { OrbitControls } from './js/orbit.js';
+        import * as THREE from '/static/js/three.js';
+        import { OrbitControls } from '/static/js/orbit.js';
         var objs =new Map()
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(0xF8F8FF)
@@ -53,7 +53,6 @@
             var geometry = new THREE.BoxGeometry();
             var material = new THREE.MeshLambertMaterial({ transparent: true});
             var cube = new THREE.Mesh(geometry, material);
-            scene.add(cube)
             return cube
         }
         function Sphere(radius) {
@@ -61,22 +60,25 @@
             var material = new THREE.MeshLambertMaterial({ transparent: true, color: 0x00ff00 });
             var obj = new THREE.Mesh(geometry, material);
             obj.scale.set(radius, radius, radius)
-            scene.add(obj);
             return obj
         }
         function Line() {
-            var material = new THREE.LineBasicMaterial({
-                color: 0x0000ff
-            });
+            var material = new THREE.LineBasicMaterial();
             var geometry = new THREE.BufferGeometry();
             var positions = new Float32Array(500 * 3); // 3 vertices per point
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setDrawRange(0, 0);
             var line = new THREE.Line(geometry, material);
-            scene.add(line);
             return line
         }
-        var ws = new WebSocket("ws://127.0.0.1:52330");
+        function LineSegment(){
+            var material = new THREE.LineBasicMaterial()
+            var geometry = new THREE.Geometry()
+            geometry.vertices.add(new THREE.Vector3(0,0,0),new THREE.Vector3(1,0,0))
+            var line = new THREE.Line(geometry,material)
+            return line
+        }
+        var ws = new WebSocket("ws://localhost:8080/ws")
 
         ws.onopen = function (evt) {
             console.log("Connection open ...");
@@ -94,6 +96,7 @@
                 }
                 else{
                     obj=new_object(message.class)
+                    scene.add(obj)
                     objs.set(message.id,obj)
                 }
                 update(message,obj)
@@ -106,6 +109,8 @@
                     return Cube()
                 case "Sphere":
                     return Sphere()
+                case "XYZ":
+                    return new THREE.AxesHelper(3)
                 default:
                     return null
             }

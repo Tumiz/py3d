@@ -9,6 +9,6 @@ setup(
     author_email="",
     python_requires=">=3.5.0",
     url="",
-    install_requires=[],
+    install_requires=["torch"],
     packages=["scenario"]
 )
