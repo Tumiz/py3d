@@ -6,7 +6,7 @@ class Vector3:
     def __new__(cls,x=0,y=0,z=0):
         return Tensor([float(x),float(y),float(z)])
 
-class Pose:
+class Transform:
     def __init__(self,position=Vector3(),rotation=Vector3(),scale=Vector3(1,1,1)):
         self.position=position
         self.rotation=rotation
@@ -109,12 +109,12 @@ class Scenario(object):
         for obj in self.objects:
             self.server.send_msg(obj.info())
         
-class Object3D:
+class Object3D(Transform):
     def __init__(self):
+        Transform.__init__(self)
         self.id=id(self)
-        self.type=""
-        self.pose=Pose()
-        self.color=Color()
+        self.type=self.__class__.__name__
+        self.color=Color(1,1,1)
         self.mass=0
         self.velocity=None
         self.angular_velocity=None
@@ -123,67 +123,49 @@ class Object3D:
 
     def step(self,dt):
         if self.local_velocity is not None:
-            self.pose.position=self.pose.transform_position(self.local_velocity*dt)
-            # print('local v',self.pose.position)
+            self.position=self.transform_position(self.local_velocity*dt)
+            # print('local v',self.position)
         elif self.velocity is not None:
-            self.pose.position+=self.velocity*dt
-            # print('v',self.pose.position)
+            self.position+=self.velocity*dt
+            # print('v',self.position)
         if self.local_angular_velocity is not None:
-            self.pose.rotation=self.pose.transform_rotation(self.local_angular_velocity*dt)
-            # print('local a',self.pose.rotation,self.local_angular_velocity)
+            self.rotation=self.transform_rotation(self.local_angular_velocity*dt)
+            # print('local a',self.rotation,self.local_angular_velocity)
         elif self.angular_velocity is not None:
-            self.pose.rotation+=self.angular_velocity*dt
-            # print('a',self.pose.rotation,self.angular_velocity)
+            self.rotation+=self.angular_velocity*dt
+            # print('a',self.rotation,self.angular_velocity)
       
     def info(self):
-        return {"id":self.id,"class":self.type,"pose":self.pose.info(),"color":self.color.__dict__}
+        ret=Transform.info(self)
+        ret.update({"id":self.id,"type":self.type,"color":self.color.tolist()})
+        return ret
     
     def __repr__(self):
         return json.dumps(self.info())
     
 class Color:
-    def __init__(self,r=1,g=1,b=1,a=1):
-        if isinstance(r, dict):
-            self.r=r["r"]
-            self.g=r["g"]
-            self.b=r["b"]
-            self.a=r["a"]
-        elif isinstance(r,tuple) or isinstance(r,list):
-            l=len(r)
-            self.r=r[0]
-            self.g=r[1] if l>=2 else 1
-            self.b=r[2] if l>=3 else 1
-            self.a=r[3] if l>=4 else 1
-        else:
-            self.r=r
-            self.g=g
-            self.b=b
-            self.a=a
-
-    def __repr__(self):
-        return self.__class__.__name__+str(self.__dict__)
+    def __new__(cls,r=0,g=0,b=0,a=1):
+        return tensor([float(r),float(g),float(b),float(a)])
         
 class Cube(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Cube"
 
 class Sphere(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Sphere"
 
     @property
     def radius(self):
-        return self.pose.scale[0]
+        return self.scale[0]
 
     @radius.setter
     def radius(self,r):
-        self.pose.scale=Vector3(r,r,r)
+        self.scale=Vector3(r,r,r)
 
     def collision_with(self,obj):
         if isinstance(obj,Sphere):
-            norm=(obj.pose.position-self.pose.position).norm()
+            norm=(obj.position-self.position).norm()
             print(norm,obj.radius,self.radius)
             if norm<obj.radius+self.radius:
                 return True
@@ -194,17 +176,38 @@ class Sphere(Object3D):
 class XYZ(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="XYZ"
         self.line_width=1
 
     def info(self):
         ret=Object3D.info(self)
-        ret['linewidth']=self.line_width
+        ret['line_width']=self.line_width
         return ret
 
 class Line(Object3D):
     def __init__(self):
         Object3D.__init__(self)
         self.points=[]
-        self.width=1
+        self.line_width=1
+        self.is_arrow=False
+
+    def info(self):
+        ret=Object3D.info(self)
+        ret['points']=self.points
+        ret['line_width']=self.line_width
+        ret['is_arrow']=self.is_arrow
+        return ret
                 
+class Cylinder(Object3D):
+    def __init__(self):
+        Object3D.__init__(self)
+        self.top_radius=1
+        self.bottom_radius=1
+        self.height=1
+
+    def info(self):
+        ret=Object3D.info(self)
+        ret['top_radius']=self.top_radius
+        ret['bottom_radius']=self.bottom_radius
+        ret['height']=self.height
+        return ret
+    

@@ -19,7 +19,7 @@
     <script type="module">
         import * as THREE from '/static/js/three.js';
         import { OrbitControls } from '/static/js/orbit.js';
-        var objs =new Map()
+        var objs = new Map()
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(0xF8F8FF)
         var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -36,6 +36,14 @@
         gridHelper.rotation.set(Math.PI / 2, 0, 0)
         scene.add(gridHelper, light);
 
+        var xAxis = Line([[0,0,0],[5,0,0]])
+        xAxis.material.color = new THREE.Color('red')
+        xAxis.material.linewidth = 3
+        var yAxis = Line([[0,0,0],[0,5,0]])
+        yAxis.material.color = new THREE.Color('green')
+        yAxis.material.linewidth = 3
+        scene.add(xAxis, yAxis)
+
         var controls = new OrbitControls(camera, renderer.domElement);
 
         var animate = function () {
@@ -45,10 +53,12 @@
         };
 
         animate();
+
         function Cube() {
             var geometry = new THREE.BoxGeometry();
-            var material = new THREE.MeshLambertMaterial({ transparent: true});
+            var material = new THREE.MeshLambertMaterial({ transparent: true });
             var cube = new THREE.Mesh(geometry, material);
+            cube.update = function (message) { }
             return cube
         }
         function Sphere(radius) {
@@ -56,24 +66,49 @@
             var material = new THREE.MeshLambertMaterial({ transparent: true, color: 0x00ff00 });
             var obj = new THREE.Mesh(geometry, material);
             obj.scale.set(radius, radius, radius)
+            obj.update = function (message) { }
             return obj
         }
-        function Line() {
+        function Line(points,is_arrow=false) {
             var material = new THREE.LineBasicMaterial();
             var geometry = new THREE.BufferGeometry();
             var positions = new Float32Array(500 * 3); // 3 vertices per point
+            for (var i = 0; i < points.length; i++) {
+                var position = points[i]
+                positions[i * 3] = position[0]
+                positions[i * 3 + 1] = position[1]
+                positions[i * 3 + 2] = position[2]
+            }
+            geometry.setDrawRange(0, points.length)
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setDrawRange(0, 0);
             var line = new THREE.Line(geometry, material);
+            if(is_arrow){
+                var p0=points[points.length-2]
+                var p1=points[points.length-1]
+                var arrow=new THREE.ArrowHelper(new THREE.Vector3(p1[0],p1[1],p1[2]),new THREE.Vector3(p0[0],p0[1],p0[2]),0.3,material.color)
+                line.add(arrow)
+            }
+            line.update = function (message) {
+                var positions = this.geometry.attributes.position.array
+                for (var i = 0; i < message.points.length; i++) {
+                    var position = message.points[i]
+                    positions[i * 3] = position[0]
+                    positions[i * 3 + 1] = position[1]
+                    positions[i * 3 + 2] = position[2]
+                }
+                geometry.setDrawRange(0, message.points.length)
+                geometry.attributes.position.needsUpdate = true
+            }
             return line
         }
-        function LineSegment(){
-            var material = new THREE.LineBasicMaterial()
-            var geometry = new THREE.Geometry()
-            geometry.vertices.add(new THREE.Vector3(0,0,0),new THREE.Vector3(1,0,0))
-            var line = new THREE.Line(geometry,material)
-            return line
+        function Cylinder(top_radius, bottom_radius, height) {
+            var geometry = new THREE.CylinderGeometry(top_radius, bottom_radius, height, 32)
+            var material = new THREE.MeshLambertMaterial({color:'white'})
+            var cylinder = new THREE.Mesh(geometry, material)
+            cylinder.update = function (message) { }
+            return cylinder
         }
+
         var ws = new WebSocket("ws://localhost:8080/ws")
 
         ws.onopen = function (evt) {
@@ -83,44 +118,46 @@
         ws.onmessage = function (msg) {
             console.log(msg.data)
             var message = JSON.parse(msg.data)
-            if(message.id)
-            {
+            if (message.id) {
                 var obj;
-                if(objs.has(message.id))
-                {
-                    obj=objs.get(message.id)
+                if (objs.has(message.id)) {
+                    obj = objs.get(message.id)
                 }
-                else{
-                    obj=new_object(message.class)
+                else {
+                    obj = new_object(message)
                     scene.add(obj)
-                    objs.set(message.id,obj)
+                    objs.set(message.id, obj)
                 }
-                update(message,obj)
+                update(message, obj)
             }
         }
-        function new_object(cl){
-            switch(cl)
-            {
+        function new_object(message) {
+            switch (message.type) {
                 case "Cube":
                     return Cube()
                 case "Sphere":
                     return Sphere()
                 case "XYZ":
                     return new THREE.AxesHelper(1)
+                case "Line":
+                    return Line(message.points,message.is_arrow)
+                case "Cylinder":
+                    return Cylinder(message.top_radius, message.bottom_radius, message.height)
                 default:
                     return null
             }
         }
-        function update(message,obj) {
-            var position=message.pose.position
-            var rotation=message.pose.rotation
-            var scale=message.pose.scale
-            obj.position.set(position[0],position[1],position[2])
-            obj.rotation.set(rotation[0],rotation[1],rotation[2])
-            obj.scale.set(scale[0],scale[1],scale[2])
-            obj.material.color.setRGB(message.color.r,message.color.g,message.color.b)
-            obj.material.opacity = message.color.a
-            obj.material.linewidth = message.linewidth
+        function update(message, obj) {
+            var position = message.position
+            var rotation = message.rotation
+            var scale = message.scale
+            obj.position.set(position[0], position[1], position[2])
+            obj.rotation.set(rotation[0], rotation[1], rotation[2])
+            obj.scale.set(scale[0], scale[1], scale[2])
+            obj.material.color.setRGB(message.color[0], message.color[1], message.color[2])
+            obj.material.opacity = message.color[3]
+            obj.material.linewidth = message.line_width
+            obj.update(message)
         }
 
         function handleLine(message) {

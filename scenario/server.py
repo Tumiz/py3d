@@ -12,13 +12,22 @@ class IndexHandler(tornado.web.RequestHandler):
             self.render("viewer.html")
 
 class WebsocketHandler(tornado.websocket.WebSocketHandler):
-    instance=None
-    def __new__(cls, app, req, **kwargs):
-        # print("__new__")
-        if cls.instance is None:
-            # print(app,req,kwargs)
-            cls.instance=tornado.websocket.WebSocketHandler(app,req,**kwargs)
-        return cls.instance
+    users=set()
+    
+    def open(self):
+        # print("open")
+        self.users.add(self)
+
+    def on_close(self):
+        # print("close")
+        self.users.remove(self)
+
+    @staticmethod
+    def send_msg(msg):
+        users=WebsocketHandler.users.copy()
+        for u in users:
+            if u.get_status()==101:
+                u.write_message(msg)
 
 class Server(threading.Thread):
     def __init__(self):
@@ -41,11 +50,11 @@ class Server(threading.Thread):
 
     def send_msg(self,msg):
         t=0
-        while WebsocketHandler.instance is None:
+        while len(WebsocketHandler.users) == 0:
             print("waiting for web to open, "+str(t)+" s\r",end='')
             time.sleep(0.1)
             t+=0.1
-        WebsocketHandler.instance.write_message(msg)
+        WebsocketHandler.send_msg(msg)
         
     def run(self):
         # print("start")
