@@ -53,7 +53,16 @@
         };
 
         animate();
-
+        
+        function Points2TypedArray(array,typed_array){
+            for (var i = 0; i < array.length; i++) {
+                var a = array[i]
+                typed_array[i * 3] = a[0]
+                typed_array[i * 3 + 1] = a[1]
+                typed_array[i * 3 + 2] = a[2]
+            }
+        }
+        
         function Cube() {
             var geometry = new THREE.BoxGeometry();
             var material = new THREE.MeshLambertMaterial({ transparent: true });
@@ -69,46 +78,61 @@
             obj.update = function (message) { }
             return obj
         }
-        function Line(points,is_arrow=false) {
+        function Line() {
             var material = new THREE.LineBasicMaterial();
             var geometry = new THREE.BufferGeometry();
-            var positions = new Float32Array(500 * 3); // 3 vertices per point
-            for (var i = 0; i < points.length; i++) {
-                var position = points[i]
-                positions[i * 3] = position[0]
-                positions[i * 3 + 1] = position[1]
-                positions[i * 3 + 2] = position[2]
-            }
-            geometry.setDrawRange(0, points.length)
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            var line = new THREE.Line(geometry, material);
-            if(is_arrow){
-                var p0=points[points.length-2]
-                var p1=points[points.length-1]
-                var arrow=new THREE.ArrowHelper(new THREE.Vector3(p1[0],p1[1],p1[2]),new THREE.Vector3(p0[0],p0[1],p0[2]),0.3,material.color)
-                line.add(arrow)
-            }
+            var line = new THREE.Line(geometry, material)
+            line.length=0
+            line.cone=Cylinder(0,0.02,0.2,material)
+            line.cone.visible=false
+            line.add(line.cone)
             line.update = function (message) {
-                var positions = this.geometry.attributes.position.array
-                for (var i = 0; i < message.points.length; i++) {
-                    var position = message.points[i]
-                    positions[i * 3] = position[0]
-                    positions[i * 3 + 1] = position[1]
-                    positions[i * 3 + 2] = position[2]
+                if(message.points.length>this.length)
+                {
+                    this.length=2*message.points.length
+                    var positions = new Float32Array(this.length* 3);
+                    if(typeof this.geometry.attributes.position != 'undefined'){
+                        positions.set(this.geometry.attributes.position.array)
+                    }
+                    this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
                 }
-                geometry.setDrawRange(0, message.points.length)
-                geometry.attributes.position.needsUpdate = true
+                var positions = this.geometry.attributes.position.array
+                Points2TypedArray(message.points,positions)
+                this.geometry.setDrawRange(0, message.points.length)
+                this.geometry.attributes.position.needsUpdate = true
+                if(message.is_arrow){
+                    var p0=message.points[message.points.length-1]
+                    var end=new THREE.Vector3(p0[0],p0[1],p0[2])
+                    var p1=message.points[message.points.length-2]
+                    var pre_end=new THREE.Vector3(p1[0],p1[1],p1[2])
+                    var direction=new THREE.Vector3().subVectors(pre_end,end)
+                    direction.normalize()
+                    var ray=new THREE.Ray(end,direction)
+                    var start=new THREE.Vector3()
+                    ray.at(0.2,start)
+                    var center=new THREE.Vector3().addVectors(start,end).divideScalar(2)
+                    direction.multiplyScalar(-1)
+                    this.cone.set_axis(direction)
+                    this.cone.position.copy(center)
+                    this.cone.visible=true
+                    this.cone.ma
+                }
             }
             return line
         }
-        function Cylinder(top_radius, bottom_radius, height) {
+        function Cylinder(top_radius, bottom_radius, height,material=new THREE.MeshLambertMaterial({color:'white'})) {
             var geometry = new THREE.CylinderGeometry(top_radius, bottom_radius, height, 32)
-            var material = new THREE.MeshLambertMaterial({color:'white'})
             var cylinder = new THREE.Mesh(geometry, material)
             cylinder.update = function (message) { }
+            cylinder.set_axis = function (direction){
+                direction.normalize()
+                var axis=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),direction)
+                var angle=Math.asin(axis.length())
+                axis.normalize()
+                this.setRotationFromAxisAngle ( axis, angle)
+            }
             return cylinder
         }
-
         var ws = new WebSocket("ws://localhost:8080/ws")
 
         ws.onopen = function (evt) {
@@ -140,7 +164,7 @@
                 case "XYZ":
                     return new THREE.AxesHelper(1)
                 case "Line":
-                    return Line(message.points,message.is_arrow)
+                    return Line()
                 case "Cylinder":
                     return Cylinder(message.top_radius, message.bottom_radius, message.height)
                 default:

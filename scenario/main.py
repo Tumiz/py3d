@@ -120,6 +120,7 @@ class Object3D(Transform):
         self.angular_velocity=None
         self.local_velocity=None
         self.local_angular_velocity=None
+        self.children=set()
 
     def step(self,dt):
         if self.local_velocity is not None:
