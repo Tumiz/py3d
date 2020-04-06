@@ -19,7 +19,7 @@
     <script type="module">
         import * as THREE from '/static/js/three.js';
         import { OrbitControls } from '/static/js/orbit.js';
-        var objs = new Map()
+        var objects = {}
         var scene = new THREE.Scene();
         scene.background = new THREE.Color(0xF8F8FF)
         var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -115,7 +115,6 @@
                     this.cone.set_axis(direction)
                     this.cone.position.copy(center)
                     this.cone.visible=true
-                    this.cone.ma
                 }
             }
             return line
@@ -139,20 +138,24 @@
             console.log("Connection open ...");
         };
 
-        ws.onmessage = function (msg) {
-            console.log(msg.data)
-            var message = JSON.parse(msg.data)
-            if (message.id) {
-                var obj;
-                if (objs.has(message.id)) {
-                    obj = objs.get(message.id)
+        ws.onmessage = function (message) {
+            console.log(message.data)
+            var data = JSON.parse(message.data)
+            for(var id in objects){
+                if(data[id]==undefined){
+                    scene.remove(objects[id])
+                    delete objects[id]
                 }
-                else {
-                    obj = new_object(message)
+            }
+            for(var id in data){
+                var obj_data=data[id]
+                var obj=objects[id]
+                if(obj==undefined){
+                    var obj = new_object(obj_data)
                     scene.add(obj)
-                    objs.set(message.id, obj)
+                    objects[id]=obj
                 }
-                update(message, obj)
+                update(obj_data, obj)
             }
         }
         function new_object(message) {
@@ -176,7 +179,7 @@
             var rotation = message.rotation
             var scale = message.scale
             obj.position.set(position[0], position[1], position[2])
-            obj.rotation.set(rotation[0], rotation[1], rotation[2])
+            obj.quaternion.set(rotation[0], rotation[1], rotation[2], rotation[3])
             obj.scale.set(scale[0], scale[1], scale[2])
             obj.material.color.setRGB(message.color[0], message.color[1], message.color[2])
             obj.material.opacity = message.color[3]
