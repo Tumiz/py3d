@@ -2,6 +2,11 @@
 from .server import *
 from math import *
 import torch
+def sign(x):
+    if x>=0:
+        return 1
+    else:
+        return -1
 
 class Vector3: 
     def __new__(cls,x=0,y=0,z=0):
@@ -9,7 +14,7 @@ class Vector3:
 
 class Rotation:
     def __init__(self):
-        self.matrix=torch.eye(4)
+        self.matrix=torch.eye(4,dtype=torch.float64)
     @staticmethod
     def eular(x=0,y=0,z=0):
         ret=Rotation()
@@ -23,7 +28,7 @@ class Rotation:
             [2*(x*y+w*z),2*(pow(w,2)+pow(y,2))-1,2*(y*z-w*x),0],
             [2*(x*z-w*y),2*(y*z+w*x),2*(pow(w,2)+pow(z,2))-1,0],
             [0,0,0,1]
-        ])
+        ],dtype=torch.float64)
         return ret
     @staticmethod
     def axis_angle(axis,angle):
@@ -38,7 +43,7 @@ class Rotation:
             [0, cos(x), -sin(x),0],
             [0, sin(x), cos(x),0],
             [0,0,0,1]
-        ])     
+        ],dtype=torch.float64)     
     @staticmethod
     def ry_matrix(y):
         return torch.tensor([
@@ -46,7 +51,7 @@ class Rotation:
             [0,1,0,0],
             [-sin(y),0,cos(y),0],
             [0,0,0,1]
-        ])
+        ],dtype=torch.float64)
     @staticmethod
     def rz_matrix(z):
         return torch.tensor([
@@ -54,7 +59,7 @@ class Rotation:
             [sin(z),cos(z),0,0],
             [0,0,1,0],
             [0,0,0,1]
-        ])
+        ],dtype=torch.float64)
     @staticmethod
     def eular2quaternion(rx,ry,rz):
         sx,cx=sin(rx/2),cos(rx/2)
@@ -69,20 +74,20 @@ class Rotation:
         y=atan2(-self.matrix[2,0],sqrt(pow(self.matrix[0,0],2)+pow(self.matrix[1,0],2)))
         z=atan2(self.matrix[1,0]/cos(y),self.matrix[0,0]/cos(y))
         x=atan2(self.matrix[2,1]/cos(y),self.matrix[2,2]/cos(y))
-        return torch.tensor([x,y,z])
+        return [x,y,z]
     def to_quaternion(self):
-        w=0.5*sqrt(max(self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]+1,0))
-        x=(self.matrix[2,1]-self.matrix[1,2])/4/w
-        y=(self.matrix[0,2]-self.matrix[2,0])/4/w
-        z=(self.matrix[1,0]-self.matrix[0,1])/4/w
-        return torch.tensor([x,y,z,w])
+        w=0.5*sqrt(self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]+1)
+        x=0.5*sign(self.matrix[2,1]-self.matrix[1,2])*sqrt(self.matrix[0,0]-self.matrix[1,1]-self.matrix[2,2]+1)
+        y=0.5*sign(self.matrix[0,2]-self.matrix[2,0])*sqrt(self.matrix[1,1]-self.matrix[2,2]-self.matrix[0,0]+1)
+        z=0.5*sign(self.matrix[1,0]-self.matrix[0,1])*sqrt(self.matrix[2,2]-self.matrix[0,0]-self.matrix[1,1]+1)
+        return [x,y,z,w]
     def to_axis_angle(self):
         angle=acos((self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]-1)/2)
         axis=torch.tensor([
             self.matrix[2,1]-self.matrix[1,2],
             self.matrix[0,2]-self.matrix[2,0],
             self.matrix[1,0]-self.matrix[0,1]
-        ])
+        ],dtype=torch.float64)
         return axis,angle
     def rotate_x(self,angle):
         self.matrix=Rotation.rx_matrix(angle).mm(self.matrix)
@@ -96,8 +101,6 @@ class Rotation:
     def rotate_axis(self,axis,angle):
         self.matrix=Rotation.axis_angle(axis,angle).matrix.mm(self.matrix)
         return self
-    def info(self):
-        return self.to_quaternion().tolist()
 
 class Transform:
     def __init__(self,position=Vector3(),rotation=Rotation(),scale=Vector3(1,1,1)):
@@ -138,7 +141,7 @@ class Transform:
         ])
     
     def info(self):
-        return {"position":self.position.tolist(),"rotation":self.rotation.info(),"scale":self.scale.tolist()}
+        return {"position":self.position.tolist(),"rotation":self.rotation.to_quaternion(),"scale":self.scale.tolist()}
     
     def __repr__(self):
         return json.dumps(self.info())
