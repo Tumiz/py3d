@@ -11,23 +11,26 @@ class IndexHandler(tornado.web.RequestHandler):
         if(self.request.uri=="/"):
             self.render("viewer.html")
 
-class WebsocketHandler(tornado.websocket.WebSocketHandler):
+class WSHandler(tornado.websocket.WebSocketHandler):
     users=set()
-    
+    msg_cache={}
     def open(self):
-        # print("open")
+#         print("open",id(self))
         self.users.add(self)
+        self.write_message(WSHandler.msg_cache)
 
     def on_close(self):
-        # print("close")
+#         print("close",id(self))
         self.users.remove(self)
 
     @staticmethod
     def send_msg(msg):
-        users=WebsocketHandler.users.copy()
+        WSHandler.msg_cache=msg
+        users=WSHandler.users.copy()
         for u in users:
             if u.get_status()==101:
                 u.write_message(msg)
+#                 print(msg)
 
 class Server(threading.Thread):
     def __init__(self):
@@ -39,13 +42,12 @@ class Server(threading.Thread):
 
     def send_msg(self,msg):
         t=0
-        if len(WebsocketHandler.users)==0:
+        if len(WSHandler.users)==0:
             self.open_web()
-        while len(WebsocketHandler.users) == 0:
-            print("waiting for web to open, "+str(t)+" s\r",end='')
+        while len(WSHandler.users) == 0:
             time.sleep(0.1)
             t+=0.1
-        WebsocketHandler.send_msg(msg)
+        WSHandler.send_msg(msg)
 
     def run(self):
         loop=asyncio.new_event_loop()
@@ -54,7 +56,7 @@ class Server(threading.Thread):
         template_path=os.path.join(os.path.dirname(__file__), "template")
         app = tornado.web.Application([
                 (r"/", IndexHandler),
-                (r"/ws", WebsocketHandler),
+                (r"/ws", WSHandler),
                 (r"/(.*)",tornado.web.StaticFileHandler)      
             ],
             static_path = static_path,
