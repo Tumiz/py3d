@@ -1,12 +1,23 @@
 import * as THREE from './three.js'
 import { OrbitControls } from './orbit.js'
-var a=new THREE.Vector3()
 var objects = {}
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0xF8F8FF)
-var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.up.set(0, 0, 1)
-camera.position.set(10, 10, 10)
+var fov_y = 60
+var aspect = window.innerWidth / window.innerHeight;
+var perspCamera = new THREE.PerspectiveCamera(fov_y, aspect, 0.1, 1000);
+perspCamera.up.set(0, 0, 1)
+perspCamera.position.set(10, 10, 10)
+var Z = perspCamera.position.length();
+var depht_s = Math.tan(fov_y / 2.0 * Math.PI / 180.0) * 2.0
+var size_y = depht_s * Z;
+var size_x = depht_s * Z * aspect
+var orthoCamera = new THREE.OrthographicCamera(
+    -size_x / 2, size_x / 2,
+    size_y / 2, -size_y / 2,
+    1, 1000);
+orthoCamera.up.set(0, 0, 1)
+orthoCamera.position.copy(perspCamera.position)
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -18,20 +29,22 @@ var gridHelper = new THREE.GridHelper(10, 10);
 gridHelper.rotation.set(Math.PI / 2, 0, 0)
 scene.add(gridHelper, light);
 
-var xAxis = Line([[0, 0, 0], [5, 0, 0]])
+var xAxis = Line()
+xAxis.set_points([[0, 0, 0], [5, 0, 0]])
 xAxis.material.color = new THREE.Color('red')
 xAxis.material.linewidth = 3
-var yAxis = Line([[0, 0, 0], [0, 5, 0]])
+var yAxis = Line()
+yAxis.set_points([[0, 0, 0], [0, 5, 0]])
 yAxis.material.color = new THREE.Color('green')
 yAxis.material.linewidth = 3
 scene.add(xAxis, yAxis)
 
-var controls = new OrbitControls(camera, renderer.domElement);
+var controls = new OrbitControls(perspCamera, orthoCamera, renderer.domElement);
 
 var animate = function () {
-    light.position.copy(camera.position)
+    light.position.copy(controls.object.position)
     requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+    renderer.render(scene, controls.object);
 };
 
 animate();
@@ -62,25 +75,24 @@ function Sphere(radius) {
 }
 function Line() {
     var material = new THREE.LineBasicMaterial();
-    var geometry = new THREE.BufferGeometry();
+    var geometry = new THREE.BufferGeometry()
     var line = new THREE.Line(geometry, material)
     line.length = 0
     line.cone = Cylinder(0, 0.02, 0.2, material)
     line.cone.visible = false
     line.add(line.cone)
-    line.update = function (message) {
-        if (message.points.length > this.length) {
-            this.length = 2 * message.points.length
+    line.set_points = function (points) {
+        if (points.length > this.length) {
+            this.length = 2 * points.length
             var positions = new Float32Array(this.length * 3);
-            if (typeof this.geometry.attributes.position != 'undefined') {
-                positions.set(this.geometry.attributes.position.array)
-            }
             this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
         }
-        var positions = this.geometry.attributes.position.array
-        Points2TypedArray(message.points, positions)
-        this.geometry.setDrawRange(0, message.points.length)
+        Points2TypedArray(points, this.geometry.attributes.position.array)
+        this.geometry.setDrawRange(0, points.length)
         this.geometry.attributes.position.needsUpdate = true
+    }
+    line.update = function (message) {
+        this.set_points(message.points)
         if (message.is_arrow) {
             var p0 = message.points[message.points.length - 1]
             var end = new THREE.Vector3(p0[0], p0[1], p0[2])
@@ -106,8 +118,8 @@ function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLa
     cylinder.update = function (message) { }
     cylinder.set_axis = function (direction) {
         direction.normalize()
-        var axis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction)
-        var angle = Math.asin(axis.length())
+        var axis = new THREE.Vector3().crossVectors(this.up, direction)
+        var angle = this.up.angleTo(direction)
         axis.normalize()
         this.setRotationFromAxisAngle(axis, angle)
     }
@@ -166,44 +178,4 @@ function update(message, obj) {
     obj.material.opacity = message.color[3]
     obj.material.linewidth = message.line_width
     obj.update(message)
-}
-
-function handleLine(message) {
-    var argvs = message.argvs
-    switch (message.method) {
-        case "__init__":
-            var id = Line()
-            ws.send(id)
-            break
-        case "points":
-            var geometry = scene.getObjectById(message.id).geometry
-            var positions = geometry.attributes.position.array
-            if (argvs == "") {
-                var points = new Array
-                for (var i = geometry.drawRange.start; i < geometry.drawRange.count; i++) {
-                    points.push([positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]])
-                }
-                ws.send(JSON.stringify(points))
-            } else {
-                for (var i = 0; i < argvs.length; i++) {
-                    var position = argvs[i]
-                    positions[i * 3] = position[0]
-                    positions[i * 3 + 1] = position[1]
-                    positions[i * 3 + 2] = position[2]
-                }
-                geometry.setDrawRange(0, argvs.length)
-                geometry.attributes.position.needsUpdate = true
-            }
-            break
-        case "linewidth":
-            var material = scene.getObjectById(message.id).material
-            if (argvs == "") {
-                ws.send(material.linewidth)
-            } else {
-                material.linewidth = argvs
-            }
-        default:
-            handleObject3D(message)
-            break
-    }
 }

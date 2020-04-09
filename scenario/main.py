@@ -257,13 +257,13 @@ class Line(Object3D):
     def __init__(self):
         Object3D.__init__(self)
         self.points=[]
-        self.line_width=1
+        self.width=1
         self.is_arrow=False
 
     def info(self):
         ret=Object3D.info(self)
         ret['points']=self.points
-        ret['line_width']=self.line_width
+        ret['line_width']=self.width
         ret['is_arrow']=self.is_arrow
         return ret
                 

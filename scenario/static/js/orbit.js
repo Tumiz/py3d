@@ -24,12 +24,12 @@ import {
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 
-var OrbitControls = function ( object, domElement ) {
+var OrbitControls = function ( perspCamera, orthoCamera, domElement ) {
 
 	if ( domElement === undefined ) console.warn( 'THREE.OrbitControls: The second parameter "domElement" is now mandatory.' );
 	if ( domElement === document ) console.error( 'THREE.OrbitControls: "document" should not be used as the target "domElement". Please use "renderer.domElement" instead.' );
 
-	this.object = object;
+	this.object = perspCamera;
 	this.domElement = domElement;
 
 	// Set to false to disable this control
@@ -143,7 +143,7 @@ var OrbitControls = function ( object, domElement ) {
 		var offset = new Vector3();
 
 		// so camera.up is the orbit axis
-		var quat = new Quaternion().setFromUnitVectors( object.up, new Vector3( 0, 1, 0 ) );
+		var quat = new Quaternion().setFromUnitVectors( perspCamera.up, new Vector3( 0, 1, 0 ) );
 		var quatInverse = quat.clone().inverse();
 
 		var lastPosition = new Vector3();
@@ -334,7 +334,27 @@ var OrbitControls = function ( object, domElement ) {
 	function rotateLeft( angle ) {
 
 		sphericalDelta.theta -= angle;
-
+		// console.log(spherical.theta,spherical.phi)
+		if(scope.object.isPerspectiveCamera&&spherical.phi<0.001){
+			orthoCamera.position.copy(scope.object.position)
+			orthoCamera.rotation.copy(scope.object.rotation)
+			orthoCamera.zoom=1
+			var Z = scope.object.position.length();
+			var depht_s = Math.tan(scope.object.fov / 2.0 * Math.PI / 180.0) * 2.0
+			var size_y = depht_s * Z;
+			var size_x = depht_s * Z * scope.object.aspect
+			orthoCamera.left=-size_x/2
+			orthoCamera.right=size_x/2
+			orthoCamera.top=size_y/2
+			orthoCamera.bottom=-size_y/2
+			orthoCamera.updateProjectionMatrix()
+			// console.log(scope.object.position.length(),orthoCamera.right,orthoCamera.top,orthoCamera.zoom)
+			scope.object=orthoCamera
+		}else if(scope.object.isOrthographicCamera&&spherical.phi>=0.001){
+			perspCamera.position.copy(scope.object.position.divideScalar(scope.object.zoom))
+			perspCamera.rotation.copy(scope.object.rotation)
+			scope.object=perspCamera
+		}
 	}
 
 	function rotateUp( angle ) {
