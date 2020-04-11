@@ -123,15 +123,17 @@ function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLa
         axis.normalize()
         this.setRotationFromAxisAngle(axis, angle)
     }
+    cylinder.axis=new THREE.AxesHelper(3)
+    cylinder.axis.material.linewidth=2
+    cylinder.add(cylinder.axis)
     return cylinder
 }
-var ws = new WebSocket("ws://localhost:8080/ws")
 
-ws.onopen = function (evt) {
+function on_open(evt) {
     console.log("Connection open ...");
 };
 
-ws.onmessage = function (message) {
+function on_message(message) {
     console.log(message.data)
     var data = JSON.parse(message.data)
     for (var id in objects) {
@@ -179,3 +181,4 @@ function update(message, obj) {
     obj.material.linewidth = message.line_width
     obj.update(message)
 }
+export{on_open,on_message}

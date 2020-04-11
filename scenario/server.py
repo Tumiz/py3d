@@ -5,11 +5,23 @@ import threading
 import tornado.web
 import tornado.websocket
 import webbrowser
+import socket
+
+def address_in_use(port,ip='127.0.0.1'):
+    s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    try:
+        s.connect((ip,port))
+        s.shutdown(2)
+#         print('%s:%d is used' % (ip,port))
+        return True
+    except:
+#         print('%s:%d is unused' % (ip,port))
+        return False
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         if(self.request.uri=="/"):
-            self.render("viewer.html")
+            self.render("viewer.html",port=Server.port)
 
 class WSHandler(tornado.websocket.WebSocketHandler):
     users=set()
@@ -33,17 +45,17 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 #                 print(msg)
 
 class Server(threading.Thread):
+    port=8000
     def __init__(self):
         threading.Thread.__init__(self)
         self.setDaemon(True)
+        while address_in_use(Server.port):
+            Server.port+=1
         
-    def open_web(self):
-        webbrowser.open("http://localhost:8080/",new=0,autoraise=False)
-
     def send_msg(self,msg):
         t=0
         if len(WSHandler.users)==0:
-            self.open_web()
+            webbrowser.open("http://localhost:"+str(self.port),new=0,autoraise=False)
         while len(WSHandler.users) == 0:
             time.sleep(0.1)
             t+=0.1
@@ -64,5 +76,5 @@ class Server(threading.Thread):
             debug = True
         )
         http_server = tornado.httpserver.HTTPServer(app)
-        http_server.listen(8080)
+        http_server.listen(Server.port)
         tornado.ioloop.IOLoop.current().start() 

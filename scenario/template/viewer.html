@@ -8,7 +8,6 @@
         body {
             margin: 0;
         }
-
         canvas {
             display: block;
         }
@@ -17,6 +16,12 @@
 
 <body>
     <script type="module" src="static/js/viewer.js"></script>
+    <script type="module">
+        import {on_open,on_message} from "../static/js/viewer.js"
+        var ws = new WebSocket("ws://localhost:"+{{port}}+"/ws")
+        ws.onopen=on_open
+        ws.onmessage=on_message
+    </script>
 </body>
 
 </html>

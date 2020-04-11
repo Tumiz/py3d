@@ -10,7 +10,7 @@ def sign(x):
 
 class Vector3: 
     def __new__(cls,x=0,y=0,z=0):
-        return torch.Tensor([float(x),float(y),float(z)])
+        return torch.tensor([x,y,z],dtype=torch.float64)
 
 class Rotation:
     def __init__(self):
@@ -36,6 +36,11 @@ class Rotation:
         w=cos(angle/2)
         x,y,z=sin(angle/2)*axis
         return Rotation.quaternion(x,y,z,w)
+    @staticmethod
+    def direction_vector(origin,direction):
+        axis=origin.cross(direction)
+        angle=acos(origin.dot(direction)/origin.norm()/direction.norm())
+        return Rotation.axis_angle(axis,angle)
     @staticmethod
     def rx_matrix(x):
         return torch.tensor([
@@ -101,14 +106,28 @@ class Rotation:
     def rotate_axis(self,axis,angle):
         self.matrix=Rotation.axis_angle(axis,angle).matrix.mm(self.matrix)
         return self
+    def __mul__(self,v):
+        if isinstance(v,float) or isinstance(v,int):
+            axis,angle=self.to_axis_angle()
+            angle*=v
+            return Rotation.axis_angle(axis,angle)
+        elif isinstance(v,torch.Tensor):
+            return self.matrix[0:3,0:3].mm(v.view(3,1)).view(3)
+        elif isinstance(v,Rotation):
+            self.matrix=v.matrix.mm(self.matrix)
+            return self
+    def transform_local_rotation(self,local):
+        axis,angle=local.to_axis_angle()
+        axis=self*axis
+        return Rotation.axis_angle(axis,angle)
 
 class Transform:
-    def __init__(self,position=Vector3(),rotation=Rotation(),scale=Vector3(1,1,1)):
-        self.position=position
-        self.rotation=rotation
-        self.scale=scale
+    def __init__(self):
+        self.position=Vector3()
+        self.rotation=Rotation()
+        self.scale=Vector3(1,1,1)
         
-    def transform_position(self,loc):#local position
+    def transform_local_position(self,loc):#local position
         tmp=torch.tensor([
             [loc[0]],
             [loc[1]],
@@ -117,12 +136,6 @@ class Transform:
             ])
         r=self.translation_matrix().mm(self.rotation.matrix).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
         return r
-    
-    def transform_rotation(self,rot):#local rotation
-        tmp=torch.tensor([
-            [rot[0]]
-        ])
-        pass
 
     def translation_matrix(self):
         return torch.tensor([
@@ -193,16 +206,16 @@ class Object3D(Transform):
 
     def step(self,dt):
         if self.local_velocity is not None:
-            self.position=self.transform_position(self.local_velocity*dt)
+            self.position=self.transform_local_position(self.local_velocity*dt)
             # print('local v',self.position)
         elif self.velocity is not None:
             self.position+=self.velocity*dt
             # print('v',self.position)
         if self.local_angular_velocity is not None:
-            self.rotation=self.transform_rotation(self.local_angular_velocity*dt)
+            self.rotation*=self.rotation.transform_local_rotation(self.local_angular_velocity*dt)
             # print('local a',self.rotation,self.local_angular_velocity)
         elif self.angular_velocity is not None:
-            self.rotation+=self.angular_velocity*dt
+            self.rotation*=(self.angular_velocity*dt)
             # print('a',self.rotation,self.angular_velocity)
       
     def info(self):
@@ -273,6 +286,9 @@ class Cylinder(Object3D):
         self.top_radius=1
         self.bottom_radius=1
         self.height=1
+        
+    def set_axis(self,axis):
+        self.rotation=Rotation.direction_vector(Vector3(0,1,0),axis)
 
     def info(self):
         ret=Object3D.info(self)
