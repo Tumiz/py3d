@@ -123,9 +123,9 @@ function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLa
         axis.normalize()
         this.setRotationFromAxisAngle(axis, angle)
     }
-    cylinder.axis=new THREE.AxesHelper(3)
-    cylinder.axis.material.linewidth=2
-    cylinder.add(cylinder.axis)
+//     cylinder.axis=new THREE.AxesHelper(3)
+//     cylinder.axis.material.linewidth=2
+//     cylinder.add(cylinder.axis)
     return cylinder
 }
 
