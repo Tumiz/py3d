@@ -1,6 +1,7 @@
 # coding: utf-8
 from .server import *
 from math import *
+from abc import abstractmethod
 import torch
 def sign(x):
     if x>=0:
@@ -11,6 +12,11 @@ def sign(x):
 class Vector3: 
     def __new__(cls,x=0,y=0,z=0):
         return torch.tensor([x,y,z],dtype=torch.float64)
+    @staticmethod
+    def rand(x=[0,0],y=[0,0],z=[0,0]):
+        low=torch.tensor([x[0],y[0],z[0]],dtype=torch.float64)
+        up=torch.tensor([x[1],y[1],z[1]],dtype=torch.float64)
+        return low+torch.rand(3,dtype=torch.float64)*(up-low)
 
 class Rotation:
     def __init__(self):
@@ -32,14 +38,18 @@ class Rotation:
         return ret
     @staticmethod
     def axis_angle(axis,angle):
-        axis=axis/axis.norm()
-        w=cos(angle/2)
-        x,y,z=sin(angle/2)*axis
-        return Rotation.quaternion(x,y,z,w)
+        axis_n=axis.norm()
+        if axis_n:
+            axis=axis/axis.norm()
+            w=cos(angle/2)
+            x,y,z=sin(angle/2)*axis
+            return Rotation.quaternion(x,y,z,w)
+        else:
+            return Rotation()
     @staticmethod
-    def direction_vector(origin,direction):
-        axis=origin.cross(direction)
-        angle=acos(origin.dot(direction)/origin.norm()/direction.norm())
+    def direction_change(before,after):
+        axis=before.cross(after)
+        angle=acos(before.dot(after)/before.norm()/after.norm())
         return Rotation.axis_angle(axis,angle)
     @staticmethod
     def rx_matrix(x):
@@ -82,9 +92,9 @@ class Rotation:
         return [x,y,z]
     def to_quaternion(self):
         w=0.5*sqrt(self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]+1)
-        x=0.5*sign(self.matrix[2,1]-self.matrix[1,2])*sqrt(self.matrix[0,0]-self.matrix[1,1]-self.matrix[2,2]+1)
-        y=0.5*sign(self.matrix[0,2]-self.matrix[2,0])*sqrt(self.matrix[1,1]-self.matrix[2,2]-self.matrix[0,0]+1)
-        z=0.5*sign(self.matrix[1,0]-self.matrix[0,1])*sqrt(self.matrix[2,2]-self.matrix[0,0]-self.matrix[1,1]+1)
+        x=0.5*sign(self.matrix[2,1]-self.matrix[1,2])*sqrt(max(0,self.matrix[0,0]-self.matrix[1,1]-self.matrix[2,2]+1))
+        y=0.5*sign(self.matrix[0,2]-self.matrix[2,0])*sqrt(max(0,self.matrix[1,1]-self.matrix[2,2]-self.matrix[0,0]+1))
+        z=0.5*sign(self.matrix[1,0]-self.matrix[0,1])*sqrt(max(0,self.matrix[2,2]-self.matrix[0,0]-self.matrix[1,1]+1))
         return [x,y,z,w]
     def to_axis_angle(self):
         angle=acos((self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]-1)/2)
@@ -126,6 +136,10 @@ class Transform:
         self.position=Vector3()
         self.rotation=Rotation()
         self.scale=Vector3(1,1,1)
+        self.direction=Vector3(1,0,0)
+        
+    def lookat(self,destination):
+        self.rotation=Rotation.direction_change(self.direction,destination-self.position)
         
     def transform_local_position(self,loc):#local position
         tmp=torch.tensor([
@@ -155,9 +169,6 @@ class Transform:
     
     def info(self):
         return {"position":self.position.tolist(),"rotation":self.rotation.to_quaternion(),"scale":self.scale.tolist()}
-    
-    def __repr__(self):
-        return json.dumps(self.info())
     
 class Scenario:
     server=None
@@ -195,7 +206,7 @@ class Object3D(Transform):
     def __init__(self):
         Transform.__init__(self)
         self.id=id(self)
-        self.type=self.__class__.__name__
+        self.type=None
         self.color=Color(1,1,1)
         self.mass=0
         self.velocity=None
@@ -204,39 +215,48 @@ class Object3D(Transform):
         self.local_angular_velocity=None
         self.children=set()
 
+    @abstractmethod
+    def on_step(self):
+        pass
+    
     def step(self,dt):
+        self.on_step()
         if self.local_velocity is not None:
             self.position=self.transform_local_position(self.local_velocity*dt)
-            # print('local v',self.position)
+#             print(self.id,'local v',self.position,self.local_velocity)
         elif self.velocity is not None:
             self.position+=self.velocity*dt
-            # print('v',self.position)
+#             print(self.id,'v',self.position,self.local_velocity)
         if self.local_angular_velocity is not None:
             self.rotation*=self.rotation.transform_local_rotation(self.local_angular_velocity*dt)
-            # print('local a',self.rotation,self.local_angular_velocity)
+#             print(self.id,'local a',self.rotation,self.local_angular_velocity)
         elif self.angular_velocity is not None:
             self.rotation*=(self.angular_velocity*dt)
-            # print('a',self.rotation,self.angular_velocity)
+#             print(self.id,'a',self.rotation,self.angular_velocity)
       
     def info(self):
         ret=Transform.info(self)
         ret.update({"id":self.id,"type":self.type,"color":self.color.tolist()})
         return ret
     
-    def __repr__(self):
-        return json.dumps(self.info())
-    
 class Color:
     def __new__(cls,r=0,g=0,b=0,a=1):
-        return torch.tensor([float(r),float(g),float(b),float(a)])
+        return torch.tensor([r,g,b,a])
+    @staticmethod
+    def rand(a=1):
+        r=torch.rand(4)
+        r[3]=a
+        return r
         
 class Cube(Object3D):
     def __init__(self):
         Object3D.__init__(self)
+        self.type="Cube"
 
 class Sphere(Object3D):
     def __init__(self):
         Object3D.__init__(self)
+        self.type="Sphere"
 
     @property
     def radius(self):
@@ -260,6 +280,7 @@ class XYZ(Object3D):
     def __init__(self):
         Object3D.__init__(self)
         self.line_width=1
+        self.type="XYZ"
 
     def info(self):
         ret=Object3D.info(self)
@@ -269,6 +290,7 @@ class XYZ(Object3D):
 class Line(Object3D):
     def __init__(self):
         Object3D.__init__(self)
+        self.type="Line"
         self.points=[]
         self.width=1
         self.is_arrow=False
@@ -283,6 +305,7 @@ class Line(Object3D):
 class Cylinder(Object3D):
     def __init__(self):
         Object3D.__init__(self)
+        self.type="Cylinder"
         self.top_radius=1
         self.bottom_radius=1
         self.height=1

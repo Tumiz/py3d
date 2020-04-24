@@ -25,16 +25,16 @@ document.body.appendChild(renderer.domElement);
 var light = new THREE.PointLight(0xffffff, 1);
 light.position.set(10, 10, 10)
 
-var gridHelper = new THREE.GridHelper(10, 10);
+var gridHelper = new THREE.GridHelper(100, 100);
 gridHelper.rotation.set(Math.PI / 2, 0, 0)
 scene.add(gridHelper, light);
 
 var xAxis = Line()
-xAxis.set_points([[0, 0, 0], [5, 0, 0]])
+xAxis.set_points([[0, 0, 0], [50, 0, 0]])
 xAxis.material.color = new THREE.Color('red')
 xAxis.material.linewidth = 3
 var yAxis = Line()
-yAxis.set_points([[0, 0, 0], [0, 5, 0]])
+yAxis.set_points([[0, 0, 0], [0, 50, 0]])
 yAxis.material.color = new THREE.Color('green')
 yAxis.material.linewidth = 3
 scene.add(xAxis, yAxis)
@@ -78,7 +78,7 @@ function Line() {
     var geometry = new THREE.BufferGeometry()
     var line = new THREE.Line(geometry, material)
     line.length = 0
-    line.cone = Cylinder(0, 0.02, 0.2, material)
+    line.cone = Cylinder(0, 0.1, 0.4, material)
     line.cone.visible = false
     line.add(line.cone)
     line.set_points = function (points) {
@@ -123,9 +123,6 @@ function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLa
         axis.normalize()
         this.setRotationFromAxisAngle(axis, angle)
     }
-//     cylinder.axis=new THREE.AxesHelper(3)
-//     cylinder.axis.material.linewidth=2
-//     cylinder.add(cylinder.axis)
     return cylinder
 }
 

@@ -50,6 +50,43 @@ while scen.t<10:
 ```
 ![](doc/circular_motion.gif)
 
+**Example 3**: A queue of agents.
+```python
+from scenario import *
+from time import sleep
+from random import random
+
+class Follower(Cube):
+    def __init__(self):
+        Cube.__init__(self)
+        self.scale=Vector3(2,1,1)
+        self.color=Color.rand()
+        self.front=None
+    def on_step(self):
+        if self.front:
+            d=(self.front.position-self.position).norm()
+            self.local_velocity=Vector3(x=d*0.1)
+            self.lookat(self.front.position)
+        else:
+            self.local_velocity=Vector3.rand(x=[0,2])
+            self.local_angular_velocity=Rotation.eular(z=random()-0.3)
+scen = Scenario()
+n=10
+front=None
+for i in range(n):
+    f=Follower()
+    f.position=Vector3(10,0,0.5)-i*Vector3(3,0,0)
+    if front:
+        f.front=front
+    scen.add(f)
+    front=f
+while scen.t<20:
+    scen.step(0.1)
+    scen.render()
+    sleep(0.1)
+```
+![](doc/queue.gif)
+
 [Here](doc/basics.ipynb) is an introduction to Scenario, read it for details.
 
 # Target Users
