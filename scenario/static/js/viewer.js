@@ -62,15 +62,12 @@ function Cube() {
     var geometry = new THREE.BoxGeometry();
     var material = new THREE.MeshLambertMaterial({ transparent: true });
     var cube = new THREE.Mesh(geometry, material);
-    cube.update = function (message) { }
     return cube
 }
-function Sphere(radius) {
+function Sphere() {
     var geometry = new THREE.SphereGeometry(1, 32, 32);
     var material = new THREE.MeshLambertMaterial({ transparent: true, color: 0x00ff00 });
     var obj = new THREE.Mesh(geometry, material);
-    obj.scale.set(radius, radius, radius)
-    obj.update = function (message) { }
     return obj
 }
 function Line() {
@@ -93,21 +90,25 @@ function Line() {
     }
     line.update = function (message) {
         this.set_points(message.points)
-        if (message.is_arrow) {
-            var p0 = message.points[message.points.length - 1]
-            var end = new THREE.Vector3(p0[0], p0[1], p0[2])
-            var p1 = message.points[message.points.length - 2]
-            var pre_end = new THREE.Vector3(p1[0], p1[1], p1[2])
-            var direction = new THREE.Vector3().subVectors(pre_end, end)
-            direction.normalize()
-            var ray = new THREE.Ray(end, direction)
-            var start = new THREE.Vector3()
-            ray.at(0.2, start)
-            var center = new THREE.Vector3().addVectors(start, end).divideScalar(2)
-            direction.multiplyScalar(-1)
-            this.cone.set_axis(direction)
-            this.cone.position.copy(center)
-            this.cone.visible = true
+        switch (message.type) {
+            case "Vector":
+                var p0 = message.points[message.points.length - 1]
+                var end = new THREE.Vector3(p0[0], p0[1], p0[2])
+                var p1 = message.points[message.points.length - 2]
+                var pre_end = new THREE.Vector3(p1[0], p1[1], p1[2])
+                var direction = new THREE.Vector3().subVectors(pre_end, end)
+                direction.normalize()
+                var ray = new THREE.Ray(end, direction)
+                var start = new THREE.Vector3()
+                ray.at(0.2, start)
+                var center = new THREE.Vector3().addVectors(start, end).divideScalar(2)
+                direction.multiplyScalar(-1)
+                this.cone.set_axis(direction)
+                this.cone.position.copy(center)
+                this.cone.visible = true
+                break
+            default:
+                break
         }
     }
     return line
@@ -115,7 +116,6 @@ function Line() {
 function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLambertMaterial({ color: 'white' })) {
     var geometry = new THREE.CylinderGeometry(top_radius, bottom_radius, height, 32)
     var cylinder = new THREE.Mesh(geometry, material)
-    cylinder.update = function (message) { }
     cylinder.set_axis = function (direction) {
         direction.normalize()
         var axis = new THREE.Vector3().crossVectors(this.up, direction)
@@ -151,13 +151,13 @@ function on_message(message) {
     }
 }
 function new_object(message) {
-    switch (message.type) {
+    switch (message.class) {
         case "Cube":
             return Cube()
         case "Sphere":
             return Sphere()
         case "XYZ":
-            return new THREE.AxesHelper(1)
+            return new THREE.AxesHelper(message.size)
         case "Line":
             return Line()
         case "Cylinder":
@@ -176,6 +176,7 @@ function update(message, obj) {
     obj.material.color.setRGB(message.color[0], message.color[1], message.color[2])
     obj.material.opacity = message.color[3]
     obj.material.linewidth = message.line_width
-    obj.update(message)
+    if(obj.update)
+        obj.update(message)
 }
 export{on_open,on_message}

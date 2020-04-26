@@ -22,12 +22,12 @@ class Rotation:
     def __init__(self):
         self.matrix=torch.eye(4,dtype=torch.float64)
     @staticmethod
-    def eular(x=0,y=0,z=0):
+    def Eular(x=0,y=0,z=0):
         ret=Rotation()
         ret.matrix=Rotation.rz_matrix(z).mm(Rotation.ry_matrix(y)).mm(Rotation.rx_matrix(x))
         return ret
     @staticmethod
-    def quaternion(x,y,z,w):
+    def Quaternion(x,y,z,w):
         ret=Rotation()
         ret.matrix=torch.tensor([
             [2*(pow(x,2)+pow(w,2))-1,2*(x*y-w*z),2*(x*z+w*y),0],
@@ -37,20 +37,20 @@ class Rotation:
         ],dtype=torch.float64)
         return ret
     @staticmethod
-    def axis_angle(axis,angle):
+    def Axis_angle(axis,angle):
         axis_n=axis.norm()
         if axis_n:
             axis=axis/axis.norm()
             w=cos(angle/2)
             x,y,z=sin(angle/2)*axis
-            return Rotation.quaternion(x,y,z,w)
+            return Rotation.Quaternion(x,y,z,w)
         else:
             return Rotation()
     @staticmethod
-    def direction_change(before,after):
+    def Direction_change(before,after):
         axis=before.cross(after)
         angle=acos(before.dot(after)/before.norm()/after.norm())
-        return Rotation.axis_angle(axis,angle)
+        return Rotation.Axis_angle(axis,angle)
     @staticmethod
     def rx_matrix(x):
         return torch.tensor([
@@ -114,32 +114,59 @@ class Rotation:
         self.matrix=Rotation.rz_matrix(angle).mm(self.matrix)
         return self
     def rotate_axis(self,axis,angle):
-        self.matrix=Rotation.axis_angle(axis,angle).matrix.mm(self.matrix)
+        self.matrix=Rotation.Axis_angle(axis,angle).matrix.mm(self.matrix)
         return self
     def __mul__(self,v):
         if isinstance(v,float) or isinstance(v,int):
             axis,angle=self.to_axis_angle()
             angle*=v
-            return Rotation.axis_angle(axis,angle)
+            return Rotation.Axis_angle(axis,angle)
         elif isinstance(v,torch.Tensor):
             return self.matrix[0:3,0:3].mm(v.view(3,1)).view(3)
         elif isinstance(v,Rotation):
             self.matrix=v.matrix.mm(self.matrix)
             return self
-    def transform_local_rotation(self,local):
-        axis,angle=local.to_axis_angle()
-        axis=self*axis
-        return Rotation.axis_angle(axis,angle)
-
+        
+    def __eq__(self,r):
+        return (self.matrix==r.matrix).sum().item()==16
+        
+    def clone(self):
+        ret=Rotation()
+        ret.matrix=self.matrix.clone()
+        return ret
+        
 class Transform:
     def __init__(self):
         self.position=Vector3()
         self.rotation=Rotation()
         self.scale=Vector3(1,1,1)
         self.direction=Vector3(1,0,0)
+        self.parent=None
+        self.children=set()
+        
+    def add(self,*objs):
+        for obj in objs:
+            obj.parent=self
+            self.children.add(obj)
+            
+    def world_position(self):
+        parent=self.parent
+        ret=self.position
+        while parent:
+            ret=parent.transform_local_position(ret)
+            parent=parent.parent
+        return ret
+    
+    def world_rotation(self):
+        parent=self.parent
+        ret=self.rotation.clone()
+        while parent:
+            ret*=parent.rotation
+            parent=parent.parent
+        return ret
         
     def lookat(self,destination):
-        self.rotation=Rotation.direction_change(self.direction,destination-self.position)
+        self.rotation=Rotation.Direction_change(self.direction,destination-self.position)
         
     def transform_local_position(self,loc):#local position
         tmp=torch.tensor([
@@ -149,6 +176,16 @@ class Transform:
             [1]
             ])
         r=self.translation_matrix().mm(self.rotation.matrix).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
+        return r
+    
+    def transform_local_vector(self,vector):
+        tmp=torch.tensor([
+            [loc[0]],
+            [loc[1]],
+            [loc[2]],
+            [1]
+            ])
+        r=mm(self.rotation.matrix).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
         return r
 
     def translation_matrix(self):
@@ -168,7 +205,7 @@ class Transform:
         ])
     
     def info(self):
-        return {"position":self.position.tolist(),"rotation":self.rotation.to_quaternion(),"scale":self.scale.tolist()}
+        return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_quaternion(),"scale":self.scale.tolist()}
     
 class Scenario:
     server=None
@@ -194,7 +231,13 @@ class Scenario:
     def info(self):
         ret=dict()
         for obj in self.objects:
-            ret[obj.id]=obj.info()
+            ret.update(self.__info(obj))
+        return ret
+    
+    def __info(self,obj):
+        ret={obj.id:obj.info()}
+        for child in obj.children:
+            ret.update(self.__info(child))
         return ret
         
     def render(self):
@@ -206,14 +249,13 @@ class Object3D(Transform):
     def __init__(self):
         Transform.__init__(self)
         self.id=id(self)
-        self.type=None
+        self.cls=None
         self.color=Color(1,1,1)
         self.mass=0
         self.velocity=None
         self.angular_velocity=None
         self.local_velocity=None
         self.local_angular_velocity=None
-        self.children=set()
 
     @abstractmethod
     def on_step(self):
@@ -228,15 +270,17 @@ class Object3D(Transform):
             self.position+=self.velocity*dt
 #             print(self.id,'v',self.position,self.local_velocity)
         if self.local_angular_velocity is not None:
-            self.rotation*=self.rotation.transform_local_rotation(self.local_angular_velocity*dt)
+            self.rotation*=self.local_angular_velocity*dt
 #             print(self.id,'local a',self.rotation,self.local_angular_velocity)
         elif self.angular_velocity is not None:
             self.rotation*=(self.angular_velocity*dt)
 #             print(self.id,'a',self.rotation,self.angular_velocity)
+        for child in self.children:
+            child.step(dt)
       
     def info(self):
         ret=Transform.info(self)
-        ret.update({"id":self.id,"type":self.type,"color":self.color.tolist()})
+        ret.update({"id":self.id,"class":self.cls,"color":self.color.tolist()})
         return ret
     
 class Color:
@@ -251,12 +295,12 @@ class Color:
 class Cube(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Cube"
+        self.cls="Cube"
 
 class Sphere(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Sphere"
+        self.cls="Sphere"
 
     @property
     def radius(self):
@@ -279,39 +323,58 @@ class Sphere(Object3D):
 class XYZ(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.line_width=1
-        self.type="XYZ"
+        self.line_width=2
+        self.cls="XYZ"
+        self.size=3
 
     def info(self):
         ret=Object3D.info(self)
         ret['line_width']=self.line_width
+        ret["size"]=self.size
         return ret
 
 class Line(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Line"
+        self.cls="Line"
         self.points=[]
-        self.width=1
-        self.is_arrow=False
+        self.width=2
+        self.type="Default"
+    @staticmethod    
+    def Vector(*argv,color=None):
+        ret=Line()
+        if len(argv)==1:
+            if isinstance(argv[0],list):
+                ret.points=[[0,0,0],argv[0]]
+            else:
+                ret.points=[[0,0,0],argv[0].tolist()]
+        elif len(argv)==2:
+            ret.points=[argv[0],argv[1]]
+        elif len(argv)==3:
+            ret.points=[[0,0,0],[argv[0],argv[1],argv[2]]]
+        else:
+            return None
+        ret.type="Vector"
+        ret.color=color if color else Color.rand()
+        return ret
 
     def info(self):
         ret=Object3D.info(self)
         ret['points']=self.points
         ret['line_width']=self.width
-        ret['is_arrow']=self.is_arrow
+        ret['type']=self.type
         return ret
                 
 class Cylinder(Object3D):
     def __init__(self):
         Object3D.__init__(self)
-        self.type="Cylinder"
+        self.cls="Cylinder"
         self.top_radius=1
         self.bottom_radius=1
         self.height=1
         
     def set_axis(self,axis):
-        self.rotation=Rotation.direction_vector(Vector3(0,1,0),axis)
+        self.rotation=Rotation.Direction_change(Vector3(0,1,0),axis)
 
     def info(self):
         ret=Object3D.info(self)
