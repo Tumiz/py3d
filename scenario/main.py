@@ -1,80 +1,97 @@
 # coding: utf-8
+# Copyright (c) Tumiz.
+# Distributed under the terms of the GPL-3.0 License.
+
 from .server import *
 from math import *
 from abc import abstractmethod
 import torch
+
 def sign(x):
     if x>=0:
         return 1
     else:
         return -1
 
-class Vector3: 
+class Vector3:       
     def __new__(cls,x=0,y=0,z=0):
-        return torch.tensor([x,y,z],dtype=torch.float64)
+        return torch.tensor([x,y,z],dtype=torch.float32)
+        
     @staticmethod
-    def rand(x=[0,0],y=[0,0],z=[0,0]):
-        low=torch.tensor([x[0],y[0],z[0]],dtype=torch.float64)
-        up=torch.tensor([x[1],y[1],z[1]],dtype=torch.float64)
-        return low+torch.rand(3,dtype=torch.float64)*(up-low)
+    def Rand(x=[0,0],y=[0,0],z=[0,0]):
+        low=torch.tensor([x[0],y[0],z[0]])
+        up=torch.tensor([x[1],y[1],z[1]])
+        return low+torch.rand(3)*(up-low)
 
-class Rotation:
-    def __init__(self):
-        self.matrix=torch.eye(4,dtype=torch.float64)
+class EularType:
+    Extrinsic=0
+    Intrinsic=1
+    
+class Rotation(torch.Tensor):
+
+    def __init__(self,matrix=torch.eye(4)):
+        self.data=matrix
+   
     @staticmethod
-    def Eular(x=0,y=0,z=0):
-        ret=Rotation()
-        ret.matrix=Rotation.rz_matrix(z).mm(Rotation.ry_matrix(y)).mm(Rotation.rx_matrix(x))
-        return ret
+    def Eular(x=0,y=0,z=0,t=EularType.Intrinsic):
+        if t==EularType.Intrinsic:
+            return Rotation.Rx(x)*Rotation.Ry(y)*Rotation.Rz(z)
+        else:
+            return Rotation.Rz(z)*Rotation.Ry(y)*Rotation.Rx(x)
+
     @staticmethod
     def Quaternion(x,y,z,w):
-        ret=Rotation()
-        ret.matrix=torch.tensor([
+        return Rotation(torch.tensor([
             [2*(pow(x,2)+pow(w,2))-1,2*(x*y-w*z),2*(x*z+w*y),0],
             [2*(x*y+w*z),2*(pow(w,2)+pow(y,2))-1,2*(y*z-w*x),0],
             [2*(x*z-w*y),2*(y*z+w*x),2*(pow(w,2)+pow(z,2))-1,0],
             [0,0,0,1]
-        ],dtype=torch.float64)
-        return ret
+        ]))
+
     @staticmethod
     def Axis_angle(axis,angle):
         axis_n=axis.norm()
         if axis_n:
-            axis=axis/axis.norm()
+            axis=axis/axis_n
             w=cos(angle/2)
             x,y,z=sin(angle/2)*axis
             return Rotation.Quaternion(x,y,z,w)
         else:
             return Rotation()
+        
     @staticmethod
     def Direction_change(before,after):
         axis=before.cross(after)
         angle=acos(before.dot(after)/before.norm()/after.norm())
         return Rotation.Axis_angle(axis,angle)
+    
     @staticmethod
-    def rx_matrix(x):
-        return torch.tensor([
+    def Rx(a):
+        return Rotation(torch.tensor([
             [1, 0, 0,0],
-            [0, cos(x), -sin(x),0],
-            [0, sin(x), cos(x),0],
+            [0, cos(a), -sin(a),0],
+            [0, sin(a), cos(a),0],
             [0,0,0,1]
-        ],dtype=torch.float64)     
+        ]))
+    
     @staticmethod
-    def ry_matrix(y):
-        return torch.tensor([
-            [cos(y),0,sin(y),0],
+    def Ry(a):
+        return Rotation(torch.tensor([
+            [cos(a),0,sin(a),0],
             [0,1,0,0],
-            [-sin(y),0,cos(y),0],
+            [-sin(a),0,cos(a),0],
             [0,0,0,1]
-        ],dtype=torch.float64)
+        ]))
+    
     @staticmethod
-    def rz_matrix(z):
-        return torch.tensor([
-            [cos(z),-sin(z),0,0],
-            [sin(z),cos(z),0,0],
+    def Rz(a):
+        return Rotation(torch.tensor([
+            [cos(a),-sin(a),0,0],
+            [sin(a),cos(a),0,0],
             [0,0,1,0],
             [0,0,0,1]
-        ],dtype=torch.float64)
+        ]))
+    
     @staticmethod
     def eular2quaternion(rx,ry,rz):
         sx,cx=sin(rx/2),cos(rx/2)
@@ -85,55 +102,70 @@ class Rotation:
         y=cx*sy*cz+sx*cy*sz
         x=sx*cy*cz-cx*sy*sz
         return x,y,z,w
-    def to_eular(self):
-        y=atan2(-self.matrix[2,0],sqrt(pow(self.matrix[0,0],2)+pow(self.matrix[1,0],2)))
-        z=atan2(self.matrix[1,0]/cos(y),self.matrix[0,0]/cos(y))
-        x=atan2(self.matrix[2,1]/cos(y),self.matrix[2,2]/cos(y))
+        
+    def to_eular(self,t=EularType.Intrinsic):
+        if t==EularType.Extrinsic:
+            x=atan2(self[2,1],self[2,2])
+            y=atan2(-self[2,0],sqrt(self[2,1]**2+self[2,2]**2))
+            z=atan2(self[1,0],self[0,0])
+        else:
+            x=atan2(-self[1,2],self[2,2])
+            y=atan2(self[0,2],sqrt(self[1,2]**2+self[2,2]**2))
+            z=atan2(-self[0,1],self[0,0])
         return [x,y,z]
+    
     def to_quaternion(self):
-        w=0.5*sqrt(self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]+1)
-        x=0.5*sign(self.matrix[2,1]-self.matrix[1,2])*sqrt(max(0,self.matrix[0,0]-self.matrix[1,1]-self.matrix[2,2]+1))
-        y=0.5*sign(self.matrix[0,2]-self.matrix[2,0])*sqrt(max(0,self.matrix[1,1]-self.matrix[2,2]-self.matrix[0,0]+1))
-        z=0.5*sign(self.matrix[1,0]-self.matrix[0,1])*sqrt(max(0,self.matrix[2,2]-self.matrix[0,0]-self.matrix[1,1]+1))
+        w=0.5*sqrt(self[0,0]+self[1,1]+self[2,2]+1)
+        x=0.5*sign(self[2,1]-self[1,2])*sqrt(max(0,self[0,0]-self[1,1]-self[2,2]+1))
+        y=0.5*sign(self[0,2]-self[2,0])*sqrt(max(0,self[1,1]-self[2,2]-self[0,0]+1))
+        z=0.5*sign(self[1,0]-self[0,1])*sqrt(max(0,self[2,2]-self[0,0]-self[1,1]+1))
         return [x,y,z,w]
+    
     def to_axis_angle(self):
-        angle=acos((self.matrix[0,0]+self.matrix[1,1]+self.matrix[2,2]-1)/2)
+        angle=acos((self[0,0]+self[1,1]+self[2,2]-1)/2)
         axis=torch.tensor([
-            self.matrix[2,1]-self.matrix[1,2],
-            self.matrix[0,2]-self.matrix[2,0],
-            self.matrix[1,0]-self.matrix[0,1]
-        ],dtype=torch.float64)
+            self[2,1]-self[1,2],
+            self[0,2]-self[2,0],
+            self[1,0]-self[0,1]
+        ])
+        l=axis.norm()
+        if l:
+            axis/=l
         return axis,angle
+    
     def rotate_x(self,angle):
-        self.matrix=Rotation.rx_matrix(angle).mm(self.matrix)
+        self.data=Rotation.Rx(angle).mm(self)
         return self
+    
     def rotate_y(self,angle):
-        self.matrix=Rotation.ry_matrix(angle).mm(self.matrix)
+        self.data=Rotation.Ry(angle).mm(self)
         return self
+    
     def rotate_z(self,angle):
-        self.matrix=Rotation.rz_matrix(angle).mm(self.matrix)
+        self.data=Rotation.Rz(angle).mm(self)
         return self
+    
     def rotate_axis(self,axis,angle):
-        self.matrix=Rotation.Axis_angle(axis,angle).matrix.mm(self.matrix)
+        self.data=Rotation.Axis_angle(axis,angle).mm(self)
         return self
+    
     def __mul__(self,v):
-        if isinstance(v,float) or isinstance(v,int):
+        t=type(v)
+        if t is float or t is int:
             axis,angle=self.to_axis_angle()
             angle*=v
             return Rotation.Axis_angle(axis,angle)
-        elif isinstance(v,torch.Tensor):
-            return self.matrix[0:3,0:3].mm(v.view(3,1)).view(3)
-        elif isinstance(v,Rotation):
-            self.matrix=v.matrix.mm(self.matrix)
-            return self
-        
+        elif t is Rotation:
+            return Rotation(self.mm(v))
+        else:
+            return self[0:3,0:3].mm(v.view(3,1)).view(3)
+
     def __eq__(self,r):
-        return (self.matrix==r.matrix).sum().item()==16
-        
-    def clone(self):
-        ret=Rotation()
-        ret.matrix=self.matrix.clone()
-        return ret
+        return (self.data==r.data).sum().item()==16
+    
+    @property
+    def I(self):
+        return Rotation(self.inverse())
         
 class Transform:
     def __init__(self):
@@ -159,9 +191,9 @@ class Transform:
     
     def world_rotation(self):
         parent=self.parent
-        ret=self.rotation.clone()
+        ret=self.rotation
         while parent:
-            ret*=parent.rotation
+            ret=parent.rotation*ret
             parent=parent.parent
         return ret
         
@@ -175,7 +207,7 @@ class Transform:
             [loc[2]],
             [1]
             ])
-        r=self.translation_matrix().mm(self.rotation.matrix).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
+        r=self.translation_matrix().mm(self.rotation).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
         return r
     
     def transform_local_vector(self,vector):
@@ -185,7 +217,7 @@ class Transform:
             [loc[2]],
             [1]
             ])
-        r=mm(self.rotation.matrix).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
+        r=mm(self.rotation).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
         return r
 
     def translation_matrix(self):
@@ -205,13 +237,15 @@ class Transform:
         ])
     
     def info(self):
-        return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_quaternion(),"scale":self.scale.tolist()}
+        return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
     
 class Scenario:
     server=None
+    count=0
     def __init__(self):#single instance
         self.t=0
         self.objects=set()
+        Scenario.count=0
         if Scenario.server is None:
             Scenario.server=Server()
 
@@ -248,12 +282,13 @@ class Scenario:
 class Object3D(Transform):
     def __init__(self):
         Transform.__init__(self)
-        self.id=id(self)
+        self.id=Scenario.count
+        Scenario.count+=1
         self.cls=None
-        self.color=Color(1,1,1)
+        self.color=Color.Rand()
         self.mass=0
-        self.velocity=None
-        self.angular_velocity=None
+        self.velocity=Vector3()
+        self.angular_velocity=Rotation()
         self.local_velocity=None
         self.local_angular_velocity=None
 
@@ -264,17 +299,13 @@ class Object3D(Transform):
     def step(self,dt):
         self.on_step()
         if self.local_velocity is not None:
-            self.position=self.transform_local_position(self.local_velocity*dt)
-#             print(self.id,'local v',self.position,self.local_velocity)
-        elif self.velocity is not None:
-            self.position+=self.velocity*dt
-#             print(self.id,'v',self.position,self.local_velocity)
+            self.velocity=self.rotation*self.local_velocity
         if self.local_angular_velocity is not None:
-            self.rotation*=self.local_angular_velocity*dt
-#             print(self.id,'local a',self.rotation,self.local_angular_velocity)
-        elif self.angular_velocity is not None:
-            self.rotation*=(self.angular_velocity*dt)
-#             print(self.id,'a',self.rotation,self.angular_velocity)
+            self.angular_velocity=self.rotation*self.local_angular_velocity*self.rotation.I
+        self.position+=self.velocity*dt
+#         print(self.velocity.tolist(),self.position.tolist(),self.angular_velocity.to_axis_angle())
+        self.rotation=self.angular_velocity*dt*self.rotation
+#         print(self.angular_velocity.to_axis_angle(),self.rotation.to_axis_angle(),(self.angular_velocity*dt).to_axis_angle())
         for child in self.children:
             child.step(dt)
       
@@ -287,15 +318,22 @@ class Color:
     def __new__(cls,r=0,g=0,b=0,a=1):
         return torch.tensor([r,g,b,a])
     @staticmethod
-    def rand(a=1):
+    def Rand(a=1):
         r=torch.rand(4)
         r[3]=a
         return r
+    @staticmethod
+    def White(a=1):
+        return torch.tensor([1,1,1,a])
+    @staticmethod
+    def Black(a=1):
+        return torch.tensor([0,0,0,a])
         
 class Cube(Object3D):
-    def __init__(self):
+    def __init__(self,size_x=1,size_y=1,size_z=1):
         Object3D.__init__(self)
         self.cls="Cube"
+        self.scale=Vector3(size_x,size_y,size_z)
 
 class Sphere(Object3D):
     def __init__(self):
@@ -325,6 +363,7 @@ class XYZ(Object3D):
         Object3D.__init__(self)
         self.line_width=2
         self.cls="XYZ"
+        self.color=Color.White()
         self.size=3
 
     def info(self):
@@ -334,14 +373,16 @@ class XYZ(Object3D):
         return ret
 
 class Line(Object3D):
+    Type_Default="Default"
+    Type_Vector="Vector"
     def __init__(self):
         Object3D.__init__(self)
         self.cls="Line"
         self.points=[]
         self.width=2
-        self.type="Default"
+        self.type=Line.Type_Default
     @staticmethod    
-    def Vector(*argv,color=None):
+    def Vector(*argv):
         ret=Line()
         if len(argv)==1:
             if isinstance(argv[0],list):
@@ -354,8 +395,7 @@ class Line(Object3D):
             ret.points=[[0,0,0],[argv[0],argv[1],argv[2]]]
         else:
             return None
-        ret.type="Vector"
-        ret.color=color if color else Color.rand()
+        ret.type=Line.Type_Vector
         return ret
 
     def info(self):

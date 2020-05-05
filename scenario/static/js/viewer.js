@@ -1,3 +1,6 @@
+// Copyright (c) Tumiz.
+// Distributed under the terms of the GPL-3.0 License.
+
 import * as THREE from './three.js'
 import { OrbitControls } from './orbit.js'
 var objects = {}
@@ -40,7 +43,61 @@ yAxis.material.linewidth = 3
 scene.add(xAxis, yAxis)
 
 var controls = new OrbitControls(perspCamera, orthoCamera, renderer.domElement);
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+var selected = null
 
+function pick(mouse){
+    var intersect=null
+    var intersect_range=1000
+    raycaster.setFromCamera( mouse, controls.object )
+    for(var i in objects){
+        var obj = objects[i]
+        if(new THREE.Vector3().subVectors(obj.position,controls.object.position).length()<intersect_range){
+            var intersects = raycaster.intersectObject( obj );
+            if(intersects.length) {
+                var d=new THREE.Vector3().subVectors(intersects[0].point,controls.object.position).length()
+                if(d<intersect_range){
+                    intersect_range=d
+                    intersect=intersects[0]
+                }
+            }
+        }
+    }
+    return intersect;
+}
+
+function object_info(object){
+    return "id:"+object.pyid
+        +"  position:"+object.position.x.toFixed(3)+","+object.position.y.toFixed(3)+","+object.position.z.toFixed(3)
+    +"  rotation:"+object.rotation.x.toFixed(3)+","+object.rotation.y.toFixed(3)+","+object.rotation.z.toFixed(3)
+}
+
+function onclick( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+        // update the picking ray with the camera and mouse position
+	var intersect = pick(mouse)
+
+	// calculate objects intersecting the picking ray
+    if(intersect) {
+        if(selected){
+            selected.material.wireframe=false
+        }
+        if(selected != intersect.object){
+            selected = intersect.object
+            selected.material.wireframe=true
+            document.getElementById("alter").innerHTML=object_info(selected)
+        }else{
+            selected = null
+            document.getElementById("alter").innerHTML=""
+        }
+    }
+}
 var animate = function () {
     light.position.copy(controls.object.position)
     requestAnimationFrame(animate);
@@ -48,6 +105,10 @@ var animate = function () {
 };
 
 animate();
+
+window.onclick=onclick
+
+window.requestAnimationFrame(animate);
 
 function Points2TypedArray(array, typed_array) {
     for (var i = 0; i < array.length; i++) {
@@ -134,7 +195,7 @@ function on_message(message) {
     console.log(message.data)
     var data = JSON.parse(message.data)
     for (var id in objects) {
-        if (data[id] == undefined) {
+        if (data[id] == undefined || objects[id].type != data[id].type) {
             scene.remove(objects[id])
             delete objects[id]
         }
@@ -144,6 +205,7 @@ function on_message(message) {
         var obj = objects[id]
         if (obj == undefined) {
             var obj = new_object(obj_data)
+            obj.pyid=id
             scene.add(obj)
             objects[id] = obj
         }
@@ -171,7 +233,7 @@ function update(message, obj) {
     var rotation = message.rotation
     var scale = message.scale
     obj.position.set(position[0], position[1], position[2])
-    obj.quaternion.set(rotation[0], rotation[1], rotation[2], rotation[3])
+    obj.rotation.set(rotation[0], rotation[1], rotation[2])
     obj.scale.set(scale[0], scale[1], scale[2])
     obj.material.color.setRGB(message.color[0], message.color[1], message.color[2])
     obj.material.opacity = message.color[3]
