@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- Copyright (c) Tumiz. Distributed under the terms of the GPL-3.0 License. -->
 <html>
-
+<link rel="icon" href="static/logo.png"/>
 <head>
     <meta charset="utf-8">
     <title>ScenarioViewer</title>
@@ -18,12 +18,13 @@
 <body>
     <label id="alter" style="color:blue;width=80;height=20;position: absolute;word-break:break-all;word-wrap:break-word;">
     </label>
-    <script type="module" src="static/js/viewer.js"></script>
+    <script type="module;application/javescript" src="static/js/viewer.js"></script>
     <script type="module">
-        import {on_open,on_message} from "../static/js/viewer.js"
-        var ws = new WebSocket("ws://localhost:"+{{port}}+"/ws")
+        import {on_open,on_message,on_close} from "../static/js/viewer.js"
+        var ws = new WebSocket("ws://localhost:"+{{port}}+"/ws/"+{{ID}})
         ws.onopen=on_open
         ws.onmessage=on_message
+        ws.onclose=on_close
     </script>
 </body>
 

@@ -174,6 +174,7 @@ function Line() {
     }
     return line
 }
+
 function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLambertMaterial({ color: 'white' })) {
     var geometry = new THREE.CylinderGeometry(top_radius, bottom_radius, height, 32)
     var cylinder = new THREE.Mesh(geometry, material)
@@ -187,31 +188,77 @@ function Cylinder(top_radius, bottom_radius, height, material = new THREE.MeshLa
     return cylinder
 }
 
+function Pipe(cross,path){  
+    var length = 12, width = 8;
+
+    var shape = new THREE.Shape();
+    for(var i=0, l=cross.length;i<l;i++){
+        var x=cross[i][0]
+        var y=cross[i][1]
+        if(i==0){
+            shape.moveTo(x,y)
+        }else{
+            shape.lineTo(x,y)
+        }
+    }
+    shape.lineTo(cross[0][0], cross[0][1]);
+    var points=[]
+    for(var i=0, l=path.length;i<l;i++){
+        var p=path[i]
+        points.push(new THREE.Vector3(p[0],p[1],p[2]))
+    }
+    var curve=new THREE.CatmullRomCurve3(points)
+    var extrudeSettings = {
+        steps: path.length*10,
+        bevelEnabled: false,
+        extrudePath: curve
+    };
+
+    var geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+    var material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+    var mesh = new THREE.Mesh( geometry, material ) ;
+    mesh.update=function(message){
+        curve.points=[]
+        for(var i=0, l=path.length;i<l;i++){
+            var p=path[i]
+            curve.points.push(new THREE.Vector3(p[0],p[1],p[2]))
+        }
+    }
+    return mesh
+}
+
 function on_open(evt) {
-    console.log("Connection open ...");
+    console.log("Connected",evt);
 };
 
 function on_message(message) {
     console.log(message.data)
     var data = JSON.parse(message.data)
     for (var id in objects) {
-        if (data[id] == undefined || objects[id].type != data[id].type) {
+        if (data.objects[id] == undefined || objects[id].class != data.objects[id].class) {
             scene.remove(objects[id])
             delete objects[id]
         }
     }
-    for (var id in data) {
-        var obj_data = data[id]
+    for (var id in data.objects) {
         var obj = objects[id]
+        var info = data.objects[id]
         if (obj == undefined) {
-            var obj = new_object(obj_data)
+            var obj = new_object(info)
             obj.pyid=id
+            obj.class=info.class
             scene.add(obj)
             objects[id] = obj
         }
-        update(obj_data, obj)
+        update(info, obj)
     }
+    document.getElementById("alter").innerHTML=data.t.toFixed(3)+" s"
 }
+
+function on_close(evt){
+    console.log("Disconnected",evt)
+}
+
 function new_object(message) {
     switch (message.class) {
         case "Cube":
@@ -224,6 +271,8 @@ function new_object(message) {
             return Line()
         case "Cylinder":
             return Cylinder(message.top_radius, message.bottom_radius, message.height)
+        case "Pipe":
+            return Pipe(message.cross,message.path)
         default:
             return null
     }
@@ -241,4 +290,4 @@ function update(message, obj) {
     if(obj.update)
         obj.update(message)
 }
-export{on_open,on_message}
+export{on_open,on_message,on_close}

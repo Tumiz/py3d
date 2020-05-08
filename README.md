@@ -1,6 +1,7 @@
 **Scenario** is a python library that helps to build simple environments for simulation of agents.
 
 # Features
+☑ Kinematics emulate\
 ☐ Simple 3d physics engine\
 ☑ Tiny 2D rendering, view from top\
 ☑ Smooth 3D rendering\
@@ -19,7 +20,6 @@ scen=Scenario()
 l=Line()
 l.line_width=2
 l.color=Color(r=1,b=1)
-l.is_arrow=True
 l.width=2
 scen.add(l)
 while scen.t<10:
@@ -33,34 +33,39 @@ while scen.t<10:
 ```
 ![](doc/dynamic_line.gif)
 
-**Example 2**: move a cube by setting **local velocity** and **local angular velocity**
+**Example 2**: rotate a child cube
 ```python
 from scenario import *
 from time import sleep
 scen=Scenario()
-c=Cube()
-c.color=Color(b=1)
-c.local_velocity=Vector3(1,0,0)
-c.local_angular_velocity=Rotation.eular(0,0,0.6)
-scen.add(c)
+parent=Cube()
+parent.scale=Vector3(2,3,5)
+parent.position=Vector3(1,1,1)
+parent.rotation=Rotation.Eular(0.2,0.1,0.5)
+scen.add(parent)
+child=Cube()
+child.scale=Vector3(1,1,0.3)
+child.position=Vector3(0.5,0.5,0.5)
+child.rotation=Rotation.Eular(0,0,0.5)
+parent.add(child)
+parent.local_angular_velocity=Rotation.Eular(0,0,0.3)
+child.local_angular_velocity=Rotation.Eular(0,0,0.6)
+scen.t=0
 while scen.t<10:
     scen.step(0.1)
-    scen.render()
     sleep(0.1)
+    scen.render()
 ```
-![](doc/circular_motion.gif)
+![](doc/local_rotation.gif)
 
 **Example 3**: A queue of agents.
 ```python
 from scenario import *
 from time import sleep
-from random import random
-
 class Follower(Cube):
     def __init__(self):
         Cube.__init__(self)
         self.scale=Vector3(2,1,1)
-        self.color=Color.rand()
         self.front=None
     def on_step(self):
         if self.front:
@@ -68,8 +73,8 @@ class Follower(Cube):
             self.local_velocity=Vector3(x=d*0.1)
             self.lookat(self.front.position)
         else:
-            self.local_velocity=Vector3.rand(x=[0,2])
-            self.local_angular_velocity=Rotation.eular(z=random()-0.3)
+            self.local_velocity=Vector3.Rand(x=[0,2])
+            self.local_angular_velocity=Rotation.Eular(z=0.1)
 scen = Scenario()
 n=10
 front=None
@@ -80,7 +85,7 @@ for i in range(n):
         f.front=front
     scen.add(f)
     front=f
-while scen.t<20:
+while scen.t<15:
     scen.step(0.1)
     scen.render()
     sleep(0.1)

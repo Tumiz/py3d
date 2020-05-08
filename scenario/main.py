@@ -15,6 +15,8 @@ def sign(x):
 
 class Vector3:       
     def __new__(cls,x=0,y=0,z=0):
+        if isinstance(x,list) and len(x)==3:
+            x,y,z=x
         return torch.tensor([x,y,z],dtype=torch.float32)
         
     @staticmethod
@@ -239,18 +241,15 @@ class Transform:
     def info(self):
         return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
     
-class Scenario:
-    server=None
-    count=0
+class Scenario(Client):
     def __init__(self):#single instance
+        Client.__init__(self)
         self.t=0
         self.objects=set()
-        Scenario.count=0
-        if Scenario.server is None:
-            Scenario.server=Server()
 
     def add(self,*objs):
         for obj in objs:
+            obj.id=len(self.objects)
             self.objects.add(obj)
 
     def remove(self,*objs):
@@ -263,9 +262,11 @@ class Scenario:
         self.t+=dt
 
     def info(self):
-        ret=dict()
+        ret={"t":self.t}
+        tmp={}
         for obj in self.objects:
-            ret.update(self.__info(obj))
+            tmp.update(self.__info(obj))
+        ret["objects"]=tmp
         return ret
     
     def __info(self,obj):
@@ -275,15 +276,12 @@ class Scenario:
         return ret
         
     def render(self):
-        if not Scenario.server.is_alive():
-            Scenario.server.start()
-        Scenario.server.send_msg(self.info())
+        self.send_msg(self.info())
         
 class Object3D(Transform):
     def __init__(self):
         Transform.__init__(self)
-        self.id=Scenario.count
-        Scenario.count+=1
+        self.id=None
         self.cls=None
         self.color=Color.Rand()
         self.mass=0
@@ -302,6 +300,8 @@ class Object3D(Transform):
             self.velocity=self.rotation*self.local_velocity
         if self.local_angular_velocity is not None:
             self.angular_velocity=self.rotation*self.local_angular_velocity*self.rotation.I
+        if self.mass:
+            self.velocity[2]-=9.8*dt
         self.position+=self.velocity*dt
 #         print(self.velocity.tolist(),self.position.tolist(),self.angular_velocity.to_axis_angle())
         self.rotation=self.angular_velocity*dt*self.rotation
@@ -423,3 +423,15 @@ class Cylinder(Object3D):
         ret['height']=self.height
         return ret
     
+class Pipe(Object3D):
+    def __init__(self):
+        Object3D.__init__(self)
+        self.cls="Pipe"
+        self.cross=[]
+        self.path=[]
+        
+    def info(self):
+        ret=Object3D.info(self)
+        ret["path"]=self.path
+        ret["cross"]=self.cross
+        return ret
