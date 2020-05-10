@@ -15,7 +15,7 @@ def sign(x):
 
 class Vector3:       
     def __new__(cls,x=0,y=0,z=0):
-        if isinstance(x,list) and len(x)==3:
+        if isinstance(x,tuple) or isinstance(x,list):
             x,y,z=x
         return torch.tensor([x,y,z],dtype=torch.float32)
         
@@ -160,7 +160,7 @@ class Rotation(torch.Tensor):
         elif t is Rotation:
             return Rotation(self.mm(v))
         else:
-            return self[0:3,0:3].mm(v.view(3,1)).view(3)
+            return self[0:3,0:3].mv(v)
 
     def __eq__(self,r):
         return (self.data==r.data).sum().item()==16
@@ -242,30 +242,31 @@ class Transform:
         return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
     
 class Scenario(Client):
+    count=0
     def __init__(self):#single instance
         Client.__init__(self)
         self.t=0
-        self.objects=set()
+        self.objects=dict()
+        Scenario.count=0
 
     def add(self,*objs):
         for obj in objs:
-            obj.id=len(self.objects)
-            self.objects.add(obj)
+            self.objects[obj.id]=obj
 
     def remove(self,*objs):
         for obj in objs:
-            self.objects.remove(obj)
+            del self.objects[obj.id]
 
     def step(self,dt=0.01):
-        for obj in self.objects:
-            obj.step(dt)
+        for oid in self.objects:
+            self.objects[oid].step(dt)
         self.t+=dt
 
     def info(self):
         ret={"t":self.t}
         tmp={}
-        for obj in self.objects:
-            tmp.update(self.__info(obj))
+        for oid in self.objects:
+            tmp.update(self.__info(self.objects[oid]))
         ret["objects"]=tmp
         return ret
     
@@ -279,9 +280,13 @@ class Scenario(Client):
         self.send_msg(self.info())
         
 class Object3D(Transform):
-    def __init__(self):
+    def __init__(self,name=None):
         Transform.__init__(self)
-        self.id=None
+        if name:
+            self.id=name
+        else:
+            self.id=Scenario.count
+            Scenario.count+=1
         self.cls=None
         self.color=Color.Rand()
         self.mass=0
@@ -291,11 +296,11 @@ class Object3D(Transform):
         self.local_angular_velocity=None
 
     @abstractmethod
-    def on_step(self):
+    def on_step(self,dt):
         pass
     
     def step(self,dt):
-        self.on_step()
+        self.on_step(dt)
         if self.local_velocity is not None:
             self.velocity=self.rotation*self.local_velocity
         if self.local_angular_velocity is not None:
@@ -336,9 +341,10 @@ class Cube(Object3D):
         self.scale=Vector3(size_x,size_y,size_z)
 
 class Sphere(Object3D):
-    def __init__(self):
+    def __init__(self,r=1):
         Object3D.__init__(self)
         self.cls="Sphere"
+        self.radius=r
 
     @property
     def radius(self):
@@ -378,29 +384,37 @@ class Line(Object3D):
     def __init__(self):
         Object3D.__init__(self)
         self.cls="Line"
-        self.points=[]
+        self.points=torch.empty(0,3)
         self.width=2
         self.type=Line.Type_Default
+        
     @staticmethod    
     def Vector(*argv):
         ret=Line()
         if len(argv)==1:
-            if isinstance(argv[0],list):
-                ret.points=[[0,0,0],argv[0]]
-            else:
-                ret.points=[[0,0,0],argv[0].tolist()]
+            ret.add_point(Vector3(),argv[0])
         elif len(argv)==2:
-            ret.points=[argv[0],argv[1]]
-        elif len(argv)==3:
-            ret.points=[[0,0,0],[argv[0],argv[1],argv[2]]]
+            ret.add_point(argv[0],argv[1])
         else:
-            return None
+            raise Exception("not tensor")
         ret.type=Line.Type_Vector
         return ret
+    
+    def add_point(self,*argv):
+        for a in argv:
+            if isinstance(a,list) or isinstance(a,tuple):
+                self.points=torch.cat((self.points,Vector3(a).unsqueeze(0)))
+            elif isinstance(a,torch.Tensor):
+                if a.size()==torch.Size([3]):
+                    self.points=torch.cat((self.points,a.unsqueeze(0)))
+                else:
+                    self.points=torch.cat((self.points,a))
+            else:
+                raise Exception(type(a),"is not acceptable")
 
     def info(self):
         ret=Object3D.info(self)
-        ret['points']=self.points
+        ret['points']=self.points.tolist()
         ret['line_width']=self.width
         ret['type']=self.type
         return ret

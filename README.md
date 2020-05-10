@@ -1,6 +1,7 @@
 **Scenario** is a python library that helps to build simple environments for simulation of agents.
 
 # Features
+☑ Jupyter support\
 ☑ Kinematics emulate\
 ☐ Simple 3d physics engine\
 ☑ Tiny 2D rendering, view from top\

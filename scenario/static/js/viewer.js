@@ -10,7 +10,7 @@ var fov_y = 60
 var aspect = window.innerWidth / window.innerHeight;
 var perspCamera = new THREE.PerspectiveCamera(fov_y, aspect, 0.1, 1000);
 perspCamera.up.set(0, 0, 1)
-perspCamera.position.set(10, 10, 10)
+perspCamera.position.set(0, 0, 10)
 var Z = perspCamera.position.length();
 var depht_s = Math.tan(fov_y / 2.0 * Math.PI / 180.0) * 2.0
 var size_y = depht_s * Z;
@@ -43,6 +43,16 @@ yAxis.material.linewidth = 3
 scene.add(xAxis, yAxis)
 
 var controls = new OrbitControls(perspCamera, orthoCamera, renderer.domElement);
+var animate = function () {
+    light.position.copy(controls.object.position)
+    requestAnimationFrame(animate);
+    renderer.render(scene, controls.object);
+};
+
+animate();
+window.onclick=onclick
+window.requestAnimationFrame(animate);
+
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 var selected = null
@@ -98,17 +108,6 @@ function onclick( event ) {
         }
     }
 }
-var animate = function () {
-    light.position.copy(controls.object.position)
-    requestAnimationFrame(animate);
-    renderer.render(scene, controls.object);
-};
-
-animate();
-
-window.onclick=onclick
-
-window.requestAnimationFrame(animate);
 
 function Points2TypedArray(array, typed_array) {
     for (var i = 0; i < array.length; i++) {

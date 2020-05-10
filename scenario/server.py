@@ -8,7 +8,9 @@ import threading
 import tornado.web
 import tornado.websocket
 import socket
+import webbrowser
 from IPython.display import IFrame, display
+
 
 def address_in_use(port,ip='127.0.0.1'):
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -30,7 +32,11 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def open(self,v):
 #         print("ws open",v,self.request)
         self.id=int(v)
-        Client.clients[self.id].handler=self
+        c=Client.clients[self.id]
+        if c.handler:
+            c.handler.close()
+        c.handler=self
+        self.write_message(c.cache)
         
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
@@ -50,13 +56,20 @@ class Client:
         self.id=id(self)
         Client.clients[self.id]=self
         self.handler=None
+        self.url="http://localhost:"+str(Client.port)+"/view/"+str(self.id)
+        self.render_in_jupyter=True
+        self.cache={}
         
     def send_msg(self,msg):
         if self.handler is None:
-            display(IFrame(src="http://localhost:"+str(self.port)+"/view/"+str(self.id),width="100%",height="600px"))
+            if self.render_in_jupyter:
+                display(IFrame(src=self.url,width="100%",height="600px"))
+            else:
+                webbrowser.open(self.url)
             while self.handler is None:
                 time.sleep(0.1)
         self.handler.write_message(msg)
+        self.cache=msg
         
     @staticmethod
     def run():
