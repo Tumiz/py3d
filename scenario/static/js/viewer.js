@@ -10,7 +10,7 @@ var fov_y = 60
 var aspect = window.innerWidth / window.innerHeight;
 var perspCamera = new THREE.PerspectiveCamera(fov_y, aspect, 0.1, 1000);
 perspCamera.up.set(0, 0, 1)
-perspCamera.position.set(0, 0, 10)
+perspCamera.position.set(0, 0, 30)
 var Z = perspCamera.position.length();
 var depht_s = Math.tan(fov_y / 2.0 * Math.PI / 180.0) * 2.0
 var size_y = depht_s * Z;
@@ -26,9 +26,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 var light = new THREE.PointLight(0xffffff, 1);
-light.position.set(10, 10, 10)
+light.position.set(1000, 1000, 1000)
 
-var gridHelper = new THREE.GridHelper(100, 100);
+var gridHelper = new THREE.GridHelper(1000, 1000);
 gridHelper.rotation.set(Math.PI / 2, 0, 0)
 scene.add(gridHelper, light);
 
@@ -251,7 +251,8 @@ function on_message(message) {
         }
         update(info, obj)
     }
-    document.getElementById("alter").innerHTML=data.t.toFixed(3)+" s"
+    if(data.t != undefined)
+        document.getElementById("alter").innerHTML=data.t.toFixed(3)+" s"
 }
 
 function on_close(evt){

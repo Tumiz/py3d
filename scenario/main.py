@@ -306,11 +306,17 @@ class Object3D(Transform):
         if self.local_angular_velocity is not None:
             self.angular_velocity=self.rotation*self.local_angular_velocity*self.rotation.I
         if self.mass:
-            self.velocity[2]-=9.8*dt
-        self.position+=self.velocity*dt
-#         print(self.velocity.tolist(),self.position.tolist(),self.angular_velocity.to_axis_angle())
-        self.rotation=self.angular_velocity*dt*self.rotation
-#         print(self.angular_velocity.to_axis_angle(),self.rotation.to_axis_angle(),(self.angular_velocity*dt).to_axis_angle())
+            self.velocity=self.velocity+Vector3(0,0,9.8)*dt
+        if self.velocity is not None:
+            self.position=self.position+self.velocity*dt
+        else:
+            raise Exception(self.id,"velocity is nan")
+#         print(self.id,self.velocity.tolist(),self.position.tolist(),self.angular_velocity.to_axis_angle())
+        if self.angular_velocity is not None:
+            self.rotation=self.angular_velocity*dt*self.rotation
+        else:
+            raise Exception(self.id,"angular velocity is nan")
+#         print(self.id,self.angular_velocity.to_axis_angle(),self.rotation.to_axis_angle(),(self.angular_velocity*dt).to_axis_angle())
         for child in self.children:
             child.step(dt)
       

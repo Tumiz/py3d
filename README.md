@@ -12,6 +12,9 @@
 ☑ Apis to handle transforms: translation, rotation and scaling\
 ☑ Apis to handle quaternion, axis-angle, and eular angles
 
+# Install
+pip install git+https://github.com/Tumiz/scenario.git
+
 **Example 1**: a dynamic spiral line
 ```python
 from scenario import *
