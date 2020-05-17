@@ -30,17 +30,20 @@ class IndexHandler(tornado.web.RequestHandler):
 
 class WSHandler(tornado.websocket.WebSocketHandler):       
     def open(self,v):
-#         print("ws open",v,self.request)
-        self.id=int(v)
-        c=Client.clients[self.id]
-        if c.handler:
-            c.handler.close()
-        c.handler=self
-        self.write_message(c.cache)
+        self.client=Client.clients[int(v)]
+        if self.client.handler:
+            self.client.handler.close()
+        self.client.handler=self
+        self.write_message(self.client.cache)
+#         print("ws open",v,self.request,self.client.__dict__)
+        
+    def on_message(self, message):
+        self.client.paused=message=="⏹️"
+#         print(message,self.client.paused)
         
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
-        Client.clients[self.id].handler=None
+        self.client.handler=None
 
 class Client:
     port=8000
@@ -59,8 +62,10 @@ class Client:
         self.url="http://localhost:"+str(Client.port)+"/view/"+str(self.id)
         self.render_in_jupyter=True
         self.cache={}
+        self.paused=False
         
     def send_msg(self,msg):
+#         print("handler",self.handler)
         if self.handler is None:
             if self.render_in_jupyter:
                 display(IFrame(src=self.url,width="100%",height="600px"))
@@ -68,6 +73,11 @@ class Client:
                 webbrowser.open(self.url)
             while self.handler is None:
                 time.sleep(0.1)
+        try:
+            asyncio.get_event_loop()
+        except:
+            loop=asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         self.handler.write_message(msg)
         self.cache=msg
         

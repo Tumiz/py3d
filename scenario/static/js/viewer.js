@@ -3,9 +3,10 @@
 
 import * as THREE from './three.js'
 import { OrbitControls } from './orbit.js'
+
 var objects = {}
 var scene = new THREE.Scene();
-scene.background = new THREE.Color(0xF8F8FF)
+scene.background = new THREE.Color(0xFFFFFF)
 var fov_y = 60
 var aspect = window.innerWidth / window.innerHeight;
 var perspCamera = new THREE.PerspectiveCamera(fov_y, aspect, 0.1, 1000);
@@ -76,11 +77,18 @@ function pick(mouse){
     }
     return intersect;
 }
-
-function object_info(object){
-    return "id:"+object.pyid
-        +"  position:"+object.position.x.toFixed(3)+","+object.position.y.toFixed(3)+","+object.position.z.toFixed(3)
-    +"  rotation:"+object.rotation.x.toFixed(3)+","+object.rotation.y.toFixed(3)+","+object.rotation.z.toFixed(3)
+var infodiv=document.getElementById("info")
+var btndiv=document.getElementById("btn")
+btndiv.onclick=function(){
+    ws.send(btndiv.innerHTML)
+    btndiv.innerHTML=btndiv.innerHTML=="⏹️"?"▶️":"⏹️"
+    btndiv.manual=true
+}
+var time=0
+function infof(){
+    return time+" s"+(selected?"  id:"+selected.pyid
+        +"  position:"+selected.position.x.toFixed(3)+","+selected.position.y.toFixed(3)+","+selected.position.z.toFixed(3)
+    +"  rotation:"+selected.rotation.x.toFixed(3)+","+selected.rotation.y.toFixed(3)+","+selected.rotation.z.toFixed(3):"")
 }
 
 function onclick( event ) {
@@ -101,11 +109,10 @@ function onclick( event ) {
         if(selected != intersect.object){
             selected = intersect.object
             selected.material.wireframe=true
-            document.getElementById("alter").innerHTML=object_info(selected)
         }else{
             selected = null
-            document.getElementById("alter").innerHTML=""
         }
+        infodiv.innerHTML=infof()
     }
 }
 
@@ -149,6 +156,8 @@ function Line() {
         this.geometry.attributes.position.needsUpdate = true
     }
     line.update = function (message) {
+        if(message.points.length<2)
+            return
         this.set_points(message.points)
         switch (message.type) {
             case "Vector":
@@ -225,37 +234,41 @@ function Pipe(cross,path){
     }
     return mesh
 }
-
-function on_open(evt) {
+ws.onopen=function(evt) {
     console.log("Connected",evt);
 };
 
-function on_message(message) {
-    console.log(message.data)
+ws.onmessage=function(message) {
+//     console.log(message.data)
     var data = JSON.parse(message.data)
-    for (var id in objects) {
-        if (data.objects[id] == undefined || objects[id].class != data.objects[id].class) {
-            scene.remove(objects[id])
-            delete objects[id]
+    if(data!=""){
+        time=data.t.toFixed(3)
+        infodiv.innerHTML=infof()
+        if(!btndiv.manual){
+            btndiv.innerHTML=data.paused?"▶️":"⏹️"
+        }
+        for (var id in objects) {
+            if (data.objects[id] == undefined || objects[id].class != data.objects[id].class) {
+                scene.remove(objects[id])
+                delete objects[id]
+            }
+        }
+        for (var id in data.objects) {
+            var obj = objects[id]
+            var info = data.objects[id]
+            if (obj == undefined) {
+                var obj = new_object(info)
+                obj.pyid=id
+                obj.class=info.class
+                scene.add(obj)
+                objects[id] = obj
+            }
+            update(info, obj)
         }
     }
-    for (var id in data.objects) {
-        var obj = objects[id]
-        var info = data.objects[id]
-        if (obj == undefined) {
-            var obj = new_object(info)
-            obj.pyid=id
-            obj.class=info.class
-            scene.add(obj)
-            objects[id] = obj
-        }
-        update(info, obj)
-    }
-    if(data.t != undefined)
-        document.getElementById("alter").innerHTML=data.t.toFixed(3)+" s"
 }
 
-function on_close(evt){
+ws.onclose=function(evt){
     console.log("Disconnected",evt)
 }
 
@@ -290,4 +303,3 @@ function update(message, obj) {
     if(obj.update)
         obj.update(message)
 }
-export{on_open,on_message,on_close}

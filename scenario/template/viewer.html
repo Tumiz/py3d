@@ -16,15 +16,15 @@
 </head>
 
 <body>
-    <label id="alter" style="color:blue;width=80;height=20;position: absolute;word-break:break-all;word-wrap:break-word;">
-    </label>
-    <script type="module;application/javescript" src="static/js/viewer.js"></script>
+    <div style="position:absolute">
+    <span id="btn" style="cursor:pointer">▶️</span>
+    <span id="info" style="color:blue;background-color:white;word-break:break-all;word-wrap:break-word;">
+    0 s</span>
+    </div>
+    <script>var ws = new WebSocket("ws://localhost:"+{{port}}+"/ws/"+{{ID}})</script>
+    <script type="application/javescript" src="static/js/viewer.js"></script>
     <script type="module">
-        import {on_open,on_message,on_close} from "../static/js/viewer.js"
-        var ws = new WebSocket("ws://localhost:"+{{port}}+"/ws/"+{{ID}})
-        ws.onopen=on_open
-        ws.onmessage=on_message
-        ws.onclose=on_close
+        import "../static/js/viewer.js"
     </script>
 </body>
 

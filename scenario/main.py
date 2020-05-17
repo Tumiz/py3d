@@ -6,6 +6,7 @@ from .server import *
 from math import *
 from abc import abstractmethod
 import torch
+from time import sleep
 
 def sign(x):
     if x>=0:
@@ -242,12 +243,10 @@ class Transform:
         return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
     
 class Scenario(Client):
-    count=0
-    def __init__(self):#single instance
+    def __init__(self):
         Client.__init__(self)
         self.t=0
         self.objects=dict()
-        Scenario.count=0
 
     def add(self,*objs):
         for obj in objs:
@@ -258,12 +257,14 @@ class Scenario(Client):
             del self.objects[obj.id]
 
     def step(self,dt=0.01):
+        while self.paused:
+            sleep(1)
         for oid in self.objects:
             self.objects[oid].step(dt)
         self.t+=dt
 
     def info(self):
-        ret={"t":self.t}
+        ret={"t":self.t,"paused":self.paused}
         tmp={}
         for oid in self.objects:
             tmp.update(self.__info(self.objects[oid]))
@@ -285,26 +286,35 @@ class Object3D(Transform):
         if name:
             self.id=name
         else:
-            self.id=Scenario.count
-            Scenario.count+=1
+            self.id=id(self)
         self.cls=None
         self.color=Color.Rand()
         self.mass=0
         self.velocity=Vector3()
         self.angular_velocity=Rotation()
-        self.local_velocity=None
-        self.local_angular_velocity=None
 
     @abstractmethod
     def on_step(self,dt):
         pass
     
+    @property
+    def local_velocity(self):
+        return self.rotation.I*self.velocity
+    
+    @local_velocity.setter
+    def local_velocity(self,v):
+        self.velocity=self.rotation*v
+        
+    @property
+    def local_angular_velocity(self):
+        return self.rotation.I*self.angular_velocity*self.rotation
+    
+    @local_angular_velocity.setter
+    def local_angular_velocity(self,v):
+        self.angular_velocity=self.rotation*v*self.rotation.I
+    
     def step(self,dt):
         self.on_step(dt)
-        if self.local_velocity is not None:
-            self.velocity=self.rotation*self.local_velocity
-        if self.local_angular_velocity is not None:
-            self.angular_velocity=self.rotation*self.local_angular_velocity*self.rotation.I
         if self.mass:
             self.velocity=self.velocity+Vector3(0,0,9.8)*dt
         if self.velocity is not None:
