@@ -49,49 +49,14 @@ var animate = function () {
     requestAnimationFrame(animate);
     renderer.render(scene, controls.object);
 };
-
-animate();
-window.onclick=onclick
+animate()
 window.requestAnimationFrame(animate);
-
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 var selected = null
-
-function pick(mouse){
-    var intersect=null
-    var intersect_range=1000
-    raycaster.setFromCamera( mouse, controls.object )
-    for(var i in objects){
-        var obj = objects[i]
-        if(new THREE.Vector3().subVectors(obj.position,controls.object.position).length()<intersect_range){
-            var intersects = raycaster.intersectObject( obj );
-            if(intersects.length) {
-                var d=new THREE.Vector3().subVectors(intersects[0].point,controls.object.position).length()
-                if(d<intersect_range){
-                    intersect_range=d
-                    intersect=intersects[0]
-                }
-            }
-        }
-    }
-    return intersect;
-}
 var infodiv=document.getElementById("info")
 var btndiv=document.getElementById("btn")
-btndiv.onclick=function(){
-    ws.send(btndiv.innerHTML)
-    btndiv.innerHTML=btndiv.innerHTML=="⏹️"?"▶️":"⏹️"
-    btndiv.manual=true
-}
-var time=0
-function infof(){
-    return time+" s"+(selected?"  id:"+selected.pyid
-        +"  position:"+selected.position.x.toFixed(3)+","+selected.position.y.toFixed(3)+","+selected.position.z.toFixed(3)
-    +"  rotation:"+selected.rotation.x.toFixed(3)+","+selected.rotation.y.toFixed(3)+","+selected.rotation.z.toFixed(3):"")
-}
-
-function onclick( event ) {
+window.onclick=function( event ) {
 
 	// calculate mouse position in normalized device coordinates
 	// (-1 to +1) for both components
@@ -115,6 +80,43 @@ function onclick( event ) {
         infodiv.innerHTML=infof()
     }
 }
+window.onkeypress=function(evt){
+    ws.send(JSON.stringify({cmd:"key",data:evt.key}))
+    console.log({"key":evt.key})
+}
+
+btndiv.onclick=function(){
+    ws.send(JSON.stringify({cmd:"pause",data:btndiv.innerHTML}))
+    btndiv.innerHTML=btndiv.innerHTML=="⏹️"?"▶️":"⏹️"
+    btndiv.manual=true
+}
+function pick(mouse){
+    var intersect=null
+    var intersect_range=1000
+    raycaster.setFromCamera( mouse, controls.object )
+    for(var i in objects){
+        var obj = objects[i]
+        if(new THREE.Vector3().subVectors(obj.position,controls.object.position).length()<intersect_range){
+            var intersects = raycaster.intersectObject( obj );
+            if(intersects.length) {
+                var d=new THREE.Vector3().subVectors(intersects[0].point,controls.object.position).length()
+                if(d<intersect_range){
+                    intersect_range=d
+                    intersect=intersects[0]
+                }
+            }
+        }
+    }
+    return intersect;
+}
+
+var time=0
+function infof(){
+    return time+" s"+(selected?"  id:"+selected.pyid
+        +"  position:"+selected.position.x.toFixed(3)+","+selected.position.y.toFixed(3)+","+selected.position.z.toFixed(3)
+    +"  rotation:"+selected.rotation.x.toFixed(3)+","+selected.rotation.y.toFixed(3)+","+selected.rotation.z.toFixed(3):"")
+}
+
 
 function Points2TypedArray(array, typed_array) {
     for (var i = 0; i < array.length; i++) {

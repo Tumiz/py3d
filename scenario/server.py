@@ -2,13 +2,15 @@
 # Distributed under the terms of the GPL-3.0 License.
 
 import os
+import json
 import time
+import socket
 import asyncio
 import threading
+import webbrowser
 import tornado.web
 import tornado.websocket
-import socket
-import webbrowser
+
 from IPython.display import IFrame, display
 
 
@@ -38,8 +40,14 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 #         print("ws open",v,self.request,self.client.__dict__)
         
     def on_message(self, message):
-        self.client.paused=message=="⏹️"
-#         print(message,self.client.paused)
+        print(message,self.client.paused)
+        msg=json.loads(message)
+        cmd=msg["cmd"]
+        data=msg["data"]
+        if cmd=="pause":
+            self.client.paused=data=="⏹️"
+        elif cmd=="key" and self.client.on_key:
+            self.client.on_key(data)
         
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
@@ -63,9 +71,10 @@ class Client:
         self.render_in_jupyter=True
         self.cache={}
         self.paused=False
+        self.on_key=None
         
     def send_msg(self,msg):
-#         print("handler",self.handler)
+        print("handler",self.handler)
         if self.handler is None:
             if self.render_in_jupyter:
                 display(IFrame(src=self.url,width="100%",height="600px"))
