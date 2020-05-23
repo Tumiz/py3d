@@ -14,11 +14,20 @@ def sign(x):
     else:
         return -1
 
-class Vector3:       
+class Vector3(torch.Tensor):
     def __new__(cls,x=0,y=0,z=0):
+        return torch.Tensor.__new__(cls)
+    
+    def __init__(self,x=0,y=0,z=0):
         if isinstance(x,tuple) or isinstance(x,list):
             x,y,z=x
-        return torch.tensor([x,y,z],dtype=torch.float32)
+        self.data=torch.tensor([x,y,z],dtype=torch.float32)
+        
+    def __eq__(self,v):
+        return (self.data==v.data).sum().item()==3
+    
+    def __ne__(self,v):
+        return (self.data==v.data).sum().item()!=3
         
     @staticmethod
     def Rand(x=[0,0],y=[0,0],z=[0,0]):
@@ -133,8 +142,9 @@ class Rotation(torch.Tensor):
         ])
         l=axis.norm()
         if l:
-            axis/=l
-        return axis,angle
+            return axis,angle
+        else:
+            return torch.tensor([0,0,1],dtype=torch.float32),0
     
     def rotate_x(self,angle):
         self.data=Rotation.Rx(angle).mm(self)
@@ -162,9 +172,16 @@ class Rotation(torch.Tensor):
             return Rotation(self.mm(v))
         else:
             return self[0:3,0:3].mv(v)
+        
+    def __imul__(self,v):
+        self=self*v
+        return self
 
     def __eq__(self,r):
         return (self.data==r.data).sum().item()==16
+    
+    def __ne__(self,r):
+        return (self.data==r.data).sum().item()!=16
     
     @property
     def I(self):
@@ -290,40 +307,66 @@ class Object3D(Transform):
         self.cls=None
         self.color=Color.Rand()
         self.mass=0
-        self.velocity=Vector3()
-        self.angular_velocity=Rotation()
+        self.__velocity=Vector3()
+        self.__angular_velocity=Rotation()
+        self.__local_velocity=Vector3()
+        self.__local_angular_velocity=Rotation()
 
     @abstractmethod
     def on_step(self,dt):
         pass
     
     @property
+    def velocity(self):
+        return self.__velocity
+    
+    @velocity.setter
+    def velocity(self,v):
+        self.__velocity=v
+        self.__local_velocity=Vector3()
+    
+    @property
     def local_velocity(self):
-        return self.rotation.I*self.velocity
+        return self.__local_velocity
     
     @local_velocity.setter
     def local_velocity(self,v):
-        self.velocity=self.rotation*v
+        self.__local_velocity=v
+        
+    @property
+    def angular_velocity(self):
+        return self.__angular_velocity
+    
+    @angular_velocity.setter
+    def angular_velocity(self,v):
+        self.__angular_velocity=v
+        self.__local_angular_velocity=Rotation()
         
     @property
     def local_angular_velocity(self):
-        return self.rotation.I*self.angular_velocity*self.rotation
+        return self.__local_angular_velocity
     
     @local_angular_velocity.setter
     def local_angular_velocity(self,v):
-        self.angular_velocity=self.rotation*v*self.rotation.I
+        self.__local_angular_velocity=v
     
     def step(self,dt):
         self.on_step(dt)
         if self.mass:
-            self.velocity=self.velocity+Vector3(0,0,9.8)*dt
-        if self.velocity is not None:
-            self.position=self.position+self.velocity*dt
+            self.__velocity=self.velocity+Vector3(0,0,9.8)*dt
+        if self.__local_velocity != Vector3():
+            self.__velocity=self.rotation*self.__local_velocity
+            # print(self.__local_velocity)
+        if self.__local_angular_velocity != Rotation():
+            self.__angular_velocity=self.rotation*self.__local_angular_velocity*self.rotation.I
+            # print(self.__local_angular_velocity)
+        if self.__velocity is not None:
+            self.position=self.position+self.__velocity*dt
         else:
             raise Exception(self.id,"velocity is nan")
 #         print(self.id,self.velocity.tolist(),self.position.tolist(),self.angular_velocity.to_axis_angle())
-        if self.angular_velocity is not None:
-            self.rotation=self.angular_velocity*dt*self.rotation
+        if self.__angular_velocity is not None:
+            self.rotation=self.__angular_velocity*dt*self.rotation
         else:
             raise Exception(self.id,"angular velocity is nan")
 #         print(self.id,self.angular_velocity.to_axis_angle(),self.rotation.to_axis_angle(),(self.angular_velocity*dt).to_axis_angle())

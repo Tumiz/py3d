@@ -40,7 +40,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
 #         print("ws open",v,self.request,self.client.__dict__)
         
     def on_message(self, message):
-        print(message,self.client.paused)
+#         print(message,self.client.paused)
         msg=json.loads(message)
         cmd=msg["cmd"]
         data=msg["data"]
@@ -74,7 +74,7 @@ class Client:
         self.on_key=None
         
     def send_msg(self,msg):
-        print("handler",self.handler)
+#         print("handler",self.handler)
         if self.handler is None:
             if self.render_in_jupyter:
                 display(IFrame(src=self.url,width="100%",height="600px"))
