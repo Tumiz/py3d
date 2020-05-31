@@ -5,16 +5,25 @@ import torch
 import numpy
 from timeit import timeit
 from time import time
-class Model(torch.nn.Module):
-    def __init__(self,cuda=True):
-        super(Model,self).__init__()  
-        input_dim=4
-        output_dim=2
+class NN(torch.nn.Module):
+    def __init__(self,input_dim,output_dim,cuda=True):
+        torch.nn.Module.__init__(self)
         self.device = torch.device("cuda:0" if cuda else "cpu")
         self.layer1=torch.nn.Linear(input_dim,input_dim*output_dim).to(self.device)
         self.layer2=torch.nn.Linear(input_dim*output_dim,output_dim).to(self.device)
-        self.optimizer = torch.optim.Adam(self.parameters())
-        self.loss=100
+        
+    def forward(self,x):
+        x=x.to(self.device)
+        y=self.layer1(x)
+        y=self.layer2(torch.relu(y))
+        return y
+    
+    
+        
+class Model(torch.nn.Module):
+    def __init__(self,input_dim,output_dim,cuda=True):
+        super(Model,self).__init__()  
+        
         self.softplus=torch.nn.Softplus()
     
     def __put_on_device(self,x):

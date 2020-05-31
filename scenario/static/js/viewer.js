@@ -82,7 +82,7 @@ window.onclick=function( event ) {
 }
 window.onkeypress=function(evt){
     ws.send(JSON.stringify({cmd:"key",data:evt.key}))
-    console.log({"key":evt.key})
+//     console.log({"key":evt.key})
 }
 
 btndiv.onclick=function(){

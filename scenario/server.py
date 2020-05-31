@@ -52,11 +52,15 @@ class WSHandler(tornado.websocket.WebSocketHandler):
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
         self.client.handler=None
+    
+def send(handler,msg):
+    handler.write_message(msg)
 
 class Client:
     port=8000
     server=None
     clients=dict()
+    loop=None
     def __init__(self):
         if Client.server is None:
             Client.server=threading.Thread(target=Client.run)
@@ -82,12 +86,7 @@ class Client:
                 webbrowser.open(self.url)
             while self.handler is None:
                 time.sleep(0.1)
-        try:
-            asyncio.get_event_loop()
-        except:
-            loop=asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        self.handler.write_message(msg)
+        Client.loop.add_callback(send,self.handler,msg)
         self.cache=msg
         
     @staticmethod
@@ -107,4 +106,5 @@ class Client:
         )
         http_server = tornado.httpserver.HTTPServer(app)
         http_server.listen(Client.port)
-        tornado.ioloop.IOLoop.current().start() 
+        Client.loop=tornado.ioloop.IOLoop.current()
+        Client.loop.start() 

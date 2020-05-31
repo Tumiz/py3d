@@ -41,7 +41,7 @@ class EularType:
     
 class Rotation(torch.Tensor):
 
-    def __init__(self,matrix=torch.eye(4)):
+    def __init__(self,matrix=torch.eye(3)):
         self.data=matrix
    
     @staticmethod
@@ -54,10 +54,9 @@ class Rotation(torch.Tensor):
     @staticmethod
     def Quaternion(x,y,z,w):
         return Rotation(torch.tensor([
-            [2*(pow(x,2)+pow(w,2))-1,2*(x*y-w*z),2*(x*z+w*y),0],
-            [2*(x*y+w*z),2*(pow(w,2)+pow(y,2))-1,2*(y*z-w*x),0],
-            [2*(x*z-w*y),2*(y*z+w*x),2*(pow(w,2)+pow(z,2))-1,0],
-            [0,0,0,1]
+            [2*(pow(x,2)+pow(w,2))-1,2*(x*y-w*z),2*(x*z+w*y)],
+            [2*(x*y+w*z),2*(pow(w,2)+pow(y,2))-1,2*(y*z-w*x)],
+            [2*(x*z-w*y),2*(y*z+w*x),2*(pow(w,2)+pow(z,2))-1]
         ]))
 
     @staticmethod
@@ -80,28 +79,25 @@ class Rotation(torch.Tensor):
     @staticmethod
     def Rx(a):
         return Rotation(torch.tensor([
-            [1, 0, 0,0],
-            [0, cos(a), -sin(a),0],
-            [0, sin(a), cos(a),0],
-            [0,0,0,1]
+            [1, 0, 0],
+            [0, cos(a), -sin(a)],
+            [0, sin(a), cos(a)]
         ]))
     
     @staticmethod
     def Ry(a):
         return Rotation(torch.tensor([
-            [cos(a),0,sin(a),0],
-            [0,1,0,0],
-            [-sin(a),0,cos(a),0],
-            [0,0,0,1]
+            [cos(a),0,sin(a)],
+            [0,1,0],
+            [-sin(a),0,cos(a)]
         ]))
     
     @staticmethod
     def Rz(a):
         return Rotation(torch.tensor([
-            [cos(a),-sin(a),0,0],
-            [sin(a),cos(a),0,0],
-            [0,0,1,0],
-            [0,0,0,1]
+            [cos(a),-sin(a),0],
+            [sin(a),cos(a),0],
+            [0,0,1]
         ]))
     
     @staticmethod
@@ -170,8 +166,10 @@ class Rotation(torch.Tensor):
             return Rotation.Axis_angle(axis,angle)
         elif t is Rotation:
             return Rotation(self.mm(v))
+        elif v.dim()==1:
+            return self.mv(v)
         else:
-            return self[0:3,0:3].mv(v)
+            return self.mm(v.permute(1,0)).permute(1,0)
         
     def __imul__(self,v):
         self=self*v
@@ -205,7 +203,7 @@ class Transform:
         parent=self.parent
         ret=self.position
         while parent:
-            ret=parent.transform_local_position(ret)
+            ret=parent.rotation*(parent.scale*ret)+parent.position
             parent=parent.parent
         return ret
     
@@ -219,42 +217,6 @@ class Transform:
         
     def lookat(self,destination):
         self.rotation=Rotation.Direction_change(self.direction,destination-self.position)
-        
-    def transform_local_position(self,loc):#local position
-        tmp=torch.tensor([
-            [loc[0]],
-            [loc[1]],
-            [loc[2]],
-            [1]
-            ])
-        r=self.translation_matrix().mm(self.rotation).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
-        return r
-    
-    def transform_local_vector(self,vector):
-        tmp=torch.tensor([
-            [loc[0]],
-            [loc[1]],
-            [loc[2]],
-            [1]
-            ])
-        r=mm(self.rotation).mm(self.scaling_matrix()).mm(tmp)[0:3,0]
-        return r
-
-    def translation_matrix(self):
-        return torch.tensor([
-            [1,0,0,self.position[0]],
-            [0,1,0,self.position[1]],
-            [0,0,1,self.position[2]],
-            [0,0,0,1]
-        ])
-
-    def scaling_matrix(self):
-        return torch.tensor([
-            [self.scale[0],0,0,0],
-            [0,self.scale[1],0,0],
-            [0,0,self.scale[2],0],
-            [0,0,0,1]
-        ])
     
     def info(self):
         return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
@@ -272,6 +234,10 @@ class Scenario(Client):
     def remove(self,*objs):
         for obj in objs:
             del self.objects[obj.id]
+            
+    def reset(self):
+        self.t=0
+        self.objects=dict()
 
     def step(self,dt=0.01):
         while self.paused:
@@ -353,7 +319,7 @@ class Object3D(Transform):
     def step(self,dt):
         self.on_step(dt)
         if self.mass:
-            self.__velocity=self.velocity+Vector3(0,0,9.8)*dt
+            self.__velocity=self.velocity+Vector3(0,0,-9.8)*dt
         if self.__local_velocity != Vector3():
             self.__velocity=self.rotation*self.__local_velocity
             # print(self.__local_velocity)
@@ -394,6 +360,16 @@ class Color:
         return torch.tensor([0,0,0,a])
         
 class Cube(Object3D):
+    corners=torch.tensor([
+        [-0.5000, -0.5000, -0.5000],
+        [-0.5000, -0.5000,  0.5000],
+        [-0.5000,  0.5000,  0.5000],
+        [ 0.5000,  0.5000,  0.5000],
+              [-0.5,0.5,-0.5],
+              [0.5,-0.5,0.5],
+              [0.5,-0.5,-0.5],
+              [0.5,0.5,-0.5]
+    ])
     def __init__(self,size_x=1,size_y=1,size_z=1):
         Object3D.__init__(self)
         self.cls="Cube"
