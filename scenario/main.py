@@ -3,7 +3,7 @@
 # Distributed under the terms of the GPL-3.0 License.
 
 from .server import *
-from math import *
+from math import sin,cos,tan,cos,atan2,acos,sqrt
 from abc import abstractmethod
 import torch
 from time import sleep
@@ -222,10 +222,11 @@ class Transform:
         return {"position":self.world_position().tolist(),"rotation":self.world_rotation().to_eular(),"scale":self.scale.tolist()}
     
 class Scenario(Client):
-    def __init__(self):
+    def __init__(self,*objs):
         Client.__init__(self)
         self.t=0
         self.objects=dict()
+        self.add(*objs)
 
     def add(self,*objs):
         for obj in objs:
@@ -370,13 +371,13 @@ class Cube(Object3D):
               [0.5,-0.5,-0.5],
               [0.5,0.5,-0.5]
     ])
-    def __init__(self,size_x=1,size_y=1,size_z=1):
-        Object3D.__init__(self)
+    def __init__(self,size_x=1,size_y=1,size_z=1,name=None):
+        Object3D.__init__(self,name)
         self.cls="Cube"
         self.scale=Vector3(size_x,size_y,size_z)
 
 class Sphere(Object3D):
-    def __init__(self,r=1):
+    def __init__(self,r=0.1):
         Object3D.__init__(self)
         self.cls="Sphere"
         self.radius=r
@@ -422,18 +423,6 @@ class Line(Object3D):
         self.points=torch.empty(0,3)
         self.width=2
         self.type=Line.Type_Default
-        
-    @staticmethod    
-    def Vector(*argv):
-        ret=Line()
-        if len(argv)==1:
-            ret.add_point(Vector3(),argv[0])
-        elif len(argv)==2:
-            ret.add_point(argv[0],argv[1])
-        else:
-            raise Exception("not tensor")
-        ret.type=Line.Type_Vector
-        return ret
     
     def add_point(self,*argv):
         for a in argv:
@@ -484,3 +473,26 @@ class Pipe(Object3D):
         ret["path"]=self.path
         ret["cross"]=self.cross
         return ret
+
+class Plane(Cube):
+    def __init__(self,point,norm):
+        Cube.__init__(self,10,10,0.01)
+        self.rotation=Rotation.Direction_change(Vector3(0,0,1),norm)
+        self.position=point
+        
+class Point(Sphere):
+    def __init__(self,position):
+        Sphere.__init__(self,0.1)
+        self.position=position
+
+class Vector(Line):
+    def __init__(self,*argv):
+        Line.__init__(self)
+        if len(argv)==1:
+            self.add_point(Vector3(),argv[0])
+        elif len(argv)==2:
+            self.add_point(argv[0],argv[1])
+        else:
+            raise Exception("only 1 or 2 arguments are accepted")
+        self.type=Line.Type_Vector
+        
