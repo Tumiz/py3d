@@ -203,7 +203,7 @@ class Transform:
         parent=self.parent
         ret=self.position
         while parent:
-            ret=parent.rotation*(parent.scale*ret)+parent.position
+            ret=parent*ret
             parent=parent.parent
         return ret
     
@@ -214,6 +214,9 @@ class Transform:
             ret=parent.rotation*ret
             parent=parent.parent
         return ret
+    
+    def __mul__(self,v):
+        return self.rotation*(self.scale*v)+self.position
         
     def lookat(self,destination):
         self.rotation=Rotation.Direction_change(self.direction,destination-self.position)
