@@ -54,8 +54,9 @@ window.requestAnimationFrame(animate);
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 var selected = null
-var infodiv=document.getElementById("info")
-var btndiv=document.getElementById("btn")
+var div_info=document.getElementById("info")
+var div_play=document.getElementById("btn")
+var div_userdefined=document.getElementById("userdefined")
 window.onclick=function( event ) {
 
 	// calculate mouse position in normalized device coordinates
@@ -77,7 +78,7 @@ window.onclick=function( event ) {
         }else{
             selected = null
         }
-        infodiv.innerHTML=infof()
+        div_info.innerHTML=infof()
     }
 }
 window.onkeypress=function(evt){
@@ -85,10 +86,10 @@ window.onkeypress=function(evt){
 //     console.log({"key":evt.key})
 }
 
-btndiv.onclick=function(){
-    ws.send(JSON.stringify({cmd:"pause",data:btndiv.innerHTML}))
-    btndiv.innerHTML=btndiv.innerHTML=="⏹️"?"▶️":"⏹️"
-    btndiv.manual=true
+div_play.onclick=function(){
+    ws.send(JSON.stringify({cmd:"pause",data:div_play.innerHTML}))
+    div_play.innerHTML=div_play.innerHTML=="⏹️"?"▶️":"⏹️"
+    div_play.manual=true
 }
 function pick(mouse){
     var intersect=null
@@ -244,10 +245,17 @@ ws.onmessage=function(message) {
 //     console.log(message.data)
     var data = JSON.parse(message.data)
     if(data!=""){
+        var tmp=""
+        for(var item in data.log){
+            tmp+=item+":"+data.log[item]+"<br>"
+        }
+        if(tmp){
+            div_userdefined.innerHTML=tmp
+        }
         time=data.t.toFixed(3)
-        infodiv.innerHTML=infof()
-        if(!btndiv.manual){
-            btndiv.innerHTML=data.paused?"▶️":"⏹️"
+        div_info.innerHTML=infof()
+        if(!div_play.manual){
+            div_play.innerHTML=data.paused?"▶️":"⏹️"
         }
         for (var id in objects) {
             if (data.objects[id] == undefined || objects[id].class != data.objects[id].class) {

@@ -6,6 +6,7 @@
 ☐ Simple 3d physics engine\
 ☑ Tiny 2D rendering, view from top\
 ☑ Smooth 3D rendering\
+☑ Full control of simulation loop\
 ☑ No ipc in simulation loop, python environment\
 ☐ python agent or C++ agent. Providing APIs to include C++ agent as a python libary\
 ☑ Simulation without rendering\

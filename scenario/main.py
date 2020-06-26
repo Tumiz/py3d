@@ -230,6 +230,7 @@ class Scenario(Client):
         self.t=0
         self.objects=dict()
         self.add(*objs)
+        self.render_log=dict()
 
     def add(self,*objs):
         for obj in objs:
@@ -239,9 +240,10 @@ class Scenario(Client):
         for obj in objs:
             del self.objects[obj.id]
             
-    def reset(self):
+    def clear(self):
         self.t=0
         self.objects=dict()
+        self.render_log.clear()
 
     def step(self,dt=0.01):
         while self.paused:
@@ -264,8 +266,11 @@ class Scenario(Client):
             ret.update(self.__info(child))
         return ret
         
-    def render(self):
-        self.send_msg(self.info())
+    def render(self,**log):
+        self.render_log.update(log)
+        info=self.info()
+        info.update({"log":self.render_log})
+        self.send_msg(info)
         
 class Object3D(Transform):
     def __init__(self,name=None):

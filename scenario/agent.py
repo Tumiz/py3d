@@ -18,7 +18,12 @@ class NN(torch.nn.Module):
         y=self.layer2(torch.relu(y))
         return y
     
-    
+    def save(self,file):
+        torch.save(self,file)
+        
+    @staticmethod
+    def Load(file):
+        return torch.load(file)
         
 class Model(torch.nn.Module):
     def __init__(self,input_dim,output_dim,cuda=True):
