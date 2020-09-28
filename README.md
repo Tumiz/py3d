@@ -3,7 +3,6 @@
 # Features
 ☑ Jupyter support\
 ☑ Kinematics emulate\
-☐ Simple 3d physics engine\
 ☑ Tiny 2D rendering, view from top\
 ☑ Smooth 3D rendering\
 ☑ Full control of simulation loop\
@@ -14,7 +13,30 @@
 ☑ Apis to handle quaternion, axis-angle, and eular angles
 
 # Install
-pip install git+https://github.com/Tumiz/scenario.git
+**ubuntu:**
+```shell
+pip install git+https://github.com/tumiz/scenario.git
+```
+**windows**:
+```
+git clone https://github.com/tumiz/scenario.git
+cd scenario
+pip install -e .
+```
+install pytorch following instructions from [pytorch website](https://pytorch.org/get-started/locally/) 
+
+如果github网速受限，请使用以下方法：\
+**ubuntu:**
+```shell
+pip install git+https://gitee.com/tumiz/scenario.git
+```
+**windows**:
+```
+git clone https://gitee.com/tumiz/scenario.git
+cd scenario
+pip install -e .
+```
+按照[pytorch官网](https://pytorch.org/get-started/locally/) 提示安装pytorch
 
 **Example 1**: a dynamic spiral line
 ```python
