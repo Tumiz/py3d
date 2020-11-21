@@ -7,17 +7,16 @@
 ☑ Smooth 3D rendering\
 ☑ Full control of simulation loop\
 ☑ No ipc in simulation loop, python environment\
-☐ python agent or C++ agent. Providing APIs to include C++ agent as a python libary\
 ☑ Simulation without rendering\
 ☑ Apis to handle transforms: translation, rotation and scaling\
 ☑ Apis to handle quaternion, axis-angle, and eular angles
 
 # Install
-**ubuntu:**
+**Ubuntu (Recommended):**
 ```shell
 pip install git+https://github.com/tumiz/scenario.git
 ```
-**windows**:
+**Windows**:
 ```
 git clone https://github.com/tumiz/scenario.git
 cd scenario
@@ -53,7 +52,7 @@ while scen.t<10:
     x=sin(5*scen.t)*scen.t
     y=cos(5*scen.t)*scen.t
     z=scen.t
-    l.points.append([x,y,z])
+    l.add_point([x,y,z])
     scen.step(0.01)
     scen.render()
     sleep(0.01)
@@ -94,7 +93,7 @@ class Follower(Cube):
         Cube.__init__(self)
         self.scale=Vector3(2,1,1)
         self.front=None
-    def on_step(self):
+    def on_step(self,dt):
         if self.front:
             d=(self.front.position-self.position).norm()
             self.local_velocity=Vector3(x=d*0.1)
