@@ -31,11 +31,11 @@ scene.add(light)
 
 
 var xAxis = Line()
-xAxis.set_points([[0, 0, 0], [50, 0, 0]])
+xAxis.set_points([[0, 0, 0], [10, 0, 0]])
 xAxis.material.color = new THREE.Color('red')
 xAxis.material.linewidth = 3
 var yAxis = Line()
-yAxis.set_points([[0, 0, 0], [0, 50, 0]])
+yAxis.set_points([[0, 0, 0], [0, 10, 0]])
 yAxis.material.color = new THREE.Color('green')
 yAxis.material.linewidth = 3
 scene.add(xAxis, yAxis)

@@ -4,3 +4,4 @@ scenario.egg-info
 __pycache__
 testbench.ipynb
 tests
+node_modules
