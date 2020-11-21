@@ -1,9 +1,6 @@
 // Copyright (c) Tumiz.
 // Distributed under the terms of the GPL-3.0 License.
 
-import * as THREE from './three.js'
-import { OrbitControls } from './orbit.js'
-
 var objects = {}
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0xFFFFFF)
@@ -28,10 +25,10 @@ document.body.appendChild(renderer.domElement);
 
 var light = new THREE.PointLight(0xffffff, 1);
 light.position.set(1000, 1000, 1000)
+scene.add(light)
+// var gridHelper = new THREE.GridHelper(1000, 1000);
+// gridHelper.rotation.set(Math.PI / 2, 0, 0)
 
-var gridHelper = new THREE.GridHelper(1000, 1000);
-gridHelper.rotation.set(Math.PI / 2, 0, 0)
-scene.add(gridHelper, light);
 
 var xAxis = Line()
 xAxis.set_points([[0, 0, 0], [50, 0, 0]])

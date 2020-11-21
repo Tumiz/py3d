@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!-- Copyright (c) Tumiz. Distributed under the terms of the GPL-3.0 License. -->
 <html>
-<link rel="icon" href="static/logo.png"/>
+<link rel="icon" href="static/logo.png" />
+
 <head>
     <meta charset="utf-8">
     <title>ScenarioViewer</title>
@@ -9,6 +10,7 @@
         body {
             margin: 0;
         }
+
         canvas {
             display: block;
         }
@@ -17,15 +19,17 @@
 
 <body>
     <div style="position:absolute">
-    <span id="btn" style="cursor:pointer">▶️</span>
-    <span id="info" style="color:blue;background-color:white;word-break:break-all;word-wrap:break-word;">
-    0 s</span>
+        <span id="btn" style="cursor:pointer">▶️</span>
+        <span id="info" style="color:blue;background-color:white;word-break:break-all;word-wrap:break-word;">
+            0 s</span>
     </div>
-    <div id="userdefined" style="position:absolute;top:20px;color:blue;background-color:white;word-break:break-all;word-wrap:break-word;"></div>
+    <div id="userdefined"
+        style="position:absolute;top:20px;color:blue;background-color:white;word-break:break-all;word-wrap:break-word;">
+    </div>
     <script>var ws = new WebSocket("ws://localhost:{{port}}/ws/{{ID}}")</script>
-    <script type="module">
-        import "../static/js/viewer.js"
-    </script>
+    <script src="https://threejs.org/build/three.js"></script>
+    <script src="/static/js/orbit.js"></script>
+    <script src="/static/js/viewer.js"></script>
 </body>
 
 </html>
