@@ -1,8 +1,8 @@
 ## Welcome to Scenario
 
-The project of Scenario is started for providing an user-friendly scenario editor for agent simulation. 
+**Scenario** is started for providing an user-friendly scenario editor for agent simulation. 
 
-**Scenario** is a python library that helps to build simple environments for simulation of agents.
+It is actually a python library that you can build a 3D world, create and control agents in a terminal, watch the agents and the environment in a web page.
 
 # Features
 ☑ Jupyter support\
@@ -124,8 +124,4 @@ while scen.t<15:
 
 [Here](doc/basics.ipynb) is an introduction to Scenario, read it for details.
 
-# Target Users
-* Students or engineers who want to test their algrithms in cases
-* For small companies
-* For unit test
-* For proto design
+[MapRoad](maproad.md)
