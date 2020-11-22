@@ -1,37 +1,131 @@
-## Welcome to GitHub Pages
+## Welcome to Scenario
 
-You can use the [editor on GitHub](https://github.com/Tumiz/scenario/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+The project of Scenario is started for providing an user-friendly scenario editor for agent simulation. 
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+**Scenario** is a python library that helps to build simple environments for simulation of agents.
 
-### Markdown
+# Features
+☑ Jupyter support\
+☑ Kinematics emulate\
+☑ Tiny 2D rendering, view from top\
+☑ Smooth 3D rendering\
+☑ Full control of simulation loop\
+☑ No ipc in simulation loop, python environment\
+☑ Simulation without rendering\
+☑ Apis to handle transforms: translation, rotation and scaling\
+☑ Apis to handle quaternion, axis-angle, and eular angles
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+# Install
+**Ubuntu (Recommended):**
+```shell
+pip install git+https://github.com/tumiz/scenario.git
 ```
+**Windows**:
+```
+git clone https://github.com/tumiz/scenario.git
+cd scenario
+pip install -e .
+```
+install pytorch following instructions from [pytorch website](https://pytorch.org/get-started/locally/) 
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+如果github网速受限，请使用以下方法：\
+**ubuntu:**
+```shell
+pip install git+https://gitee.com/tumiz/scenario.git
+```
+**windows**:
+```
+git clone https://gitee.com/tumiz/scenario.git
+cd scenario
+pip install -e .
+```
+按照[pytorch官网](https://pytorch.org/get-started/locally/) 提示安装pytorch
 
-### Jekyll Themes
+**Example 1**: a dynamic spiral line
+```python
+from scenario import *
+from time import sleep
+from math import sin,cos
+scen=Scenario()
+l=Line()
+l.line_width=2
+l.color=Color(r=1,b=1)
+l.width=2
+scen.add(l)
+while scen.t<10:
+    x=sin(5*scen.t)*scen.t
+    y=cos(5*scen.t)*scen.t
+    z=scen.t
+    l.add_point([x,y,z])
+    scen.step(0.01)
+    scen.render()
+    sleep(0.01)
+```
+![](doc/dynamic_line.gif)
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Tumiz/scenario/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+**Example 2**: rotate a child cube
+```python
+from scenario import *
+from time import sleep
+scen=Scenario()
+parent=Cube()
+parent.scale=Vector3(2,3,5)
+parent.position=Vector3(1,1,1)
+parent.rotation=Rotation.Eular(0.2,0.1,0.5)
+scen.add(parent)
+child=Cube()
+child.scale=Vector3(1,1,0.3)
+child.position=Vector3(0.5,0.5,0.5)
+child.rotation=Rotation.Eular(0,0,0.5)
+parent.add(child)
+parent.local_angular_velocity=Rotation.Eular(0,0,0.3)
+child.local_angular_velocity=Rotation.Eular(0,0,0.6)
+scen.t=0
+while scen.t<10:
+    scen.step(0.1)
+    sleep(0.1)
+    scen.render()
+```
+![](doc/local_rotation.gif)
 
-### Support or Contact
+**Example 3**: A queue of agents.
+```python
+from scenario import *
+from time import sleep
+class Follower(Cube):
+    def __init__(self):
+        Cube.__init__(self)
+        self.scale=Vector3(2,1,1)
+        self.front=None
+    def on_step(self,dt):
+        if self.front:
+            d=(self.front.position-self.position).norm()
+            self.local_velocity=Vector3(x=d*0.1)
+            self.lookat(self.front.position)
+        else:
+            self.local_velocity=Vector3.Rand(x=[0,2])
+            self.local_angular_velocity=Rotation.Eular(z=0.1)
+scen = Scenario()
+n=10
+front=None
+for i in range(n):
+    f=Follower()
+    f.position=Vector3(10,0,0.5)-i*Vector3(3,0,0)
+    if front:
+        f.front=front
+    scen.add(f)
+    front=f
+while scen.t<15:
+    scen.step(0.1)
+    scen.render()
+    sleep(0.1)
+```
+![](doc/queue.gif)
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+[Here](doc/basics.ipynb) is an introduction to Scenario, read it for details.
+
+# Target Users
+* Students or engineers who want to test their algrithms in cases
+* For small companies
+* For unit test
+* For proto design
