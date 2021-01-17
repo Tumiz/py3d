@@ -4,11 +4,11 @@ from setuptools import setup
 
 setup(
     name="scenario",
-    description="a Python 3d physics library",
+    description="a Python 3d simulation library",
     author="tumiz",
     author_email="",
     python_requires=">=3.5.0",
     url="",
-    install_requires=["torch"],
+    install_requires=["tornado","numpy"],
     packages=["scenario"]
 )

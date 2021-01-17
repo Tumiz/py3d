@@ -29,16 +29,7 @@ scene.add(light)
 // var gridHelper = new THREE.GridHelper(1000, 1000);
 // gridHelper.rotation.set(Math.PI / 2, 0, 0)
 
-
-var xAxis = Line()
-xAxis.set_points([[0, 0, 0], [10, 0, 0]])
-xAxis.material.color = new THREE.Color('red')
-xAxis.material.linewidth = 3
-var yAxis = Line()
-yAxis.set_points([[0, 0, 0], [0, 10, 0]])
-yAxis.material.color = new THREE.Color('green')
-yAxis.material.linewidth = 3
-scene.add(xAxis, yAxis)
+scene.add(new THREE.AxesHelper(5))
 
 var controls = new OrbitControls(perspCamera, orthoCamera, renderer.domElement);
 var animate = function () {

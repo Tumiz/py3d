@@ -28,65 +28,62 @@ def address_in_use(port,ip='127.0.0.1'):
 class IndexHandler(tornado.web.RequestHandler):
     def get(self,v):
 #         print("Index",v,self.request)
-        self.render("viewer.html",port=Client.port,ID=v)
+        self.render("viewer.html",port=Source.port,ID=v)
 
 class WSHandler(tornado.websocket.WebSocketHandler):       
     def open(self,v):
-        self.client=Client.clients[int(v)]
-        if self.client.handler:
-            self.client.handler.close()
-        self.client.handler=self
-        self.write_message(self.client.cache)
-#         print("ws open",v,self.request,self.client.__dict__)
+        if Source.connections.__contains__(v):
+            self.source = Source.connections[v]["source"]
+            self.source.sinks.append(self)
+            self.write_message(self.source.cache)
+        # print("ws open",v,self.request,self.source.__dict__)
         
     def on_message(self, message):
-#         print(message,self.client.paused)
+#         print(message,self.source.paused)
         msg=json.loads(message)
         cmd=msg["cmd"]
         data=msg["data"]
         if cmd=="pause":
-            self.client.paused=data=="⏹️"
-        elif cmd=="key" and self.client.on_key:
-            self.client.on_key(data)
+            self.source.paused=data=="⏹️"
+        elif cmd=="key" and self.source.on_key:
+            self.source.on_key(data)
         
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
-        self.client.handler=None
+        self.source.sinks.remove(self)
     
 def send(handler,msg):
     handler.write_message(msg)
 
-class Client:
+class Source:
     port=8000
     server=None
-    clients=dict()
+    connections=dict()
     loop=None
-    def __init__(self):
-        if Client.server is None:
-            Client.server=threading.Thread(target=Client.run)
-            Client.server.setDaemon(True)
-            while address_in_use(Client.port):
-                Client.port+=1
-            Client.server.start()
-        self.id=id(self)
-        Client.clients[self.id]=self
-        self.handler=None
-        self.url="http://localhost:"+str(Client.port)+"/view/"+str(self.id)
-        self.render_in_jupyter=True
+    def __init__(self,name):
+        if Source.server is None:
+            Source.server=threading.Thread(target=Source.run)
+            Source.server.setDaemon(True)
+            while address_in_use(Source.port):
+                Source.port+=1
+            Source.server.start()
+        if Source.connections.__contains__(name):
+            Source.connections[name]["source"]=self
+            self.sinks = Source.connections[name]["sinks"]
+        else:
+            self.sinks=[]
+            Source.connections[name]=dict(source=self,sinks=self.sinks)
+        if len(self.sinks)==0:    
+            print("open http://localhost:"+str(Source.port)+"/view/"+name)
         self.cache={}
         self.paused=False
         self.on_key=None
         
     def send_msg(self,msg):
-#         print("handler",self.handler)
-        if self.handler is None:
-            if self.render_in_jupyter:
-                display(IFrame(src=self.url,width="100%",height="600px"))
-            else:
-                webbrowser.open(self.url)
-            while self.handler is None:
-                time.sleep(0.1)
-        Client.loop.add_callback(send,self.handler,msg)
+        while len(self.sinks) == 0:
+            time.sleep(0.1)
+        for sink in self.sinks:
+            Source.loop.add_callback(send,sink,msg)
         self.cache=msg
         
     @staticmethod
@@ -105,6 +102,6 @@ class Client:
             debug = True
         )
         http_server = tornado.httpserver.HTTPServer(app)
-        http_server.listen(Client.port)
-        Client.loop=tornado.ioloop.IOLoop.current()
-        Client.loop.start() 
+        http_server.listen(Source.port)
+        Source.loop=tornado.ioloop.IOLoop.current()
+        Source.loop.start() 
