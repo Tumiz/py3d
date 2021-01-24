@@ -67,9 +67,9 @@ class Object3D(Transform):
         self.color = Color.Rand()
         self.mass = 0
         self.__velocity = Vector3()
-        self.__angular_velocity = Rotation()
+        self.__angular_velocity = Rotation3()
         self.__local_velocity = Vector3()
-        self.__local_angular_velocity = Rotation()
+        self.__local_angular_velocity = Rotation3()
 
     @abstractmethod
     def on_step(self, dt):
@@ -99,7 +99,7 @@ class Object3D(Transform):
     @angular_velocity.setter
     def angular_velocity(self, v):
         self.__angular_velocity = v
-        self.__local_angular_velocity = Rotation()
+        self.__local_angular_velocity = Rotation3()
 
     @property
     def local_angular_velocity(self):
@@ -232,7 +232,7 @@ class Cylinder(Object3D):
         self.height = 1
 
     def set_axis(self, axis):
-        self.rotation = Rotation.Direction_change(Vector3(0, 1, 0), axis)
+        self.rotation = Rotation3.Direction_change(Vector3(0, 1, 0), axis)
 
     def info(self):
         ret = Object3D.info(self)
@@ -259,7 +259,7 @@ class Pipe(Object3D):
 class Plane(Cube):
     def __init__(self, point, norm):
         Cube.__init__(self, 10, 10, 0.01)
-        self.rotation = Rotation.Direction_change(Vector3(0, 0, 1), norm)
+        self.rotation = Rotation3.Direction_change(Vector3(0, 0, 1), norm)
         self.position = point
 
 

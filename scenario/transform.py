@@ -1,9 +1,10 @@
 from numpy import *
-from math import sin, cos, tan, cos, atan2, acos, sqrt
+from math import sin, cos, cos, atan2, acos, sqrt
+
 
 class Vector3(ndarray):
     def __new__(cls, x=0, y=0, z=0):
-        if isinstance(x,list) or isinstance(x,tuple) or isinstance(x,ndarray):
+        if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, ndarray):
             return ndarray.__new__(cls, (3), buffer=array(x, dtype=float))
         else:
             return ndarray.__new__(cls, (3), buffer=array([x, y, z], dtype=float))
@@ -14,18 +15,18 @@ class Vector3(ndarray):
         up = Vector3(x[1], y[1], z[1])
         return low+random.rand(3)*(up-low)
 
-    def length(self):#norm
+    def length(self):  # norm
         return linalg.norm(self)
-    
+
     def normalize(self):
-        l=self.length()
+        l = self.length()
         if(l):
-            self.data=(self/l).data
+            self.data = (self/l).data
         else:
-            raise ValueError("It is a zero vector, cant be normalized")
-        
-    def normalized(self):#unit vector, direction vector
-        l=self.length()
+            raise ValueError("Zero vector cant be normalized")
+
+    def normalized(self):  # unit vector, direction vector
+        l = self.length()
         if l:
             return self/l
         else:
@@ -33,10 +34,34 @@ class Vector3(ndarray):
 
     def cross(self, v):
         return Vector3(cross(self, v))
-    
+
     def angle_to(self, to):
-        cos=self.dot(to)/self.length()/to.length()
+        cos = self.dot(to)/self.length()/to.length()
         return acos(cos)
+
+    def rotation_to(self, to):
+        axis = self.cross(to)
+        angle = self.angle_to(to)
+        return axis, angle
+
+    def perpendicular_to(self, to):
+        return self.dot(to) == 0
+
+    def distance_to(self, p0, p1):
+        v0 = p1-p0
+        v1 = self-p0
+        return v0.cross(v1).length()/v0.length()
+
+    def area(self, p0, p1=None):
+        if p1 is None:
+            return self.cross(p0).length()
+        else:
+            v0 = p1-p0
+            v1 = self-p0
+            return v0.cross(v1).length()
+
+    def clone(self):
+        return Vector3(self)
 
     def __eq__(self, v):
         return self.data == v.data
@@ -45,7 +70,7 @@ class Vector3(ndarray):
         return self.data != v.data
 
 
-class Rotation(ndarray):
+class Rotation3(ndarray):
     def __new__(cls, matrix=eye(3)):
         return ndarray.__new__(cls, (3, 3), buffer=array(matrix, dtype=float))
 
@@ -143,19 +168,19 @@ class Rotation(ndarray):
             return axis, angle
 
     def rotate_x(self, angle):
-        self.real = Rotation.Rx(angle).dot(self)
+        self.real = Rotation3.Rx(angle).dot(self)
         return self
 
     def rotate_y(self, angle):
-        self.real = Rotation.Ry(angle).dot(self)
+        self.real = Rotation3.Ry(angle).dot(self)
         return self
 
     def rotate_z(self, angle):
-        self.real = Rotation.Rz(angle).dot(self)
+        self.real = Rotation3.Rz(angle).dot(self)
         return self
 
     def rotate_axis(self, axis, angle):
-        self.real = Rotation.Axis_angle(axis, angle).dot(self)
+        self.real = Rotation3.Axis_angle(axis, angle).dot(self)
         return self
 
     def __mul__(self, v):
@@ -163,8 +188,8 @@ class Rotation(ndarray):
         if t is float or t is int:
             axis, angle = self.to_axis_angle()
             angle *= v
-            return Rotation.Axis_angle(axis, angle)
-        elif t is Rotation:
+            return Rotation3.Axis_angle(axis, angle)
+        elif t is Rotation3:
             return self.dot(v)
         elif t is Vector3:
             return Vector3(self.dot(v))
@@ -184,11 +209,12 @@ class Rotation(ndarray):
     @property
     def I(self):
         return linalg.inv(self)
-    
+
+
 class Transform:
     def __init__(self):
         self.position = Vector3()
-        self.rotation = Rotation()
+        self.rotation = Rotation3()
         self.scale = Vector3(1, 1, 1)
         self.direction = Vector3(1, 0, 0)
         self.parent = None
@@ -219,7 +245,7 @@ class Transform:
         return self.rotation*(self.scale*v)+self.position
 
     def lookat(self, destination):
-        self.rotation = Rotation.Direction_change(
+        self.rotation = Rotation3.Direction_change(
             self.direction, destination-self.position)
 
     def info(self):
