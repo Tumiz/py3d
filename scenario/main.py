@@ -267,15 +267,3 @@ class Point(Sphere):
     def __init__(self, position):
         Sphere.__init__(self, 0.1)
         self.position = position
-
-
-class Vector(Line):
-    def __init__(self, *argv):
-        Line.__init__(self)
-        if len(argv) == 1:
-            self.add_point(Vector3(), argv[0])
-        elif len(argv) == 2:
-            self.add_point(argv[0], argv[1])
-        else:
-            raise Exception("only 1 or 2 arguments are accepted")
-        self.type = Line.Type_Vector

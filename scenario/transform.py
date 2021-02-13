@@ -1,73 +1,165 @@
+from typing import Optional, Tuple, Union
+
+from numpy.core.defchararray import equal
+
+from scenario.server import Source
 from numpy import *
-from math import sin, cos, cos, atan2, acos, sqrt
+from math import acos, sin, cos, cos, atan2, sqrt, pi
 
 
 class Vector3(ndarray):
-    def __new__(cls, x=0, y=0, z=0):
+    def __new__(cls, x=0, y=0, z=0, n=1):
         if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, ndarray):
-            return ndarray.__new__(cls, (3), buffer=array(x, dtype=float))
+            data = array(x, dtype=float)
+            if data.size % 3:
+                raise("input data size must be multiple of 3")
+            else:
+                n = data.size//3
+                if n == 0:
+                    raise("input data is empty")
+                elif n == 1:
+                    data = data.reshape(3)
+                else:
+                    data = data.reshape(n, 3)
+        elif n > 1:
+            data = tile(array([x, y, z], dtype=float), (n, 1))
         else:
-            return ndarray.__new__(cls, (3), buffer=array([x, y, z], dtype=float))
+            data = array([x, y, z], dtype=float)
+        obj = ndarray.__new__(
+            cls, data.shape, buffer=data)
+        return obj
 
-    @staticmethod
-    def Rand(x=[0, 0], y=[0, 0], z=[0, 0]):
-        low = Vector3(x[0], y[0], z[0])
-        up = Vector3(x[1], y[1], z[1])
-        return low+random.rand(3)*(up-low)
+    @classmethod
+    def Rand(cls, n: int):
+        return Vector3(random.rand(3, n))
 
-    def length(self):  # norm
-        return linalg.norm(self)
+    @classmethod
+    def Zeros(cls, n: int):
+        return Vector3(zeros((n, 3)))
 
-    def normalize(self):
-        l = self.length()
-        if(l):
-            self.data = (self/l).data
+    @classmethod
+    def Ones(cls, n: int):
+        return Vector3(ones((n, 3)))
+
+    def norm(self) -> ndarray:  # norm
+        if self.ndim > 1:
+            return linalg.norm(self, axis=1, keepdims=True)
         else:
-            raise ValueError("Zero vector cant be normalized")
+            return linalg.norm(self)
 
-    def normalized(self):  # unit vector, direction vector
-        l = self.length()
-        if l:
+    def normalize(self) -> None:
+        l = self.norm()
+        try:
+            self /= l
+        except:
+            ValueError("zero vector can not be normalized")
+
+    def normalized(self) -> Optional[ndarray]:  # unit vector, direction vector
+        l = self.norm()
+        try:
             return self/l
-        else:
+        except:
             return None
 
-    def cross(self, v):
+    def reverse(self) -> None:
+        self[:] = flipud(self)
+
+    def reversed(self) -> ndarray:
+        return flipud(self)
+
+    def append(self, v) -> ndarray:
+        self[:]=concatenate((self,v), axis=0)
+
+    def dot(self, v: ndarray) -> ndarray:
+        if v.ndim > 1:
+            d = dot(self, v.T).diagonal()
+            return array(d.reshape(d.size, 1))
+        else:
+            return super().dot(v)
+
+    def cross(self, v: ndarray) -> ndarray:
         return Vector3(cross(self, v))
 
-    def angle_to(self, to):
-        cos = self.dot(to)/self.length()/to.length()
-        return acos(cos)
+    def angle_to_vector(self, to: ndarray) -> ndarray:
+        cos = self.dot(to)/self.norm()/to.norm()
+        return arccos(cos)
 
-    def rotation_to(self, to):
+    def angle_to_plane(self, normal: ndarray) -> float:
+        return pi/2 - self.angle_to_vector(normal)
+
+    def rotation_to(self, to: ndarray) -> Tuple[ndarray, float]:
         axis = self.cross(to)
-        angle = self.angle_to(to)
+        angle = self.angle_to_vector(to)
         return axis, angle
 
-    def perpendicular_to(self, to):
-        return self.dot(to) == 0
+    def is_parallel_to_vector(self, v: ndarray) -> bool:
+        return self.normalized() == v.normalized()
 
-    def distance_to(self, p0, p1):
+    def is_parallel_to_plane(self, normal: ndarray) -> bool:
+        return self.is_perpendicular_to_vector(normal)
+
+    def is_perpendicular_to_vector(self, v: ndarray) -> bool:
+        return self.dot(v) == 0
+
+    def is_perpendicular_to_plane(self, normal: ndarray) -> bool:
+        return self.is_parallel_to_vector(normal)
+
+    def scalar_projection(self, v: ndarray) -> float:
+        return self.dot(v).item()/v.norm()
+
+    def vector_projection(self, v: ndarray) -> ndarray:
+        return self.scalar_projection(v)/v.norm()*v
+
+    def distance_to_line(self, p0: ndarray, p1: ndarray) -> float:
         v0 = p1-p0
         v1 = self-p0
-        return v0.cross(v1).length()/v0.length()
+        return v0.cross(v1).norm()/v0.norm()
 
-    def area(self, p0, p1=None):
-        if p1 is None:
-            return self.cross(p0).length()
+    def distance_to_plane(self, n: ndarray, p: ndarray) -> float:
+        v = self - p
+        return v.scalar_projection(n)
+
+    def projection_point_on_line(self, p0: ndarray, p1: ndarray) -> ndarray:
+        return p0+(self-p0).vector_projection(p1-p0)
+
+    def projection_point_on_plane(self, normal: ndarray, point: ndarray) -> ndarray:
+        return self+(point-self).vector_projection(normal)
+
+    def area(self) -> float:
+        if self.ndim > 1 and self.shape[0] == 3:
+            v0 = self[1]-self[0]
+            v1 = self[2]-self[0]
+            return v0.cross(v1).norm()/2
         else:
-            v0 = p1-p0
-            v1 = self-p0
-            return v0.cross(v1).length()
+            raise "size should be (3,3)"
 
-    def clone(self):
-        return Vector3(self)
+    def __eq__(self, v: ndarray):
+        if isinstance(v, ndarray):
+            if self.ndim == v.ndim and self.size == v.size:
+                if self.ndim > 1:
+                    return array(equal(self, v).all(axis=1, keepdims=True))
+                else:
+                    return equal(self, v).all().item()
+            else:
+                return False
+        else:
+            return array(equal(self, v))
 
-    def __eq__(self, v):
-        return self.data == v.data
+    def __ne__(self, v: ndarray) -> bool:
+        return not self.__eq__(v)
 
-    def __ne__(self, v):
-        return self.data != v.data
+    def numpy(self):
+        return array(self)
+
+    def render(self, serial=True):
+        s = Source("default")
+        s.send_msg({
+            "class": self.__class__.__name__,
+            "data": {
+                "data": self.tolist() if self.ndim > 1 else [self.tolist()],
+                "serial": serial
+            }
+        })
 
 
 class Rotation3(ndarray):
@@ -94,7 +186,7 @@ class Rotation3(ndarray):
 
     @classmethod
     def Axis_angle(cls, axis, angle):
-        axis_n = axis.length()
+        axis_n = axis.norm()
         if axis_n:
             axis = axis/axis_n
             w = cos(angle/2)
@@ -106,7 +198,7 @@ class Rotation3(ndarray):
     @classmethod
     def Direction_change(cls, before, after):
         axis = before.cross(after)
-        angle = acos(before.dot(after)/before.length()/after.length())
+        angle = acos(before.dot(after)/before.norm()/after.norm())
         return cls.Axis_angle(axis, angle)
 
     @classmethod

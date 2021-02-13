@@ -30,6 +30,10 @@ class IndexHandler(tornado.web.RequestHandler):
 #         print("Index",v,self.request)
         self.render("viewer.html",port=Source.port,ID=v)
 
+class StaticHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        self.set_header("Cache-control", "no-cache")
+
 class WSHandler(tornado.websocket.WebSocketHandler):       
     def open(self,v):
         if Source.connections.__contains__(v):
@@ -72,12 +76,11 @@ class Source:
             self.sinks = Source.connections[name]["sinks"]
         else:
             self.sinks=[]
+            self.cache={}
+            self.paused=False
+            self.on_key=None
             Source.connections[name]=dict(source=self,sinks=self.sinks)
-        if len(self.sinks)==0:    
             print("open http://localhost:"+str(Source.port)+"/view/"+name)
-        self.cache={}
-        self.paused=False
-        self.on_key=None
         
     def send_msg(self,msg):
         while len(self.sinks) == 0:
@@ -95,7 +98,7 @@ class Source:
         app = tornado.web.Application([
                 (r"/view/(.*)", IndexHandler),
                 (r"/ws/(.*)", WSHandler),
-                (r"/(.*)",tornado.web.StaticFileHandler)      
+                (r"/(.*)",StaticHandler)      
             ],
             static_path = static_path,
             template_path = template_path,
