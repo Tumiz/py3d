@@ -61,6 +61,13 @@ class Line extends THREE.Line {
 		this.points.push(point)
 		this.geometry.setFromPoints(this.points)
 	}
+	length() {
+		let ret = 0
+		for (let i = 0, l = this.points.length; i + 1 < l; i++) {
+			ret += new THREE.Vector3().subVectors(this.points[i], this.points[i + 1]).length()
+		}
+		return ret
+	}
 }
 
 class Cylinder extends THREE.Mesh {
@@ -114,6 +121,15 @@ class Cylinder extends THREE.Mesh {
 		this.bottomCenter.copy(value)
 		this.position.copy(new THREE.Vector3().addVectors(value, this.axis.multiplyScalar(this.geometry.parameters.height / 2)))
 	}
+	static proc(scene, data) {
+		let cylinder = new Cylinder
+		cylinder.axis = new THREE.Vector3().fromArray(data.axis)
+		cylinder.color.set(data.color)
+		cylinder.radiusTop = data.radiusTop
+		cylinder.radiusBottom = data.radiusBottom
+		cylinder.height = data.height
+		scene.add(cylinder)
+	}
 }
 
 class Sphere extends THREE.Mesh {
@@ -165,39 +181,49 @@ class Box extends THREE.Mesh {
 	}
 }
 
+class PointCloud extends THREE.Points {
+	constructor() {
+		const geometry = new THREE.BufferGeometry()
+		const material = new THREE.PointsMaterial({
+			sizeAttenuation: true,
+			size: 0.1
+		})
+		super(geometry, material)
+		this.color = this.material.color
+	}
+	set(points, color=undefined, size = undefined) {
+		if (points.length && points[0].x) {
+			this.geometry.setFromPoints(points)
+		} else {
+			this.geometry.setAttribute('position', new THREE.Float32BufferAttribute( points.flat(), 3 ))
+		}
+		this.geometry.computeBoundingSphere()
+		if(color){
+			this.color.set(color)
+		}
+		if (size){
+			this.material.size = size 
+		}
+		return this
+	}
+}
+
 class Arrow extends THREE.Object3D {
 	constructor() {
 		super()
 		this.header = new Cylinder
-		this.header.radiusTop = 0
-		this.header.radiusBottom = 0.1
-		this.header.height = 0.4
 		this.body = new Line
 		this.add(this.header, this.body)
 	}
-	set(startPoint, endPoint) {
+	set(startPoint, endPoint, color) {
 		this.body.set([startPoint, endPoint])
+		this.header.height = this.body.length() * 0.2
+		this.header.radiusTop = 0
+		this.header.radiusBottom = this.header.height / 4
 		this.header.axis = new THREE.Vector3().subVectors(endPoint, startPoint)
 		this.header.topCenter = endPoint
+		this.header.color.set(color)
+		this.body.color.set(color)	
 		return this
-	}
-	static proc(scene, data) {
-		let vectors = new THREE.Object3D
-		let startPoint = new THREE.Vector3
-		if (data.serial) {
-			for (let step of data.data) {
-				let endPoint = new THREE.Vector3(startPoint.x + step[0], startPoint.y + step[1], startPoint.z + step[2])
-				let arrow = new Arrow().set(startPoint, endPoint)
-				startPoint.copy(endPoint)
-				vectors.add(arrow)
-			}
-		} else {
-			for (let step of data.data) {
-				let endPoint = new THREE.Vector3(startPoint.x + step[0], startPoint.y + step[1], startPoint.z + step[2])
-				let arrow = new Arrow().set(startPoint, endPoint)
-				vectors.add(arrow)
-			}
-		}
-		scene.add(vectors)
 	}
 }

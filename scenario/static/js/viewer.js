@@ -105,15 +105,49 @@ function infof() {
     + "  rotation:" + selected.rotation.x.toFixed(3) + "," + selected.rotation.y.toFixed(3) + "," + selected.rotation.z.toFixed(3) : "")
 }
 
+const vector3_proc = (scene, data) => {
+  switch (data.start_points.length) {
+    case 0:
+      scene.add(new PointCloud().set(data.end_points, data.color, data.size))
+      break
+    case 1:
+      {
+        let vectors = new THREE.Object3D
+        let start = new THREE.Vector3().fromArray(data.start_points[0])
+        for (let i = 0, l = data.end_points.length; i < l; i++) {
+          let end = new THREE.Vector3().fromArray(data.end_points[i])
+          let arrow = new Arrow().set(start, end, data.color)
+          vectors.add(arrow)
+        }
+        scene.add(vectors)
+      }
+    default:
+      {
+        let vectors = new THREE.Object3D
+        for (let i = 0, l = data.end_points.length; i < l; i++) {
+          let start = new THREE.Vector3().fromArray(data.start_points[i])
+          let end = new THREE.Vector3().fromArray(data.end_points[i])
+          let arrow = new Arrow().set(start, end, data.color)
+          vectors.add(arrow)
+        }
+        scene.add(vectors)
+      }
+      break
+  }
+}
+
 ws.onopen = function (evt) {
   console.log("Connected", evt);
 };
 
 ws.onmessage = function (message) {
   let msg = JSON.parse(message.data)
+  console.log(msg)
   switch (msg.class) {
     case "Vector3":
-      return Arrow.proc(scene, msg.data)
+      return vector3_proc(scene, msg.data)
+    case "Cylinder":
+      return Cylinder.proc(scene, msg.data)
     default:
       return
   }

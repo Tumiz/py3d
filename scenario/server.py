@@ -64,6 +64,8 @@ class Source:
     server=None
     connections=dict()
     loop=None
+    action_clear=0
+    action_draw=1
     def __init__(self,name):
         if Source.server is None:
             Source.server=threading.Thread(target=Source.run)
@@ -76,18 +78,21 @@ class Source:
             self.sinks = Source.connections[name]["sinks"]
         else:
             self.sinks=[]
-            self.cache={}
+            self.cache=[]
             self.paused=False
             self.on_key=None
             Source.connections[name]=dict(source=self,sinks=self.sinks)
             print("open http://localhost:"+str(Source.port)+"/view/"+name)
         
-    def send_msg(self,msg):
+    def send_msg(self,action,msg):
         while len(self.sinks) == 0:
             time.sleep(0.1)
         for sink in self.sinks:
             Source.loop.add_callback(send,sink,msg)
-        self.cache=msg
+        if action==Source.action_clear:
+            self.cache.clear()
+        elif action==Source.action_draw:
+            self.cache.append(msg)
         
     @staticmethod
     def run():
@@ -102,7 +107,8 @@ class Source:
             ],
             static_path = static_path,
             template_path = template_path,
-            debug = True
+            debug = True,
+            autoreload=True
         )
         http_server = tornado.httpserver.HTTPServer(app)
         http_server.listen(Source.port)
