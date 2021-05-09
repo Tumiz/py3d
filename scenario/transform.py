@@ -3,7 +3,6 @@ from numpy.core.defchararray import equal
 
 from scenario.server import Source
 import numpy
-import math
 
 class Vector3(numpy.ndarray):
     as_points = 0
@@ -11,6 +10,7 @@ class Vector3(numpy.ndarray):
     as_vectors = 2
     as_connected_vectors = 3
     as_vectors_from_given_points = 4
+
     def __new__(cls, x=0, y=0, z=0, n=1):
         if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, numpy.ndarray):
             data = numpy.array(x, dtype=float)
@@ -56,7 +56,8 @@ class Vector3(numpy.ndarray):
             ValueError("zero vector can not be normalized")
         return self
 
-    def normalized(self) -> Optional[numpy.ndarray]:  # unit vector, direction vector
+    # unit vector, direction vector
+    def normalized(self) -> Optional[numpy.ndarray]:
         l = self.norm()
         try:
             return self/l
@@ -89,7 +90,7 @@ class Vector3(numpy.ndarray):
         self[:] = new
         return self
 
-    def diff(self, n = 1) -> numpy.ndarray:
+    def diff(self, n=1) -> numpy.ndarray:
         if self.ndim > 1:
             return numpy.diff(self, n, axis=0)
         else:
@@ -102,9 +103,8 @@ class Vector3(numpy.ndarray):
             return self
 
     def dot(self, v: numpy.ndarray) -> numpy.ndarray:
-        if v.ndim > 1:
-            d = numpy.dot(self, v.T).diagonal()
-            return numpy.array(d.reshape(d.size, 1))
+        if self.ndim > 1 or v.ndim > 1:
+            return numpy.sum(self*v, axis=1, keepdims=True)
         else:
             return super().dot(v)
 
@@ -113,10 +113,10 @@ class Vector3(numpy.ndarray):
 
     def angle_to_vector(self, to: numpy.ndarray) -> numpy.ndarray:
         cos = self.dot(to)/self.norm()/to.norm()
-        return math.acos(cos)
+        return numpy.arccos(cos)
 
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
-        return math.pi/2 - self.angle_to_vector(normal)
+        return numpy.pi/2 - self.angle_to_vector(normal)
 
     def rotation_to(self, to: numpy.ndarray) -> Tuple[numpy.ndarray, float]:
         axis = self.cross(to)
@@ -182,7 +182,7 @@ class Vector3(numpy.ndarray):
     def numpy(self):
         return array(self)
 
-    def render(self, color="white", mode=0, size = 1, start_points=None):
+    def render(self, color="white", mode=0, size=1, start_points=None):
         if mode == Vector3.as_points:
             sp = None
             ep = self
@@ -214,7 +214,7 @@ class Vector3(numpy.ndarray):
         else:
             ep = [ep.tolist()]
         s = Source("default")
-        s.send_msg(Source.action_draw,{
+        s.send_msg(Source.action_draw, {
             "class": self.__class__.__name__,
             "data": {
                 "color": color,
@@ -224,7 +224,7 @@ class Vector3(numpy.ndarray):
             }
         })
 
- 
+
 class Rotation3(numpy.ndarray):
     def __new__(cls, matrix=numpy.eye(3)):
         return numpy.ndarray.__new__(cls, (3, 3), buffer=array(matrix, dtype=float))
