@@ -31,7 +31,7 @@ class Vector3(numpy.ndarray):
         return data.view(cls).copy()
 
     @classmethod
-    def Rand(cls, n: int):
+    def Rand(cls, n = 1):
         return Vector3(numpy.random.rand(3, n))
 
     @classmethod
@@ -64,6 +64,7 @@ class Vector3(numpy.ndarray):
         except:
             return None
 
+    # [1,2,3] => [3,2,1]
     def reverse(self) -> numpy.ndarray:
         self[:] = numpy.flipud(self)
         return self
@@ -223,6 +224,15 @@ class Vector3(numpy.ndarray):
                 "end_points": ep,
             }
         })
+
+class Plane:
+    def __init__(self, norm = Vector3(z=1), constant = 0) -> None:
+        self.norm = norm
+        self.constant = constant
+
+    @classmethod
+    def NormPoint(cls, norm: Vector3, point: Vector3):
+        return cls(norm, point.scalar_projection(norm))
 
 
 class Rotation3(numpy.ndarray):

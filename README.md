@@ -1,5 +1,9 @@
 **Scenario** is a python library that helps to build simple environments for simulation of agents.
 
+# Note
+I'm now refacing this project, so if you want to use scenario, please checkout tag v0.0.0 for a stable release.
+Besides, you can also have a look at the minimum version -- py3d. It's a independed package with classes I seperated from this project. It focusses on dealing with points, lines and planes in batches. And it is also very easy to install, without clone this project, just `pip install py3d -i https://pypi.org/simple`. Its documents locates in ./py3d/doc of this project.
+
 # Features
 ☑ Jupyter support\
 ☑ Kinematics emulate\
