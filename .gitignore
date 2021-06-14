@@ -1,7 +1,8 @@
 .ipynb_checkpoints
 .vscode
-scenario.egg-info
+*gg-info*
 __pycache__
 testbench.ipynb
 tests
 node_modules
+*.swp

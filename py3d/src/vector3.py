@@ -31,6 +31,7 @@ class Vector3(numpy.ndarray):
     def Rand(cls, n = 1):
         return Vector3(numpy.random.rand(3, n))
 
+    # construct a vector3 list of length n and filled with zero
     @classmethod
     def Zeros(cls, n: int):
         return Vector3(numpy.zeros((n, 3)))

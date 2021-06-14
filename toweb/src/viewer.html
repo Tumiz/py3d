@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!-- Copyright (c) Tumiz. Distributed under the terms of the GPL-3.0 License. -->
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" href="/static/logo.png"/>
+	<title>{{ID}}</title>
+	<style>
+		body {
+			margin: 0;
+		}
+
+		canvas {
+			display: block;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="root" style="position:absolute">
+	</div>
+	<script>
+		const log = (message) => {
+			var new_div = document.createElement("div")
+			document.getElementById("root").appendChild(new_div)
+			new_div.innerHTML = message
+		}
+		var ws = new WebSocket("ws://localhost:{{port}}/ws/{{ID}}");
+		ws.onmessage = (event) => { console.log(event.data); log(event.data) };
+	</script>
+</body>
+
+</html>
