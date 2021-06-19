@@ -7,28 +7,21 @@
 	<link rel="icon" href="/static/logo.png"/>
 	<title>{{ID}}</title>
 	<style>
-		body {
+		html,body {
 			margin: 0;
-		}
-
-		canvas {
-			display: block;
+			width: 100%;
+			height: 100%;
 		}
 	</style>
 </head>
-
+<style>
+</style>
 <body>
-	<div id="root" style="position:absolute">
 	</div>
 	<script>
-		const log = (message) => {
-			var new_div = document.createElement("div")
-			document.getElementById("root").appendChild(new_div)
-			new_div.innerHTML = message
-		}
 		var ws = new WebSocket("ws://localhost:{{port}}/ws/{{ID}}");
-		ws.onmessage = (event) => { console.log(event.data); log(event.data) };
 	</script>
+	<script src="/static/bundle.js"></script>
 </body>
 
 </html>

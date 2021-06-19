@@ -10,6 +10,7 @@ import threading
 import webbrowser
 import tornado.web
 import tornado.websocket
+from IPython.display import IFrame, display
 
 def address_in_use(port,ip='127.0.0.1'):
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -36,15 +37,8 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if Server.connections.__contains__(v):
             self.server = Server.connections[v]["server"]
             self.server.clients.append(self)
-            if self.server.cache:
-                self.write_message(self.server.cache)
+            self.write_message(json.dumps(self.server.cache))
         # print("ws open",v,self.request,self.server.__dict__)
-        
-    def on_message(self, message):
-#         print(message,self.server.paused)
-        msg=json.loads(message)
-        cmd=msg["cmd"]
-        data=msg["data"]
         
     def on_close(self):
 #         print("ws close",self.request,self.close_code,self.close_reason)
@@ -58,37 +52,67 @@ class Server:
     server=None
     connections=dict()
     loop=None
-    def __init__(self,name):
-        if Server.server is None:
-            Server.server=threading.Thread(target=Server.run)
-            Server.server.setDaemon(True)
-            while address_in_use(Server.port):
-                Server.port+=1
-            Server.server.start()
-        if Server.connections.__contains__(name):
-            self = Server.connections[name]["server"]
+    def __new__(cls,name):
+        if cls.server is None:
+            cls.server=threading.Thread(target=Server.run)
+            cls.server.setDaemon(True)
+            while address_in_use(cls.port):
+                cls.port+=1
+            cls.server.start()
+        if cls.connections.__contains__(name):
+            return cls.connections[name]["server"]
         else:
-            self.name=name
-            self.clients=[]
-            self.cache=None
-            self.url = "http://localhost:"+str(Server.port)+"/view/"+name
-            Server.connections[name]=dict(server=self,clients=self.clients)
-            print(self.url)
-    
-    def open(self):
-        webbrowser.open(self.url,new=1)
+            instance=super().__new__(cls)
+            instance.name=name
+            instance.clients=[]
+            instance.cache=[]
+            instance.url = "http://localhost:"+str(cls.port)+"/view/"+name
+            cls.connections[name]=dict(server=instance,clients=instance.clients)
+            return instance
         
     def send(self,msg):
-        self.cache=msg
+        if len(self.clients) == 0:
+            print("Please open", self.url)
+            display(IFrame(src=self.url,width="100%",height="600px"))
         while len(self.clients) == 0:
             time.sleep(0.1)
         for client in self.clients:
             Server.loop.add_callback(send_callback,client,msg)
+
+    def send_t(self,method,msg):
+        cmd={"method":method,"time":time.time(),"data":msg}
+        self.cache.append(cmd)
+        self.send(json.dumps([cmd]))
+
+    def clear(self):
+        self.send_t("clear","")
+        self.cache=[]
+
+    def log(self,level,*msg):
+        tmp=""
+        for m in msg:
+            tmp+=str(m)+" "
+        self.send_t(level,tmp)
+
+    def info(self,*msg):
+        self.log("info",*msg)
+
+    def err(self,*msg):
+        self.log("err",*msg)
+
+    def warn(self,*msg):
+        self.log("warn",*msg)
+
+    def plot(self,x,y=None):
+        self.send_t("plot",{"x":x,"y":y})
+
+    def wait(self):
+        input("Press enter to exit")
         
     @staticmethod
     def run():
         loop=asyncio.new_event_loop()
-        asyncio.set_event_loop(loop) #允许server在子线程中运行
+        asyncio.set_event_loop(loop) #允许server在子线程中运�?
         static_path=os.path.join(os.path.dirname(__file__), "static")
         template_path=os.path.join(os.path.dirname(__file__), ".")
         app = tornado.web.Application([
