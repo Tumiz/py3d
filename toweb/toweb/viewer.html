@@ -4,24 +4,25 @@
 
 <head>
 	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" href="/static/logo.png"/>
+	<link rel="icon" href="/static/logo.png" />
 	<title>{{ID}}</title>
-	<style>
-		html,body {
-			margin: 0;
-			width: 100%;
-			height: 100%;
-		}
-	</style>
 </head>
 <style>
+	html,
+	body {
+		margin: 0;
+		padding: auto;
+		width: 100%;
+		height: 100%;
+	}
 </style>
+<script>
+	var ws = new WebSocket("ws://localhost:{{port}}/ws/{{ID}}");
+</script>
+<script src="/static/bundle.js"></script>
+
 <body>
-	</div>
-	<script>
-		var ws = new WebSocket("ws://localhost:{{port}}/ws/{{ID}}");
-	</script>
-	<script src="/static/bundle.js"></script>
 </body>
+
 
 </html>

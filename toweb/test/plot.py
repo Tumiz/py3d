@@ -1,6 +1,6 @@
 import toweb
 import math
-s = toweb.Server("test")
+s = toweb.Page("test")
 
 s.plot(2, 3.3)
 s.plot(4.7, 2.2)

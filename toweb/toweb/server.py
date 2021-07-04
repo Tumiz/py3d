@@ -28,7 +28,7 @@ def address_in_use(port, ip='127.0.0.1'):
 class IndexHandler(tornado.web.RequestHandler):
     def get(self, v):
         #         print("Index",v,self.request)
-        self.render("viewer.html", port=Server.port, ID=v)
+        self.render("viewer.html", port=Page.port, ID=v)
 
 
 class StaticHandler(tornado.web.StaticFileHandler):
@@ -38,8 +38,8 @@ class StaticHandler(tornado.web.StaticFileHandler):
 
 class WSHandler(tornado.websocket.WebSocketHandler):
     def open(self, v):
-        if Server.connections.__contains__(v):
-            self.server = Server.connections[v]["server"]
+        if Page.connections.__contains__(v):
+            self.server = Page.connections[v]["server"]
             self.server.clients.append(self)
             self.write_message(json.dumps(self.server.cache))
         # print("ws open",v,self.request,self.server.__dict__)
@@ -62,15 +62,15 @@ def log(*msg):
     return ret
 
 
-class Server:
+class Page:
     port = 8000
     server = None
     connections = dict()
-    loop = None
+    __loop = None
 
-    def __new__(cls, name):
+    def __new__(cls, name="default"):
         if cls.server is None:
-            cls.server = threading.Thread(target=Server.run)
+            cls.server = threading.Thread(target=cls.run)
             cls.server.setDaemon(True)
             while address_in_use(cls.port):
                 cls.port += 1
@@ -94,7 +94,7 @@ class Server:
         while len(self.clients) == 0:
             time.sleep(0.1)
         for client in self.clients:
-            Server.loop.add_callback(send_callback, client, msg)
+            Page.__loop.add_callback(send_callback, client, msg)
 
     def send_t(self, method, msg):
         cmd = {"method": method, "time": time.time(), "data": msg}
@@ -118,15 +118,21 @@ class Server:
         self.send_t("plot", {"x": x, "y": y})
 
     def render_point(self, x, y, z):
-        self.send_t("point", {"x": x, "y": y, "z": z})
+        self.send_t("point", {"x":x,"y":y,"z":z})
+
+    def render_arrow(self, x, y, z, x1, y1, z1):
+        self.send_t("arrow", {"x":x,"y":y,"z":z,"x1":x1,"y1":y1,"z1":z1})
+
+    def render_points(self, points):
+        self.send_t("points", points)
 
     def wait(self):
         input("Press enter to exit")
 
-    @staticmethod
-    def run():
+    @classmethod
+    def run(cls):
         loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)  # ����server�����߳�����???
+        asyncio.set_event_loop(loop)
         static_path = os.path.join(os.path.dirname(__file__), "static")
         template_path = os.path.join(os.path.dirname(__file__), ".")
         app = tornado.web.Application([
@@ -140,6 +146,6 @@ class Server:
             autoreload=True
         )
         http_server = tornado.httpserver.HTTPServer(app)
-        http_server.listen(Server.port)
-        Server.loop = tornado.ioloop.IOLoop.current()
-        Server.loop.start()
+        http_server.listen(Page.port)
+        cls.__loop = tornado.ioloop.IOLoop.current()
+        cls.__loop.start()

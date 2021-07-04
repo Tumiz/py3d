@@ -1,4 +1,5 @@
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
+from toweb import Page
 import numpy
 
 class Vector3(numpy.ndarray):
@@ -165,12 +166,15 @@ class Vector3(numpy.ndarray):
             else:
                 return False
         else:
-            return array(equal(self, v))
+            return numpy.array(numpy.equal(self, v))
 
     def __ne__(self, v: numpy.ndarray) -> bool:
         return not self.__eq__(v)
 
     def numpy(self):
-        return array(self)
+        return numpy.array(self)
 
+    def render_as_points(self, page="default"):
+        p=Page(page)
+        p.render_points(self.flatten().tolist())
 
