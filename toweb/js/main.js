@@ -3,7 +3,6 @@ CHART.Chart.register(CHART.ScatterController, CHART.LinearScale, CHART.PointElem
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
-require("./orbit")
 console.log("ready")
 const create_chart = () => {
     console.log("create_chart")
@@ -135,23 +134,6 @@ methods.warn = (time, data) => {
     let div = methods.info(time, data)
     div.style.color = "orange"
 }
-methods.point = (time, data) => {
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
-    }
-    const s = new GEO.Sphere
-    s.radius = 0.1
-    s.position.set(data.x, data.y, data.z)
-    this.chart.add(s)
-}
-methods.arrow = (time, data) => {
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
-    }
-    const mesh = new GEO.Arrow
-    mesh.set(new THREE.Vector3(data.x, data.y, data.z), new THREE.Vector3(data.x1, data.y1, data.z1), "gray")
-    this.chart.add(mesh)
-}
 methods.points = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
@@ -159,4 +141,16 @@ methods.points = (time, data) => {
     const mesh = new GEO.Points
     mesh.set(data,"white")
     this.chart.add(mesh)
+}
+methods.arrows = (time, data) => {
+    if (!this.chart) {
+        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
+    }
+    for(let i=0,l=data.start_points.length;i<l;i++){
+        const sp = data.start_points[i]
+        const ep = data.end_points[i]
+        const mesh = new GEO.Arrow
+        mesh.set(new THREE.Vector3(sp[0], sp[1], sp[2]), new THREE.Vector3(ep[0], ep[1], ep[2]), "gray")
+        this.chart.add(mesh)
+    }
 }

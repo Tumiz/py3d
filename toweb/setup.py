@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import toweb
 from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="toweb",
-    version="0.0.2",
+    version="0.0.3",
     description="a library help you show logs and data on web",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,8 +17,8 @@ setup(
     install_requires=["tornado"],
     packages=find_packages(),
     data_files=[
-        ("/toweb/static",["toweb/static/logo.png","toweb/static/bundle.js"]),
-        ("/toweb",["toweb/viewer.html"])
+        ("/toweb/static",["static/logo.png","static/bundle.js"]),
+        ("/toweb",["viewer.html"])
         ],
     license="GPL-3.0 License"
 )

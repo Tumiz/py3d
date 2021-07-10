@@ -1,14 +1,8 @@
 from typing import Optional, Tuple
-from toweb import Page
 import numpy
+from toweb import Space
 
 class Vector3(numpy.ndarray):
-    as_points = 0
-    as_connected_points = 1
-    as_vectors = 2
-    as_connected_vectors = 3
-    as_vectors_from_given_points = 4
-
     def __new__(cls, x=0, y=0, z=0, n=1):
         if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, numpy.ndarray):
             data = numpy.array(x, dtype=float)
@@ -174,7 +168,17 @@ class Vector3(numpy.ndarray):
     def numpy(self):
         return numpy.array(self)
 
-    def render_as_points(self, page="default"):
-        p=Page(page)
+    def render_as_points(self, page=""):
+        p=Space(page)
         p.render_points(self.flatten().tolist())
+
+    def render_as_connected_vectors(self, page=""):
+        start_points=Vector3().append(self[0:-1])
+        p=Space(page)
+        p.render_arrows(start_points.tolist(),self.tolist())
+
+    def render_as_origin_vectors(self, page=""):
+        start_points=Vector3.Zeros(len(self))
+        p=Space(page)
+        p.render_arrows(start_points.tolist(),self.tolist())
 

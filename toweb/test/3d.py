@@ -1,5 +1,8 @@
-import toweb
-p=toweb.Page("3d")
-p.render_point(1,2,3)
-p.render_arrow(1,2,3,4,5,6)
-p.wait()
+from py3d import Vector3
+from toweb import Space
+
+points=Vector3.Rand(200)
+p=Space("points")
+p.render_points(points.tolist())
+p1=Space("vectors")
+p1.render_arrows(Vector3.Zeros(200).tolist(),points.tolist())
