@@ -18,7 +18,7 @@ Besides, you can also have a look at the minimum version -- py3d. It's a indepen
 # Install
 **Ubuntu (Recommended):**
 ```shell
-pip install git+https://github.com/tumiz/scenario.git
+pip install git+git://github.com/Tumiz/scenario.git
 ```
 **Windows**:
 ```
@@ -27,19 +27,6 @@ cd scenario
 pip install -e .
 ```
 install pytorch following instructions from [pytorch website](https://pytorch.org/get-started/locally/) 
-
-如果github网速受限，请使用以下方法：\
-**ubuntu:**
-```shell
-pip install git+git://github.com/Tumiz/scenario.git
-```
-**windows**:
-```
-git clone https://gitee.com/tumiz/scenario.git
-cd scenario
-pip install -e .
-```
-按照[pytorch官网](https://pytorch.org/get-started/locally/) 提示安装pytorch
 
 **Example 1**: a dynamic spiral line
 ```python
