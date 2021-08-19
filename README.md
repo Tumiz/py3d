@@ -31,7 +31,7 @@ install pytorch following instructions from [pytorch website](https://pytorch.or
 如果github网速受限，请使用以下方法：\
 **ubuntu:**
 ```shell
-pip install git+https://gitee.com/tumiz/scenario.git
+pip install git+git://github.com/Tumiz/scenario.git
 ```
 **windows**:
 ```
