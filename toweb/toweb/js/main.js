@@ -11,18 +11,9 @@ const create_chart = () => {
     let config = {
         type: 'scatter',
         data: {
-            datasets: [{
-                data: [],
-                borderWidth: 1,
-                showLine: true,
-                borderColor: "brown",
-                pointBackgroundColor: "brown",
-            }],
+            datasets: [],
         },
         options: {
-            plugins: {
-                legend: { display: false }
-            },
             elements: {
                 line: {
                     tension: 0 // 禁用贝塞尔曲线
@@ -34,7 +25,7 @@ const create_chart = () => {
             hover: {
                 animationDuration: 0 // 悬停项目时动画的持续时间
             },
-            responsiveAnimationDuration: 0 // 调整大小后的动画持续时间
+            responsiveAnimationDuration: 0, // 调整大小后的动画持续时间
         }
     }
     return new CHART.Chart(ctx, config)
@@ -84,8 +75,8 @@ const init_3d_canvas = (canvas) => {
         requestAnimationFrame(animate)
         renderer.render(scene, control.object);
     }
-    canvas.onresize=(ev)=>{
-        perspCamera.aspect = canvas.width/canvas.height
+    canvas.onresize = (ev) => {
+        perspCamera.aspect = canvas.width / canvas.height
         perspCamera.updateProjectionMatrix()
         renderer.setSize(canvas.width, canvas.height)
         console.log("canvas resize")
@@ -95,7 +86,7 @@ const init_3d_canvas = (canvas) => {
 }
 ws.onmessage = (message) => {
     try {
-        const cmds = JSON.parse(message.data.replace(/"/g,'\"'))
+        const cmds = JSON.parse(message.data.replace(/"/g, '\"'))
         for (let cmd of cmds) {
             methods[cmd.method](cmd.time, cmd.data)
         }
@@ -112,11 +103,28 @@ methods.clear = (time, data) => {
 methods.plot = (time, data) => {
     if (!this.chart) {
         this.chart = create_chart()
+        this.chart.indexes = {}
+    }
+    let index = -1
+    if (data.key in this.chart.indexes) {
+        index = this.chart.indexes[data.key]
+    } else {
+        index = Object.keys(this.chart.indexes).length
+        this.chart.indexes[data.key] = index
+        let rand_color = '#' + (Math.random() * 0xffffff << 0).toString(16)
+        this.chart.data.datasets.push({
+            label: data.key,
+            data: [],
+            borderWidth: 1,
+            showLine: true,
+            borderColor: rand_color,
+            pointBackgroundColor: rand_color,
+        })
     }
     if (data.y != null) {
-        this.chart.data.datasets[0].data.push({ x: data.x, y: data.y })
+        this.chart.data.datasets[index].data.push({ x: data.x, y: data.y })
     } else {
-        this.chart.data.datasets[0].data.push({ x: time, y: data.x })
+        this.chart.data.datasets[index].data.push({ x: time, y: data.x })
     }
     this.chart.update()
 }
@@ -139,14 +147,14 @@ methods.points = (time, data) => {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
     const mesh = new GEO.Points
-    mesh.set(data,"white")
+    mesh.set(data, "white")
     this.chart.add(mesh)
 }
 methods.arrows = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
-    for(let i=0,l=data.start_points.length;i<l;i++){
+    for (let i = 0, l = data.start_points.length; i < l; i++) {
         const sp = data.start_points[i]
         const ep = data.end_points[i]
         const mesh = new GEO.Arrow

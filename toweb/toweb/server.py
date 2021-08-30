@@ -143,8 +143,8 @@ class Space(Page):
         self.send_t("arrows", {"start_points":start_points, "end_points":end_points})
 
 class Chart(Page):
-    def plot(self, x, y=None):
-        self.send_t("plot", {"x": x, "y": y})
+    def plot(self, key, x, y=None):
+        self.send_t("plot", {"key":key, "x": x, "y": y})
 
 class Log(Page):
     def info(self, *msg):

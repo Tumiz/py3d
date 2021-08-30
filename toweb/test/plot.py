@@ -2,13 +2,13 @@ import toweb
 import math
 
 s = toweb.Chart("test")
-s.plot(2, 3.3)
-s.plot(4.7, 2.2)
+s.plot("a",2, 3.3)
+s.plot("b",4.7, 2.2)
 log=toweb.Log()
 
 for i in range(100):
     v = math.sin(i/10)
-    s.plot(i, v)
+    s.plot("c",i, v)
     if v < 0.5:
         log.info("OK", i, v)
     elif v >= 0.5 and v <= 0.8:
