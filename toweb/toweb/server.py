@@ -50,7 +50,8 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         # print("ws open",v,self.request,self.server.__dict__)
 
     def on_close(self):
-        self.server.clients.remove(self)
+        if self.server:
+            self.server.clients.remove(self)
 
 
 def send_callback(handler, msg):
@@ -81,7 +82,7 @@ class Page:
             Page.server.setDaemon(True)
             Page.server.start()
         if name in cls.connections:
-            instance = cls.connections[name]["server"]
+            instance = cls.connections[name]
             display(instance.iframe)
             return instance
         else:

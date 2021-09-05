@@ -88,9 +88,9 @@ class Vector3(numpy.ndarray):
         else:
             return self
 
-    def dot(self, v: numpy.ndarray) -> numpy.ndarray:
-        if self.ndim > 1 or v.ndim > 1:
-            return numpy.sum(self*v, axis=1, keepdims=True)
+    def dot(self,v) -> numpy.ndarray:
+        if type(v) is Vector3:
+            return (self*v).sum(axis=1)
         else:
             return numpy.dot(self,v)
 
@@ -133,6 +133,8 @@ class Vector3(numpy.ndarray):
         return v0.cross(v1).norm()/v0.norm()
 
     def distance_to_plane(self, n: numpy.ndarray, p: numpy.ndarray) -> float:
+        # n: normal vector of the plane
+        # p: a point on the plane
         v = self - p
         return v.scalar_projection(n)
 
@@ -182,3 +184,142 @@ class Vector3(numpy.ndarray):
         p=Space(page)
         p.render_arrows(start_points.tolist(),self.tolist())
 
+class Rotation3(numpy.ndarray):
+    def __new__(cls, matrix=numpy.eye(3)):
+        return numpy.ndarray.__new__(cls, (3, 3), buffer=numpy.array(matrix, dtype=float))
+
+    # rotate around body frame's axis
+    @classmethod
+    def EularIntrinsic(cls, x=0, y=0, z=0):
+        return cls.Rz(x).T.dot(cls.Ry(y).T).dot(cls.Rx(z).T)
+
+    # rotate around parent frame's axis
+    @classmethod
+    def EularExtrinsic(cls, x=0, y=0, z=0):
+        return cls.Rx(z).dot(cls.Ry(y)).dot(cls.Rz(x))
+
+    @classmethod
+    def Quaternion(cls, x, y, z, w):
+        return cls([
+            [2*(pow(x, 2)+pow(w, 2))-1, 2*(x*y-w*z), 2*(x*z+w*y)],
+            [2*(x*y+w*z), 2*(pow(w, 2)+pow(y, 2))-1, 2*(y*z-w*x)],
+            [2*(x*z-w*y), 2*(y*z+w*x), 2*(pow(w, 2)+pow(z, 2))-1]
+        ])
+
+    @classmethod
+    def Axis_angle(cls, axis, angle):
+        axis_n = axis.norm()
+        if axis_n:
+            axis = axis/axis_n
+            w = numpy.cos(angle/2)
+            x, y, z = numpy.sin(angle/2)*axis
+            return cls.Quaternion(x, y, z, w)
+        else:
+            return cls()
+
+    @classmethod
+    def Direction_change(cls, before, after):
+        axis = before.cross(after)
+        angle = numpy.acos(before.dot(after)/before.norm()/after.norm())
+        return cls.Axis_angle(axis, angle)
+
+    @classmethod
+    def Rx(cls, a):
+        return cls([
+            [1, 0, 0],
+            [0, numpy.cos(a), numpy.sin(a)],
+            [0, -numpy.sin(a), numpy.cos(a)]
+        ])
+
+    @classmethod
+    def Ry(cls, a):
+        return cls([
+            [numpy.cos(a), 0, -numpy.sin(a)],
+            [0, 1, 0],
+            [numpy.sin(a), 0, numpy.cos(a)]
+        ])
+
+    @classmethod
+    def Rz(cls, a):
+        return cls([
+            [numpy.cos(a), numpy.sin(a), 0],
+            [-numpy.sin(a), numpy.cos(a), 0],
+            [0, 0, 1]
+        ])
+
+    def to_extrinsic_eular(self):
+        x = numpy.arctan2(self[1, 2], self[2, 2])
+        y = numpy.arctan2(-self[0, 2], numpy.sqrt(self[1, 2]**2+self[2, 2]**2))
+        z = numpy.arctan2(self[0, 1], self[0, 0])
+        return [x, y, z]
+
+    def to_instrinsic_eular(self):
+        x = numpy.arctan2(-self[1, 2], self[2, 2])
+        y = numpy.arctan2(self[0, 2], numpy.sqrt(self[1, 2]**2+self[2, 2]**2))
+        z = numpy.arctan2(-self[0, 1], self[0, 0])
+        return [x, y, z]
+
+    def to_quaternion(self):
+        w = 0.5*numpy.sqrt(self[0, 0]+self[1, 1]+self[2, 2]+1)
+        x = 0.5*numpy.sign(self[2, 1]-self[1, 2]) * \
+            numpy.sqrt(max(0, self[0, 0]-self[1, 1]-self[2, 2]+1))
+        y = 0.5*sign(self[0, 2]-self[2, 0]) * \
+            numpy.sqrt(max(0, self[1, 1]-self[2, 2]-self[0, 0]+1))
+        z = 0.5*sign(self[1, 0]-self[0, 1]) * \
+            numpy.sqrt(max(0, self[2, 2]-self[0, 0]-self[1, 1]+1))
+        return [x, y, z, w]
+
+    def to_axis_angle(self):
+        angle = acos((self[0, 0]+self[1, 1]+self[2, 2]-1)/2)
+        axis = Vector3(
+            self[2, 1]-self[1, 2],
+            self[0, 2]-self[2, 0],
+            self[1, 0]-self[0, 1]
+        ).normalized()
+        if axis is None:
+            raise VelueError("axis is a zero vector")
+        else:
+            return axis, angle
+
+    def rotate_x(self, angle):
+        self.real = Rotation3.Rx(angle).dot(self)
+        return self
+
+    def rotate_y(self, angle):
+        self.real = Rotation3.Ry(angle).dot(self)
+        return self
+
+    def rotate_z(self, angle):
+        self.real = Rotation3.Rz(angle).dot(self)
+        return self
+
+    def rotate_axis(self, axis, angle):
+        self.real = Rotation3.Axis_angle(axis, angle).dot(self)
+        return self
+
+    def __mul__(self, v):
+        t = type(v)
+        if t is float or t is int:
+            axis, angle = self.to_axis_angle()
+            angle *= v
+            return Rotation3.Axis_angle(axis, angle)
+        elif t is Rotation3:
+            return self.dot(v)
+        elif t is Vector3:
+            return Vector3(self.dot(v))
+        else:
+            return None
+
+    def __imul__(self, v):
+        self = self*v
+        return self
+
+    def __eq__(self, v):
+        return self.data == v.data
+
+    def __ne__(self, v):
+        return self.data != v.data
+
+    @property
+    def I(self):
+        return numpy.linalg.inv(self)
