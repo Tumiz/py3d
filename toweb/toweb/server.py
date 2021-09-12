@@ -7,6 +7,7 @@ import socket
 import uuid
 import asyncio
 import threading
+import random
 import inspect
 import tornado.web
 import tornado.websocket
@@ -47,7 +48,7 @@ class WSHandler(tornado.websocket.WebSocketHandler):
             self.server = Page.connections[v]
             self.server.clients.append(self)
             self.write_message(json.dumps(self.server.cache))
-        # print("ws open",v,self.request,self.server.__dict__)
+        # print("ws open",v,self.request,self.server.clients)
 
     def on_close(self):
         if self.server:
@@ -83,7 +84,6 @@ class Page:
             Page.server.start()
         if name in cls.connections:
             instance = cls.connections[name]
-            display(instance.iframe)
             return instance
         else:
             instance = super().__new__(cls)
@@ -91,13 +91,14 @@ class Page:
             instance.clients = []
             instance.cache = []
             instance.url = "http://localhost:"+str(cls.port)+"/view/"+name
-            print("click", instance.url, "to view in browser")
             instance.iframe = IFrame(src=instance.url, width="100%", height="600px")
-            display(instance.iframe)
+            print("click", instance.url, "to view in browser")
             cls.connections[name] = instance
             return instance
 
     def send(self, msg):
+        if len(self.clients) == 0:
+            display(self.iframe)
         while len(self.clients) == 0:
             time.sleep(0.1)
         for client in self.clients:
@@ -137,8 +138,8 @@ class Page:
         cls.__loop.start()
 
 class Space(Page):
-    def render_points(self, points):
-        self.send_t("points", points)
+    def render_points(self, points, color=random.randint(0x50,0x100)*0x10000+random.randint(0x50,0x100)*0x100+random.randint(0x50,0x100)):
+        self.send_t("points", {"vertices":points, "color":color})
 
     def render_arrows(self, start_points, end_points):
         self.send_t("arrows", {"start_points":start_points, "end_points":end_points})

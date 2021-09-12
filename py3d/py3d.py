@@ -1,45 +1,67 @@
 from typing import Optional, Tuple
 import numpy
+from numpy.core.records import array
+from numpy.lib.function_base import iterable
 from toweb import Space
-
+from collections import Iterable
 class Vector3(numpy.ndarray):
     def __new__(cls, x=0, y=0, z=0, n=1):
-        if isinstance(x, list) or isinstance(x, tuple) or isinstance(x, numpy.ndarray):
-            data = numpy.array(x, dtype=float)
-            if data.size % 3:
-                raise("input data size must be multiple of 3")
-            else:
-                n = data.size//3
-                if n == 0:
-                    raise("input data is empty")
-                elif n == 1:
-                    data = data.reshape(3)
-                else:
-                    data = data.reshape(n, 3)
-        elif n > 1:
-            data = numpy.tile(numpy.array([x, y, z], dtype=float), (n, 1))
+        if iterable(x):
+            return cls.from_array(x)
+        else:       
+            return numpy.tile(numpy.array([x,y,z],dtype=numpy.float),(n,1)).view(cls).copy()
+
+    @classmethod
+    def from_array(cls, v):
+        array=numpy.array(v)
+        assert array.ndim == 1 or array.ndim == 2
+        if array.ndim == 1:
+            assert array.size % 3 == 0
+            tmp=array.reshape(array.size//3, 3)
+            return numpy.array(tmp,dtype=numpy.float).view(cls).copy()
         else:
-            data = numpy.array([x, y, z], dtype=float)
-        return data.view(cls).copy()
+            assert array.shape[1] == 3
+            return numpy.array(array,dtype=numpy.float).view(cls).copy()
 
     @classmethod
     def Rand(cls, n = 1):
-        return Vector3(numpy.random.rand(3, n))
+        return numpy.random.rand(n, 3).view(cls).copy()
 
     # construct a vector3 list of length n and filled with zero
     @classmethod
     def Zeros(cls, n: int):
-        return Vector3(numpy.zeros((n, 3)))
+        return numpy.zeros((n, 3)).view(cls).copy()
 
     @classmethod
     def Ones(cls, n: int):
-        return Vector3(numpy.ones((n, 3)))
+        return numpy.ones((n, 3)).view(cls).copy()
+
+    @property
+    def x(self):
+        return self[:,0].view(numpy.ndarray)
+
+    @x.setter
+    def x(self,v):
+        self[:,0]=v
+
+    @property
+    def y(self):
+        return self[:,1].view(numpy.ndarray)
+
+    @y.setter
+    def y(self,v):
+        self[:,1]=v
+
+    @property
+    def z(self):
+        return self[:,2].view(numpy.ndarray)
+
+    @z.setter
+    def z(self,v):
+        self[:,2]=v
 
     def norm(self) -> numpy.ndarray:  # norm
-        if self.ndim > 1:
-            return numpy.linalg.norm(self, axis=1, keepdims=True)
-        else:
-            return numpy.linalg.norm(self)
+        return numpy.linalg.norm(self, axis=1, keepdims=True)
 
     # unit vector, direction vector
     def normalized(self) -> Optional[numpy.ndarray]:
@@ -90,7 +112,9 @@ class Vector3(numpy.ndarray):
 
     def dot(self,v) -> numpy.ndarray:
         if type(v) is Vector3:
-            return (self*v).sum(axis=1)
+            return (self*v).sum(axis=1).view(numpy.ndarray)
+        elif type(v) is Transform3:
+            return (self*v.scale).dot(v.rotation)+v.translation
         else:
             return numpy.dot(self,v)
 
@@ -263,14 +287,14 @@ class Rotation3(numpy.ndarray):
         w = 0.5*numpy.sqrt(self[0, 0]+self[1, 1]+self[2, 2]+1)
         x = 0.5*numpy.sign(self[2, 1]-self[1, 2]) * \
             numpy.sqrt(max(0, self[0, 0]-self[1, 1]-self[2, 2]+1))
-        y = 0.5*sign(self[0, 2]-self[2, 0]) * \
+        y = 0.5*numpy.sign(self[0, 2]-self[2, 0]) * \
             numpy.sqrt(max(0, self[1, 1]-self[2, 2]-self[0, 0]+1))
-        z = 0.5*sign(self[1, 0]-self[0, 1]) * \
+        z = 0.5*numpy.sign(self[1, 0]-self[0, 1]) * \
             numpy.sqrt(max(0, self[2, 2]-self[0, 0]-self[1, 1]+1))
         return [x, y, z, w]
 
     def to_axis_angle(self):
-        angle = acos((self[0, 0]+self[1, 1]+self[2, 2]-1)/2)
+        angle = numpy.acos((self[0, 0]+self[1, 1]+self[2, 2]-1)/2)
         axis = Vector3(
             self[2, 1]-self[1, 2],
             self[0, 2]-self[2, 0],
@@ -323,3 +347,9 @@ class Rotation3(numpy.ndarray):
     @property
     def I(self):
         return numpy.linalg.inv(self)
+
+class Transform3:
+    def __init__(self) -> None:
+        self.scale=Vector3()
+        self.translation=Vector3()
+        self.rotation=Rotation3()

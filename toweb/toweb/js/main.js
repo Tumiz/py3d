@@ -3,6 +3,8 @@ CHART.Chart.register(CHART.ScatterController, CHART.LinearScale, CHART.PointElem
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
+var ws = new WebSocket("ws://localhost:"+port_+"/ws/"+id_);
+ws.onopen=()=>{console.log("connected")}
 console.log("ready")
 const create_chart = () => {
     console.log("create_chart")
@@ -85,6 +87,7 @@ const init_3d_canvas = (canvas) => {
     return scene
 }
 ws.onmessage = (message) => {
+    console.log(message)
     try {
         const cmds = JSON.parse(message.data.replace(/"/g, '\"'))
         for (let cmd of cmds) {
@@ -143,11 +146,12 @@ methods.warn = (time, data) => {
     div.style.color = "orange"
 }
 methods.points = (time, data) => {
+    console.log(time,data)
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
     const mesh = new GEO.Points
-    mesh.set(data, "white")
+    mesh.set(data.vertices,data.color)
     this.chart.add(mesh)
 }
 methods.arrows = (time, data) => {
