@@ -71,114 +71,23 @@ class Line extends THREE.Line {
 	}
 }
 
-class Cylinder extends THREE.Mesh {
-	axis_ = new THREE.Vector3(0, 1, 0)
-	topCenter_ = new THREE.Vector3(0, -1, 0)
-	bottomCenter_ = new THREE.Vector3(0, 1, 0)
+export class Mesh extends THREE.Mesh {
 	constructor() {
-		var geometry = new THREE.CylinderGeometry(1, 1, 2, 32)
-		const material = new THREE.MeshLambertMaterial({ transparent: true }.lki);
-		super(geometry, material)
-		this.color = this.material.color
-	}
-	get axis() {
-		return this.axis_
-	}
-	set axis(value) {
-		this.axis_.copy(value.normalize())
-		var axis = new THREE.Vector3().crossVectors(this.up, value).normalize()
-		var angle = this.up.angleTo(value)
-		this.setRotationFromAxisAngle(axis, angle)
-	}
-	get radiusTop() {
-		return this.geometry.parameters.radiusTop
-	}
-	set radiusTop(value) {
-		this.geometry = new THREE.CylinderGeometry(value, this.geometry.parameters.radiusBottom, this.geometry.parameters.height, this.geometry.parameters.radialSegments)
-	}
-	get radiusBottom() {
-		return this.geometry.parameters.radiusBottom
-	}
-	set radiusBottom(value) {
-		this.geometry = new THREE.CylinderGeometry(this.geometry.parameters.radiusTop, value, this.geometry.parameters.height, this.geometry.parameters.radialSegments)
-	}
-	get height() {
-		return this.geometry.parameters.height
-	}
-	set height(value) {
-		this.geometry = new THREE.CylinderGeometry(this.geometry.parameters.radiusTop, this.geometry.parameters.radiusBottom, value, this.geometry.parameters.radialSegments)
-	}
-	get topCenter() {
-		return this.topCenter_
-	}
-	set topCenter(value) {
-		this.topCenter_.copy(value)
-		this.position.copy(new THREE.Vector3().subVectors(value, this.axis.multiplyScalar(this.geometry.parameters.height / 2)))
-	}
-	get bottomCenter() {
-		return this.bottomCenter
-	}
-	set bottomCenter(value) {
-		this.bottomCenter.copy(value)
-		this.position.copy(new THREE.Vector3().addVectors(value, this.axis.multiplyScalar(this.geometry.parameters.height / 2)))
-	}
-	static proc(scene, data) {
-		let cylinder = new Cylinder
-		cylinder.axis = new THREE.Vector3().fromArray(data.axis)
-		cylinder.color.set(data.color)
-		cylinder.radiusTop = data.radiusTop
-		cylinder.radiusBottom = data.radiusBottom
-		cylinder.height = data.height
-		scene.add(cylinder)
-	}
-}
-
-export class Sphere extends THREE.Mesh {
-	constructor() {
-		var geometry = new THREE.SphereGeometry(1, 32, 32);
-		const material = new THREE.MeshLambertMaterial({ transparent: true });
-		super(geometry, material)
-		this.color = this.material.color
-	}
-	get radius() {
-		return Math.max(this.scale.x, this.scale.y, this.scale.z)
-	}
-	set radius(value) {
-		this.scale.set(value, value, value)
-	}
-}
-
-class Plane extends THREE.Mesh {
-	constructor() {
-		const geometry = new THREE.PlaneBufferGeometry(5, 5);
-		const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
-		super(geometry, material)
-		this.color = this.material.color
-	}
-	get width() {
-		return this.geometry.parameters.width
-	}
-	set width(value) {
-		if (value != this.geometry.parameters.width) {
-			this.geometry = new THREE.PlaneBufferGeometry(value, this.geometry.parameters.height)
-		}
-	}
-	get height() {
-		return this.geometry.parameters.height
-	}
-	set height(value) {
-		if (value != this.geometry.parameters.height) {
-			this.geometry = new THREE.PlaneBufferGeometry(this.geometry.parameters.width, value)
-		}
-	}
-}
-
-class Box extends THREE.Mesh {
-	constructor() {
-		const geometry = new THREE.BoxGeometry();
-		const material = new THREE.MeshLambertMaterial({ transparent: true });
+		const geometry = new THREE.BufferGeometry();
+		const material = new THREE.MeshLambertMaterial({ color: 0xff0000, side: 2 });
 		super(geometry, material);
-		this.color = this.material.color
+	}
+	set(points, color = undefined) {
+		if (points.length && points[0].x) {
+			this.geometry.setFromPoints(points)
+		} else {
+			this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points.flat()), 3))
+		}
+		this.geometry.computeVertexNormals()//lambert need to know face directions
+		this.geometry.verticesNeedUpdate = true
+		if (color) {
+			this.material.color.set(color)
+		}
 	}
 }
 
@@ -209,22 +118,17 @@ export class Points extends THREE.Points {
 	}
 }
 
-export class Arrow extends THREE.Object3D {
-	constructor() {
-		super()
-		this.header = new Cylinder
-		this.body = new Line
-		this.add(this.header, this.body)
+
+export class Lines extends THREE.LineSegments{
+	constructor(){
+		const geometry = new THREE.BufferGeometry()
+		const material = new THREE.LineBasicMaterial()
+		super(geometry,material)
 	}
-	set(startPoint, endPoint, color) {
-		this.body.set([startPoint, endPoint])
-		this.header.height = this.body.length() * 0.2
-		this.header.radiusTop = 0
-		this.header.radiusBottom = this.header.height / 4
-		this.header.axis = new THREE.Vector3().subVectors(endPoint, startPoint)
-		this.header.topCenter = endPoint
-		this.header.color.set(color)
-		this.body.color.set(color)
+	set(points,color){
+		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3))
+		if(color)
+			this.material.color.set(color)
 		return this
 	}
 }

@@ -154,15 +154,19 @@ methods.points = (time, data) => {
     mesh.set(data.vertices,data.color)
     this.chart.add(mesh)
 }
-methods.arrows = (time, data) => {
+methods.mesh = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
-    for (let i = 0, l = data.start_points.length; i < l; i++) {
-        const sp = data.start_points[i]
-        const ep = data.end_points[i]
-        const mesh = new GEO.Arrow
-        mesh.set(new THREE.Vector3(sp[0], sp[1], sp[2]), new THREE.Vector3(ep[0], ep[1], ep[2]), "gray")
-        this.chart.add(mesh)
+    const mesh = new GEO.Mesh
+    mesh.set(data.vertices,data.color)
+    this.chart.add(mesh)
+}
+methods.lines = (time, data) => {
+    if (!this.chart) {
+        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
+    const mesh = new GEO.Lines
+    mesh.set(data.vertices,data.color)
+    this.chart.add(mesh)
 }

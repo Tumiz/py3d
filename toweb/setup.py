@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="toweb",
-    version="0.0.6",
+    version="0.0.7",
     description="a library help you show logs and data on web",
     long_description=long_description,
     long_description_content_type="text/markdown",

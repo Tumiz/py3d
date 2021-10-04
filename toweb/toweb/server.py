@@ -15,12 +15,13 @@ from tornado import httputil
 from typing import Any
 from IPython.display import IFrame, display
 
-def address_in_use(port, ip='127.0.0.1'):
+
+def address_in_use(port, ip="127.0.0.1"):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.connect((ip, port))
         s.shutdown(2)
-#         print('%s:%d is used' % (ip,port))
+        #         print('%s:%d is used' % (ip,port))
         return True
     except:
         # print('%s:%d is unused' % (ip,port))
@@ -39,9 +40,14 @@ class StaticHandler(tornado.web.StaticFileHandler):
 
 
 class WSHandler(tornado.websocket.WebSocketHandler):
-    def __init__(self, application: tornado.web.Application, request: httputil.HTTPServerRequest, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        application: tornado.web.Application,
+        request: httputil.HTTPServerRequest,
+        **kwargs: Any
+    ) -> None:
         super().__init__(application, request, **kwargs)
-        self.server=None
+        self.server = None
 
     def open(self, v):
         if v in Page.connections:
@@ -62,9 +68,9 @@ def send_callback(handler, msg):
 def log(*msg):
     cur = inspect.currentframe()
     info = cur.f_back.f_back
-    ret = info.f_code.co_filename+":"+str(info.f_lineno)+"]"
+    ret = info.f_code.co_filename + ":" + str(info.f_lineno) + "]"
     for m in msg:
-        ret += str(m)+" "
+        ret += str(m) + " "
     return ret
 
 
@@ -90,7 +96,7 @@ class Page:
             instance.name = name
             instance.clients = []
             instance.cache = []
-            instance.url = "http://localhost:"+str(cls.port)+"/view/"+name
+            instance.url = "http://localhost:" + str(cls.port) + "/view/" + name
             instance.iframe = IFrame(src=instance.url, width="100%", height="600px")
             print("click", instance.url, "to view in browser")
             cls.connections[name] = instance
@@ -122,31 +128,48 @@ class Page:
         asyncio.set_event_loop(loop)
         static_path = os.path.join(os.path.dirname(__file__), "static")
         template_path = os.path.join(os.path.dirname(__file__), ".")
-        app = tornado.web.Application([
-            (r"/view/(.*)", IndexHandler),
-            (r"/ws/(.*)", WSHandler),
-            (r"/(.*)", StaticHandler)
-        ],
+        app = tornado.web.Application(
+            [
+                (r"/view/(.*)", IndexHandler),
+                (r"/ws/(.*)", WSHandler),
+                (r"/(.*)", StaticHandler),
+            ],
             static_path=static_path,
             template_path=template_path,
             debug=True,
-            autoreload=True
+            autoreload=True,
         )
         http_server = tornado.httpserver.HTTPServer(app)
         http_server.listen(cls.port)
         cls.__loop = tornado.ioloop.IOLoop.current()
         cls.__loop.start()
 
-class Space(Page):
-    def render_points(self, points, color=random.randint(0x50,0x100)*0x10000+random.randint(0x50,0x100)*0x100+random.randint(0x50,0x100)):
-        self.send_t("points", {"vertices":points, "color":color})
 
-    def render_arrows(self, start_points, end_points):
-        self.send_t("arrows", {"start_points":start_points, "end_points":end_points})
+class Color:
+    @staticmethod
+    def Rand():
+        return (
+            random.randint(0x50, 0x100) * 0x10000
+            + random.randint(0x50, 0x100) * 0x100
+            + random.randint(0x50, 0x100)
+        )
+
+
+class Space(Page):
+    def render_points(self, points, color):
+        self.send_t("points", {"vertices": points, "color": color})
+
+    def render_mesh(self, points, color):
+        self.send_t("mesh", {"vertices": points, "color": color})
+
+    def render_lines(self, points, color):
+        self.send_t("lines", {"vertices": points, "color": color})
+
 
 class Chart(Page):
     def plot(self, key, x, y=None):
-        self.send_t("plot", {"key":key, "x": x, "y": y})
+        self.send_t("plot", {"key": key, "x": x, "y": y})
+
 
 class Log(Page):
     def info(self, *msg):
