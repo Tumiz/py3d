@@ -6,6 +6,7 @@ const { OrbitControls } = require("./orbit")
 var ws = new WebSocket("ws://localhost:"+port_+"/ws/"+id_);
 ws.onopen=()=>{console.log("connected")}
 console.log("ready")
+
 const create_chart = () => {
     console.log("create_chart")
     const canvas = create_canvas("chart")
@@ -94,7 +95,7 @@ ws.onmessage = (message) => {
             methods[cmd.method](cmd.time, cmd.data)
         }
     } catch (e) {
-        console.log(message.data)
+        console.log(e,message.data)
     }
 }
 const methods = {}
@@ -150,17 +151,25 @@ methods.points = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
-    const mesh = new GEO.Points
+    let mesh = this.chart.getObjectByName(data.index)
+    if (!mesh){
+        mesh = new GEO.Points
+        mesh.name = data.index
+        this.chart.add(mesh)
+    }
     mesh.set(data.vertices,data.color)
-    this.chart.add(mesh)
 }
 methods.mesh = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
-    const mesh = new GEO.Mesh
+    let mesh = this.chart.getObjectByName(data.index)
+    if (!mesh){
+        mesh = new GEO.Mesh
+        mesh.name = data.index
+        this.chart.add(mesh)
+    }
     mesh.set(data.vertices,data.color)
-    this.chart.add(mesh)
 }
 methods.lines = (time, data) => {
     if (!this.chart) {
@@ -169,4 +178,17 @@ methods.lines = (time, data) => {
     const mesh = new GEO.Lines
     mesh.set(data.vertices,data.color)
     this.chart.add(mesh)
+}
+methods.text = (time, data) => {
+    if (!this.chart) {
+        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
+    }
+    const div=document.createElement("div")
+    div.innerHTML=data.text
+    div.style.left=data.x+"px"
+    div.style.top=data.y+"px"
+    div.style.color=data.color
+    div.style.position="absolute"
+    document.body.appendChild(div)
+    console.log(data.x,data.y,data.text,data.color)
 }

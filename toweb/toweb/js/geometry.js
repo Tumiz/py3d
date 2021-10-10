@@ -1,3 +1,5 @@
+import { TriangleFanDrawMode } from "three";
+
 const THREE = require("three")
 class Grid extends THREE.LineSegments {
 	static attributes(step, divisions, centerLineColor, commonLineColor) {
@@ -45,49 +47,17 @@ class Grid extends THREE.LineSegments {
 	}
 }
 
-class Line extends THREE.Line {
-	constructor() {
-		let geometry = new THREE.BufferGeometry()
-		const material = new THREE.LineBasicMaterial()
-		super(geometry, material)
-		this.color = this.material.color
-		this.lineWidth = this.material.linewidth
-		this.points = []
-	}
-	set(points) {
-		this.points = points
-		this.geometry.setFromPoints(points)
-	}
-	addPoint(point) {
-		this.points.push(point)
-		this.geometry.setFromPoints(this.points)
-	}
-	length() {
-		let ret = 0
-		for (let i = 0, l = this.points.length; i + 1 < l; i++) {
-			ret += new THREE.Vector3().subVectors(this.points[i], this.points[i + 1]).length()
-		}
-		return ret
-	}
-}
-
 export class Mesh extends THREE.Mesh {
 	constructor() {
 		const geometry = new THREE.BufferGeometry();
-		const material = new THREE.MeshLambertMaterial({ color: 0xff0000, side: 2 });
+		const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: 2 });
 		super(geometry, material);
 	}
 	set(points, color = undefined) {
-		if (points.length && points[0].x) {
-			this.geometry.setFromPoints(points)
-		} else {
-			this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points.flat()), 3))
-		}
+		this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points), 3))
 		this.geometry.computeVertexNormals()//lambert need to know face directions
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3))
 		this.geometry.verticesNeedUpdate = true
-		if (color) {
-			this.material.color.set(color)
-		}
 	}
 }
 
@@ -95,22 +65,15 @@ export class Points extends THREE.Points {
 	constructor() {
 		const geometry = new THREE.BufferGeometry()
 		const material = new THREE.PointsMaterial({
-			sizeAttenuation: true,
+			vertexColors: true,
 			size: 0.1
 		})
 		super(geometry, material)
-		this.color = this.material.color
 	}
 	set(points, color = undefined, size = undefined) {
-		if (points.length && points[0].x) {
-			this.geometry.setFromPoints(points)
-		} else {
-			this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3))
-		}
+		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
 		this.geometry.computeBoundingSphere()
-		if (color) {
-			this.color.set(color)
-		}
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3))
 		if (size) {
 			this.material.size = size
 		}
@@ -119,16 +82,20 @@ export class Points extends THREE.Points {
 }
 
 
-export class Lines extends THREE.LineSegments{
-	constructor(){
+export class Lines extends THREE.LineSegments {
+	constructor() {
 		const geometry = new THREE.BufferGeometry()
 		const material = new THREE.LineBasicMaterial()
-		super(geometry,material)
+		super(geometry, material)
 	}
-	set(points,color){
+	set(points, color) {
 		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3))
-		if(color)
-			this.material.color.set(color)
+		if (color) {
+			if (color.length)
+				this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color.flat(), 1))
+			else
+				this.material.color.set(color)
+		}
 		return this
 	}
 }

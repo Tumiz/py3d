@@ -1,4 +1,3 @@
-from toweb import Color
 import py3d
 from typing import Optional, Tuple
 import numpy
@@ -25,6 +24,26 @@ class Vector3(numpy.ndarray):
         ret[..., 2] = z.flatten() if isinstance(x, numpy.ndarray) else z
         return ret.view(cls)
 
+    def __getitem__(self, v):
+        if isinstance(v, int) and self.ndim == 2:
+            return super().__getitem__((v, numpy.newaxis))
+        return super().__getitem__(v)
+
+    def __eq__(self, v: numpy.ndarray):
+        if isinstance(v, numpy.ndarray):
+            if self.ndim == v.ndim and self.size == v.size:
+                if self.ndim > 1:
+                    return numpy.array(numpy.equal(self, v).all(axis=1, keepdims=True))
+                else:
+                    return numpy.equal(self, v).all().item()
+            else:
+                return False
+        else:
+            return numpy.array(numpy.equal(self, v))
+
+    def __ne__(self, v: numpy.ndarray) -> bool:
+        return not self.__eq__(v)
+
     @classmethod
     def from_array(cls, v):
         array = numpy.array(v)
@@ -39,7 +58,7 @@ class Vector3(numpy.ndarray):
 
     @classmethod
     def Rand(cls, n=1):
-        return numpy.random.rand(n, 3).view(cls).copy()
+        return numpy.random.rand(n, 3).view(cls)
 
     # construct a vector3 list of length n and filled with zero
     @classmethod
@@ -92,7 +111,7 @@ class Vector3(numpy.ndarray):
 
     def append(self, v) -> numpy.ndarray:
         # wouldnt change self
-        return numpy.concatenate((self, v), axis=0).view(Vector3)
+        return numpy.vstack((self, v)).view(Vector3)
 
     def insert(self, pos, v) -> numpy.ndarray:
         # wouldnt change self
@@ -101,6 +120,9 @@ class Vector3(numpy.ndarray):
     def remove(self, pos) -> numpy.ndarray:
         # wouldnt change self
         return numpy.delete(self, pos, axis=0)
+
+    def expand_dims(self, axis=1):
+        return numpy.expand_dims(self, axis)
 
     def diff(self, n=1) -> numpy.ndarray:
         return numpy.diff(self, n, axis=0)
@@ -111,7 +133,7 @@ class Vector3(numpy.ndarray):
     def mq(self, q) -> numpy.ndarray:
         # multiply quaternion
         p = Quaternion(0, self)
-        return (q.mq(p).mq(q.I)).xyz
+        return q.mq(p, byrow=False).mq(q.I).xyz
 
     def mt(self, v) -> numpy.ndarray:
         # multiply transform
@@ -119,7 +141,8 @@ class Vector3(numpy.ndarray):
 
     def dot(self, v) -> numpy.ndarray:
         if type(v) is Vector3:
-            return (self * v).sum(axis=1, keepdims=True).view(numpy.ndarray)
+            product = self * v
+            return product.sum(axis=product.ndim - 1, keepdims=True).view(numpy.ndarray)
         else:
             return numpy.dot(self, v)
 
@@ -197,7 +220,9 @@ class Vector3(numpy.ndarray):
         return p0 + (self - p0).vector_projection(p1 - p0)
 
     def projection_point_on_plane(self, plane) -> numpy.ndarray:
-        return self + (plane.point - self).vector_projection(plane.normal)
+        return self + (plane.point.expand_dims() - self).vector_projection(
+            plane.normal.expand_dims()
+        )
 
     def area(self) -> float:
         if self.ndim > 1 and self.shape[0] == 3:
@@ -207,24 +232,15 @@ class Vector3(numpy.ndarray):
         else:
             raise "size should be (3,3)"
 
-    def __eq__(self, v: numpy.ndarray):
-        if isinstance(v, numpy.ndarray):
-            if self.ndim == v.ndim and self.size == v.size:
-                if self.ndim > 1:
-                    return numpy.array(numpy.equal(self, v).all(axis=1, keepdims=True))
-                else:
-                    return numpy.equal(self, v).all().item()
-            else:
-                return False
-        else:
-            return numpy.array(numpy.equal(self, v))
-
-    def __ne__(self, v: numpy.ndarray) -> bool:
-        return not self.__eq__(v)
-
     def render_as_points(self, page=None, color=None):
         p = page if page else Space()
-        p.render_points(self.flatten().tolist(), color if color else Color.Rand())
+        n = 1 if self.ndim == 2 else self.shape[0]
+        m = self.shape[-2]
+        p.render_points(
+            id(self),
+            self.flatten().tolist(),
+            color if color else Color.Rand(n, m).flatten().tolist(),
+        )
         return p
 
     def render_as_vector(self, origin, page=None, color=None):
@@ -233,7 +249,12 @@ class Vector3(numpy.ndarray):
 
     def render_as_mesh(self, page=None, color=None):
         p = page if page else Space()
-        p.render_mesh(self.flatten().tolist(), color if color else Color.Rand())
+        n = 1 if self.ndim == 2 else self.shape[0]
+        m = self.shape[-2]
+        p.render_mesh(
+            self.flatten().tolist(),
+            color if color else Color.Rand(n, m).flatten().tolist(),
+        )
         return p
 
 
@@ -254,6 +275,11 @@ class Quaternion(numpy.ndarray):
             ret[..., 3] = z
         return ret.view(cls)
 
+    def __getitem__(self, v):
+        if isinstance(v, int):
+            return super().__getitem__((v, numpy.newaxis))
+        return super().__getitem__(v)
+
     @classmethod
     def from_angle_axis(cls, angle, axis: Vector3, n=None):
         if isinstance(angle, Iterable):
@@ -268,6 +294,49 @@ class Quaternion(numpy.ndarray):
         ret[..., 1:4] = axis.unit() * numpy.sin(half_angle)
         return ret.view(cls)
 
+    @classmethod
+    def from_direction_change(cls, before, after):
+        axis = before.cross(after)
+        angle = before.angle_to_vector(after)
+        return cls.from_angle_axis(angle, axis)
+
+    @property
+    def I(self):
+        # inverse
+        ret = self.copy()
+        ret[..., 1:4] *= -1
+        return ret
+
+    @property
+    def w(self):
+        return self[..., 0].view(numpy.ndarray)
+
+    @property
+    def xyz(self):
+        return self[..., 1:4].view(Vector3)
+
+    def split(self, n=1):
+        return self.reshape(self.size // 4 // n, n, 4)
+    
+    def wxyz(self, keepdims=False):
+        q=self.view(numpy.ndarray)
+        if keepdims:
+            return q[...,0,numpy.newaxis],q[...,1,numpy.newaxis],q[...,2,numpy.newaxis],q[...,3,numpy.newaxis]
+        else:
+            return q[...,0],q[...,1],q[...,2],q[...,3]
+
+    def mq(self, q, byrow=True):
+        # byrow: multiply by row
+        w, x, y, z = self.wxyz(not byrow)
+        w_, x_, y_, z_ = q.wxyz(self.ndim>2)
+        shape=self.shape if byrow else (self.shape[0],q.shape[0],4)
+        ret = numpy.empty(shape)
+        ret[..., 0] = w * w_ - x * x_ - y * y_ - z * z_
+        ret[..., 1] = w * x_ + x * w_ + y * z_ - z * y_
+        ret[..., 2] = w * y_ + y * w_ - x * z_ + z * x_
+        ret[..., 3] = w * z_ + z * w_ + x * y_ - y * x_
+        return ret.view(self.__class__)
+    
     def to_angle_axis(self):
         return (
             numpy.arccos(self[..., 0]) * 2,
@@ -296,68 +365,15 @@ class Quaternion(numpy.ndarray):
             ]
         ).T.view(Rotation3)
 
-    @classmethod
-    def from_direction_change(cls, before, after):
-        axis = before.cross(after)
-        angle = before.angle_to_vector(after)
-        return cls.from_angle_axis(angle, axis)
-
-    @property
-    def I(self):
-        # inverse
-        ret = self.copy()
-        ret[..., 1:4] *= -1
-        return ret
-
-    @property
-    def w(self):
-        return self[..., 0].view(Vector1)
-
-    @property
-    def xyz(self):
-        return self[..., 1:4].view(Vector3)
-
-    def mq(self, q):
-        w, x, y, z = self.T
-        w_, x_, y_, z_ = q.T
-        if self.shape[0] != q.shape[0]:
-            ret = numpy.empty((self.shape[0], q.shape[0], 4))
-            ret[..., 0] = (
-                w.reshape(-1, 1) * w_
-                - x.reshape(-1, 1) * x_
-                - y.reshape(-1, 1) * y_
-                - z.reshape(-1, 1) * z_
-            )
-            ret[..., 1] = (
-                w.reshape(-1, 1) * x_
-                + x.reshape(-1, 1) * w_
-                + y.reshape(-1, 1) * z_
-                - z.reshape(-1, 1) * y_
-            )
-            ret[..., 2] = (
-                w.reshape(-1, 1) * y_
-                + y.reshape(-1, 1) * w_
-                - x.reshape(-1, 1) * z_
-                + z.reshape(-1, 1) * x_
-            )
-            ret[..., 3] = (
-                w.reshape(-1, 1) * z_
-                + z.reshape(-1, 1) * w_
-                + x.reshape(-1, 1) * y_
-                - y.reshape(-1, 1) * x_
-            )
-        else:
-            ret = numpy.empty(self.shape)
-            ret[..., 0] = (w * w_ - x * x_ - y * y_ - z * z_).T
-            ret[..., 1] = (w * x_ + x * w_ + y * z_ - z * y_).T
-            ret[..., 2] = (w * y_ + y * w_ - x * z_ + z * x_).T
-            ret[..., 3] = (w * z_ + z * w_ + x * y_ - y * x_).T
-        return ret.view(self.__class__)
-
 
 class Rotation3(numpy.ndarray):
-    def __new__(cls, matrix=numpy.eye(3), n=1):
-        return numpy.full((n, 3, 3) if n > 1 else (3, 3), matrix).view(cls)
+    def __new__(cls, n=1, matrix=numpy.eye(3)):
+        return numpy.full((n, 3, 3), matrix).view(cls)
+
+    def __getitem__(self, v):
+        if isinstance(v, int):
+            return super().__getitem__((v, numpy.newaxis))
+        return super().__getitem__(v)
 
     # rotate around body frame's axis
     @classmethod
@@ -433,34 +449,79 @@ class Rotation3(numpy.ndarray):
 
 
 class Transform3(numpy.ndarray):
-    def __new__(
-        cls, scale=Vector3(1, 1, 1), translation=Vector3(), rotation=Rotation3()
-    ) -> None:
+    def __new__(cls, n=1):
         return (
-            scale.as_scaling_matrix()
-            @ rotation.as_matrix4x4()
-            @ translation.as_translation_matrix()
+            Vector3.Ones(n).as_scaling_matrix()
+            @ Rotation3(n).as_matrix4x4()
+            @ Vector3.Zeros(n).as_translation_matrix()
         ).view(cls)
+
+    def __getitem__(self, v):
+        if isinstance(v, int):
+            return super().__getitem__((v, numpy.newaxis))
+        return super().__getitem__(v)
 
     @classmethod
     def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3):
         d = p1 - p0
         d_ = p1_ - p0_
         s = d_.norm() / d.norm()
-        scale = Vector3(s, s, s)
-        translation = p0_ - p0
-        rotation = Quaternion.from_direction_change(d, d_).to_matrix()
-        return cls(scale, translation, rotation)
+        ret = Transform3(len(s))
+        ret.scale = Vector3(s, s, s)
+        ret.translation = p0_ - p0
+        ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix()
+        return ret
+
+    @property
+    def translation(self):
+        return self[..., 3, 0:3].view(Vector3)
+
+    @translation.setter
+    def translation(self, v):
+        self[..., 3, 0:3] = v
+
+    @property
+    def scaling(self):
+        return numpy.linalg.norm(self[:, 0:3, 0:3], axis=1).view(Vector3)
+
+    @scaling.setter
+    def scaling(self, v):
+        self[:] = (
+            v.as_scaling_matrix()
+            @ numpy.linalg.inv(self.scaling.as_scaling_matrix())
+            @ self
+        )
+
+    @property
+    def rotation(self):
+        return (
+            numpy.linalg.inv(self.scaling.as_scaling_matrix()[:, 0:3, 0:3])
+            @ self[:, 0:3, 0:3]
+        ).view(Rotation3)
+
+    @rotation.setter
+    def rotation(self, v):
+        self[:] = (
+            self.scaling.as_scaling_matrix()
+            @ v.as_matrix4x4()
+            @ self.translation.as_translation_matrix()
+        )
+
+
+class Color:
+    @staticmethod
+    def Rand(n=1, m=1):
+        return numpy.repeat(numpy.random.rand(n, 3), m, axis=0)
 
 
 class Triangle:
-    def __init__(self, vertices):
-        assert len(vertices) == 3
-        self.vertices = vertices
+    def __init__(self, n=1):
+        self.vertices = Vector3.Rand(n*3)
+        self.color = Color.Rand(n, 3)
 
     def render(self, page=""):
         p = Space(page)
-        p.render_mesh(self.vertices.flatten().tolist(), Color.Rand())
+        p.render_mesh(id(self), self.vertices.flatten().tolist(), self.color.flatten().tolist())
 
 
 class Tetrahedron:
@@ -473,7 +534,9 @@ class Tetrahedron:
     def render(self, page=""):
         p = Space(page)
         p.render_mesh(
-            self.vertices[self.trianglar_index].flatten().tolist(), Color.Rand()
+            id(self),
+            self.vertices[self.trianglar_index].flatten().tolist(),
+            Color.Rand(),
         )
 
 
@@ -517,7 +580,7 @@ class Cube:
         4,
     ]
 
-    def __init__(self) -> None:
+    def __init__(self, n=1) -> None:
         self.vertices = Vector3(
             [
                 [0.5, 0.5, 0.5],
@@ -530,17 +593,19 @@ class Cube:
                 [-0.5, -0.5, -0.5],
             ]
         )
-        self.transform = Transform3()
+        self.transform = Transform3(n)
+        self.color = Color.Rand(n, len(self.trianglar_index))
 
-    def render(self, s=None, color=None):
+    def render(self, s=None):
         s = Space() if not s else s
-        color = Color.Rand() if not color else color
         s.render_mesh(
+            id(self),
             self.vertices.mt(self.transform)[:, self.trianglar_index]
             .flatten()
             .tolist(),
-            color,
+            self.color.flatten().tolist(),
         )
+        return s
 
 
 class DoubleTetrahedron:
@@ -571,6 +636,7 @@ class DoubleTetrahedron:
         if not color:
             color = Color.Rand()
         space.render_mesh(
+            id(self),
             self.vertices.mt(self.transform)[:, self.trianglar_index]
             .flatten()
             .tolist(),
@@ -592,11 +658,13 @@ class Arrow:
 
     def render(self, space=None, color=None):
         space = space if space else Space()
-        color = color if color else Color.Rand()
+        color = color if color else Color.Rand(len(self.head_vertices)).tolist()
         space.render_mesh(
-            self.head_vertices[:, Tetrahedron.trianglar_index].flatten().tolist(), color
+            id(self),
+            self.head_vertices[:, Tetrahedron.trianglar_index].flatten().tolist(),
+            color,
         )
-        space.render_lines(self.line_vertices.flatten().tolist(), color)
+        space.render_lines(id(self), self.line_vertices.flatten().tolist(), color)
 
 
 class Plane:

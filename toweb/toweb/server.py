@@ -145,25 +145,18 @@ class Page:
         cls.__loop.start()
 
 
-class Color:
-    @staticmethod
-    def Rand():
-        return (
-            random.randint(0x50, 0x100) * 0x10000
-            + random.randint(0x50, 0x100) * 0x100
-            + random.randint(0x50, 0x100)
-        )
-
-
 class Space(Page):
-    def render_points(self, points, color):
-        self.send_t("points", {"vertices": points, "color": color})
+    def render_points(self, index, points, color):
+        self.send_t("points", {"index":index, "vertices": points, "color": color})
 
-    def render_mesh(self, points, color):
-        self.send_t("mesh", {"vertices": points, "color": color})
+    def render_mesh(self, index, points, color):
+        self.send_t("mesh", {"index": index, "vertices": points, "color": color})
 
-    def render_lines(self, points, color):
-        self.send_t("lines", {"vertices": points, "color": color})
+    def render_lines(self, index, points, color):
+        self.send_t("lines", {"index":index,"vertices": points, "color": color})
+
+    def render_text(self, index, text, x, y, z, color):
+        self.send_t("text", {"index":index, "text": text, "x": x, "y": y, "z":z, "color":color})
 
 
 class Chart(Page):
