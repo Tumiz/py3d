@@ -1,4 +1,4 @@
-import { TriangleFanDrawMode } from "three";
+import { TriangleFanDrawMode, VertexColors } from "three";
 
 const THREE = require("three")
 class Grid extends THREE.LineSegments {
@@ -50,13 +50,13 @@ class Grid extends THREE.LineSegments {
 export class Mesh extends THREE.Mesh {
 	constructor() {
 		const geometry = new THREE.BufferGeometry();
-		const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: 2 });
+		const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: 2, transparent: true });
 		super(geometry, material);
 	}
 	set(points, color = undefined) {
 		this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points), 3))
 		this.geometry.computeVertexNormals()//lambert need to know face directions
-		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3))
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
 		this.geometry.verticesNeedUpdate = true
 	}
 }
@@ -66,6 +66,7 @@ export class Points extends THREE.Points {
 		const geometry = new THREE.BufferGeometry()
 		const material = new THREE.PointsMaterial({
 			vertexColors: true,
+			transparent: true,
 			size: 0.1
 		})
 		super(geometry, material)
@@ -73,7 +74,7 @@ export class Points extends THREE.Points {
 	set(points, color = undefined, size = undefined) {
 		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
 		this.geometry.computeBoundingSphere()
-		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3))
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
 		if (size) {
 			this.material.size = size
 		}
@@ -85,17 +86,12 @@ export class Points extends THREE.Points {
 export class Lines extends THREE.LineSegments {
 	constructor() {
 		const geometry = new THREE.BufferGeometry()
-		const material = new THREE.LineBasicMaterial()
+		const material = new THREE.LineBasicMaterial({ vertexColors: true })
 		super(geometry, material)
 	}
 	set(points, color) {
-		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3))
-		if (color) {
-			if (color.length)
-				this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color.flat(), 1))
-			else
-				this.material.color.set(color)
-		}
+		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
 		return this
 	}
 }

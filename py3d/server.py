@@ -7,7 +7,6 @@ import socket
 import uuid
 import asyncio
 import threading
-import random
 import inspect
 import tornado.web
 import tornado.websocket
@@ -146,14 +145,14 @@ class Page:
 
 
 class Space(Page):
-    def render_points(self, index, points, color):
-        self.send_t("points", {"index":index, "vertices": points, "color": color})
+    def render_point(self, index, vertice, color):
+        self.send_t("point", {"index":index, "vertice": vertice, "color": color})
 
-    def render_mesh(self, index, points, color):
-        self.send_t("mesh", {"index": index, "vertices": points, "color": color})
+    def render_mesh(self, index, vertice, color):
+        self.send_t("mesh", {"index": index, "vertice": vertice, "color": color})
 
-    def render_lines(self, index, points, color):
-        self.send_t("lines", {"index":index,"vertices": points, "color": color})
+    def render_line(self, index, vertice, color):
+        self.send_t("line", {"index":index,"vertice": vertice, "color": color})
 
     def render_text(self, index, text, x, y, z, color):
         self.send_t("text", {"index":index, "text": text, "x": x, "y": y, "z":z, "color":color})

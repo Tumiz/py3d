@@ -146,7 +146,7 @@ methods.warn = (time, data) => {
     let div = methods.info(time, data)
     div.style.color = "orange"
 }
-methods.points = (time, data) => {
+methods.point = (time, data) => {
     console.log(time,data)
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
@@ -157,7 +157,7 @@ methods.points = (time, data) => {
         mesh.name = data.index
         this.chart.add(mesh)
     }
-    mesh.set(data.vertices,data.color)
+    mesh.set(data.vertice,data.color)
 }
 methods.mesh = (time, data) => {
     if (!this.chart) {
@@ -169,14 +169,14 @@ methods.mesh = (time, data) => {
         mesh.name = data.index
         this.chart.add(mesh)
     }
-    mesh.set(data.vertices,data.color)
+    mesh.set(data.vertice,data.color)
 }
-methods.lines = (time, data) => {
+methods.line = (time, data) => {
     if (!this.chart) {
         this.chart = init_3d_canvas(create_canvas("3d_canvas"))
     }
     const mesh = new GEO.Lines
-    mesh.set(data.vertices,data.color)
+    mesh.set(data.vertice,data.color)
     this.chart.add(mesh)
 }
 methods.text = (time, data) => {

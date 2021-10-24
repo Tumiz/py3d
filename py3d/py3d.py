@@ -1,33 +1,55 @@
-import py3d
-from typing import Optional, Tuple
+import collections
 import numpy
-from toweb import Space
-from collections import Iterable
+from server import Space
 
 pi = numpy.arccos(-1)
 
+class Data(numpy.ndarray):
+    # usually, d1 is the number of entities, and d3 is the size of one element.  
+    def __new__(cls, *shape):
+        return numpy.empty(shape).view(cls)
 
-class Vector3(numpy.ndarray):
-    def __new__(cls, x=0, y=0, z=0, n=1):
-        if isinstance(x, Iterable):
+    @property
+    def n(self):
+        return self.shape[:-1]
+
+    def inflate(self, repeats, split=True):
+        if self.ndim ==1:
+            return numpy.full((repeats, self.shape[0]), self).view(Data)
+        elif self.ndim ==2:
+            if split:
+                return numpy.repeat(self[:,numpy.newaxis], repeats, axis=1)
+            else:
+                return numpy.repeat(self, repeats, axis=0)
+        elif self.ndim ==3:
+            return numpy.repeat(self, repeats, axis=1)
+        else:
+            raise "bad data shape"
+
+class Vector3(Data):
+    def __new__(cls, x=0, y=0, z=0, n=()):
+        n=(n,) if type(n) is int else n
+        if isinstance(x, collections.Iterable):
             array = numpy.array(x)
             if array.ndim > 1 and array.shape[-1] == 3:
                 return array.view(cls)
-            n = len(x)
-        elif isinstance(y, Iterable):
-            n = len(y)
-        elif isinstance(z, Iterable):
-            n = len(z)
-        ret = numpy.empty((n, 3))
-        ret[..., 0] = x.flatten() if isinstance(x, numpy.ndarray) else x
-        ret[..., 1] = y.flatten() if isinstance(x, numpy.ndarray) else y
-        ret[..., 2] = z.flatten() if isinstance(x, numpy.ndarray) else z
+            shape = *n,len(x),3
+        elif isinstance(y, collections.Iterable):
+            shape = *n,len(y),3
+        elif isinstance(z, collections.Iterable):
+            shape = *n,len(z),3
+        else:
+            shape = *n,3
+        ret = super().__new__(cls, *shape)
+        ret.x = numpy.array(x).squeeze()
+        ret.y = numpy.array(y).squeeze()
+        ret.z = numpy.array(z).squeeze()
         return ret.view(cls)
 
-    def __getitem__(self, v):
-        if isinstance(v, int) and self.ndim == 2:
-            return super().__getitem__((v, numpy.newaxis))
-        return super().__getitem__(v)
+    def __len__(self):
+        if self.ndim == 1:
+            return 1
+        return super().__len__()
 
     def __eq__(self, v: numpy.ndarray):
         if isinstance(v, numpy.ndarray):
@@ -57,17 +79,8 @@ class Vector3(numpy.ndarray):
             return array.view(cls)
 
     @classmethod
-    def Rand(cls, n=1):
-        return numpy.random.rand(n, 3).view(cls)
-
-    # construct a vector3 list of length n and filled with zero
-    @classmethod
-    def Zeros(cls, n: int):
-        return numpy.zeros((n, 3)).view(cls).copy()
-
-    @classmethod
-    def Ones(cls, n: int):
-        return numpy.ones((n, 3)).view(cls).copy()
+    def Rand(cls, *n):
+        return numpy.random.rand(*n, 3).view(cls)
 
     @property
     def x(self):
@@ -97,7 +110,7 @@ class Vector3(numpy.ndarray):
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
     # unit vector, direction vector
-    def unit(self) -> Optional[numpy.ndarray]:
+    def unit(self) -> numpy.ndarray:
         n = self.norm()
         return numpy.divide(self, n, where=n != 0)
 
@@ -121,14 +134,11 @@ class Vector3(numpy.ndarray):
         # wouldnt change self
         return numpy.delete(self, pos, axis=0)
 
-    def expand_dims(self, axis=1):
-        return numpy.expand_dims(self, axis)
-
     def diff(self, n=1) -> numpy.ndarray:
         return numpy.diff(self, n, axis=0)
 
     def cumsum(self) -> numpy.ndarray:
-        return super().cumsum(axis=0)
+        return super().cumsum(axis=self.ndim-2)
 
     def mq(self, q) -> numpy.ndarray:
         # multiply quaternion
@@ -146,17 +156,12 @@ class Vector3(numpy.ndarray):
         else:
             return numpy.dot(self, v)
 
-    def cross_matrix(self) -> numpy.ndarray:
-        return len(self)
-
     def as_vector4(self):
-        ret = numpy.ones((len(self), 4))
-        ret[..., 0:3] = self
-        return ret
+        return numpy.insert(self, 3, 1, axis=self.ndim-1)
 
     def as_scaling_matrix(self) -> numpy.ndarray:
         n = len(self)
-        ret = numpy.full((n, 4, 4), numpy.eye(4))
+        ret = numpy.full((n, 4, 4), numpy.eye(4)).squeeze()
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
         ret[..., 2, 2] = self[..., 2]
@@ -164,7 +169,7 @@ class Vector3(numpy.ndarray):
 
     def as_translation_matrix(self):
         n = len(self)
-        ret = numpy.full((n, 4, 4), numpy.eye(4))
+        ret = numpy.full((n, 4, 4), numpy.eye(4)).squeeze()
         ret[..., 3, 0] = self[..., 0]
         ret[..., 3, 1] = self[..., 1]
         ret[..., 3, 2] = self[..., 2]
@@ -180,7 +185,7 @@ class Vector3(numpy.ndarray):
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
         return numpy.pi / 2 - self.angle_to_vector(normal)
 
-    def rotation_to(self, to: numpy.ndarray) -> Tuple[numpy.ndarray, float]:
+    def rotation_to(self, to: numpy.ndarray):
         axis = self.cross(to)
         angle = self.angle_to_vector(to)
         return axis, angle
@@ -232,40 +237,38 @@ class Vector3(numpy.ndarray):
         else:
             raise "size should be (3,3)"
 
-    def render_as_points(self, page=None, color=None):
-        p = page if page else Space()
-        n = 1 if self.ndim == 2 else self.shape[0]
-        m = self.shape[-2]
-        p.render_points(
-            id(self),
-            self.flatten().tolist(),
-            color if color else Color.Rand(n, m).flatten().tolist(),
-        )
-        return p
+    def as_point(self):
+        point = Point(*self.n)
+        point.vertice = self
+        return point
 
-    def render_as_vector(self, origin, page=None, color=None):
-        arrows = Arrow(origin, self)
-        arrows.render(page, color)
+    def as_vector(self,start=0):
+        arrow=Arrow(*self.n)
+        arrow.start=start
+        arrow.end=self
+        return arrow
 
-    def render_as_mesh(self, page=None, color=None):
-        p = page if page else Space()
-        n = 1 if self.ndim == 2 else self.shape[0]
-        m = self.shape[-2]
-        p.render_mesh(
-            self.flatten().tolist(),
-            color if color else Color.Rand(n, m).flatten().tolist(),
-        )
-        return p
+    def as_line(self):
+        vertice=numpy.repeat(self, 2, axis=self.ndim-2)[..., 1:-1, :].view(Vector3)
+        line = LineSegment(*vertice.n)
+        line.vertice = vertice
+        print(vertice.n,line.vertice.n,line.color.n)
+        return line
+
+    def as_linesegment(self):
+        line = LineSegment(*self.n)
+        line.vertice = self
+        return line
 
 
 class Quaternion(numpy.ndarray):
     # unit quaternion
     def __new__(cls, w=1, x=0, y=0, z=0, n=None):
-        if isinstance(x, Iterable):
+        if isinstance(x, collections.Iterable):
             n = len(x)
         elif n is None:
             n = 1
-        ret = numpy.empty((n, 4))
+        ret = numpy.empty((n, 4) if n > 1 else 4)
         ret[..., 0] = w
         if type(x) is Vector3:
             ret[..., 1:4] = x
@@ -275,20 +278,17 @@ class Quaternion(numpy.ndarray):
             ret[..., 3] = z
         return ret.view(cls)
 
-    def __getitem__(self, v):
-        if isinstance(v, int):
-            return super().__getitem__((v, numpy.newaxis))
+    def __len__(self):
+        if self.ndim == 1:
+            return 1
         return super().__getitem__(v)
 
     @classmethod
-    def from_angle_axis(cls, angle, axis: Vector3, n=None):
-        if isinstance(angle, Iterable):
-            n = len(angle)
-        elif len(axis) > 1:
-            n = len(axis)
-        elif n is None:
-            n = 1
-        ret = numpy.empty((n, 4))
+    def from_angle_axis(cls, angle, axis: Vector3):
+        angle = numpy.array(angle)
+        angle = angle.reshape((angle.size, 1))
+        n = angle.size if angle.size > 1 else len(axis)
+        ret = numpy.empty((n, 4) if n > 1 else 4)
         half_angle = angle / 2
         ret[..., 0] = numpy.cos(half_angle).flatten()
         ret[..., 1:4] = axis.unit() * numpy.sin(half_angle)
@@ -317,34 +317,34 @@ class Quaternion(numpy.ndarray):
 
     def split(self, n=1):
         return self.reshape(self.size // 4 // n, n, 4)
-    
+
     def wxyz(self, keepdims=False):
-        q=self.view(numpy.ndarray)
+        q = self.view(numpy.ndarray)
         if keepdims:
-            return q[...,0,numpy.newaxis],q[...,1,numpy.newaxis],q[...,2,numpy.newaxis],q[...,3,numpy.newaxis]
+            return q[..., 0, numpy.newaxis], q[..., 1, numpy.newaxis], q[..., 2, numpy.newaxis], q[..., 3, numpy.newaxis]
         else:
-            return q[...,0],q[...,1],q[...,2],q[...,3]
+            return q[..., 0], q[..., 1], q[..., 2], q[..., 3]
 
     def mq(self, q, byrow=True):
         # byrow: multiply by row
         w, x, y, z = self.wxyz(not byrow)
-        w_, x_, y_, z_ = q.wxyz(self.ndim>2)
-        shape=self.shape if byrow else (self.shape[0],q.shape[0],4)
+        w_, x_, y_, z_ = q.wxyz(self.ndim > 2)
+        shape = self.shape if byrow else (self.shape[0], q.shape[0], 4)
         ret = numpy.empty(shape)
         ret[..., 0] = w * w_ - x * x_ - y * y_ - z * z_
         ret[..., 1] = w * x_ + x * w_ + y * z_ - z * y_
         ret[..., 2] = w * y_ + y * w_ - x * z_ + z * x_
         ret[..., 3] = w * z_ + z * w_ + x * y_ - y * x_
         return ret.view(self.__class__)
-    
+
     def to_angle_axis(self):
         return (
             numpy.arccos(self[..., 0]) * 2,
             self[..., 1:4].view(Vector3).unit(),
         )
 
-    def to_matrix(self):
-        w, x, y, z = self.T
+    def to_matrix33(self):
+        w, x, y, z = self.view(numpy.ndarray).T
         return numpy.array(
             [
                 [
@@ -366,14 +366,15 @@ class Quaternion(numpy.ndarray):
         ).T.view(Rotation3)
 
 
-class Rotation3(numpy.ndarray):
-    def __new__(cls, n=1, matrix=numpy.eye(3)):
-        return numpy.full((n, 3, 3), matrix).view(cls)
+class Rotation3(Data):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n, 3, 3)
+        ret[:] = numpy.eye(3)
+        return ret
 
-    def __getitem__(self, v):
-        if isinstance(v, int):
-            return super().__getitem__((v, numpy.newaxis))
-        return super().__getitem__(v)
+    @classmethod
+    def Rand(cls, n=1):
+        return cls.Rx(numpy.random.rand(n))@cls.Ry(numpy.random.rand(n))@cls.Rz(numpy.random.rand(n))
 
     # rotate around body frame's axis
     @classmethod
@@ -386,8 +387,12 @@ class Rotation3(numpy.ndarray):
         return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
 
     @classmethod
+    def from_angle_axis(cls, angle, axis):
+        return Quaternion.from_angle_axis(angle, axis).to_matrix33().view(cls)
+
+    @classmethod
     def Rx(cls, a, n=1):
-        if isinstance(a, Iterable):
+        if isinstance(a, collections.Iterable):
             n = len(a)
         ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
         cos = numpy.cos(a).flatten()
@@ -400,7 +405,7 @@ class Rotation3(numpy.ndarray):
 
     @classmethod
     def Ry(cls, a, n=1):
-        if isinstance(a, Iterable):
+        if isinstance(a, collections.Iterable):
             n = len(a)
         ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
         cos = numpy.cos(a).flatten()
@@ -413,7 +418,7 @@ class Rotation3(numpy.ndarray):
 
     @classmethod
     def Rz(cls, a, n=1):
-        if isinstance(a, Iterable):
+        if isinstance(a, collections.Iterable):
             n = len(a)
         ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
         cos = numpy.cos(a).flatten()
@@ -442,24 +447,29 @@ class Rotation3(numpy.ndarray):
     def I(self):
         return numpy.linalg.inv(self)
 
-    def as_matrix4x4(self):
-        ret = numpy.full((len(self), 4, 4) if self.ndim > 2 else (4, 4), numpy.eye(4))
+    def to_matrix44(self):
+        ret = numpy.full((len(self), 4, 4) if self.ndim >
+                         2 else (4, 4), numpy.eye(4))
         ret[..., 0:3, 0:3] = self
         return ret
 
 
-class Transform3(numpy.ndarray):
-    def __new__(cls, n=1):
+class Transform3(Data):
+    def __new__(cls, *n):
         return (
-            Vector3.Ones(n).as_scaling_matrix()
-            @ Rotation3(n).as_matrix4x4()
-            @ Vector3.Zeros(n).as_translation_matrix()
+            Vector3(1, 1, 1, n=n).as_scaling_matrix()
+            @ Rotation3(*n).to_matrix44()
+            @ Vector3(n=n).as_translation_matrix()
         ).view(cls)
 
-    def __getitem__(self, v):
-        if isinstance(v, int):
-            return super().__getitem__((v, numpy.newaxis))
-        return super().__getitem__(v)
+    def __len__(self):
+        if self.ndim == 2:
+            return 1
+        return super().__len__(self)
+
+    @classmethod
+    def Rand(cls, n=1):
+        return (Vector3.Rand(n).as_scaling_matrix()@Rotation3.Rand(n).to_matrix44()@Vector3.Rand(n).as_translation_matrix()).view(cls)
 
     @classmethod
     def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3):
@@ -467,9 +477,9 @@ class Transform3(numpy.ndarray):
         d_ = p1_ - p0_
         s = d_.norm() / d.norm()
         ret = Transform3(len(s))
-        ret.scale = Vector3(s, s, s)
+        ret.scaling = Vector3(s, s, s)
         ret.translation = p0_ - p0
-        ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix()
+        ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix33()
         return ret
 
     @property
@@ -482,7 +492,7 @@ class Transform3(numpy.ndarray):
 
     @property
     def scaling(self):
-        return numpy.linalg.norm(self[:, 0:3, 0:3], axis=1).view(Vector3)
+        return numpy.linalg.norm(self[..., 0:3, 0:3], axis=1).view(Vector3)
 
     @scaling.setter
     def scaling(self, v):
@@ -503,85 +513,199 @@ class Transform3(numpy.ndarray):
     def rotation(self, v):
         self[:] = (
             self.scaling.as_scaling_matrix()
-            @ v.as_matrix4x4()
+            @ v.to_matrix44()
             @ self.translation.as_translation_matrix()
         )
 
 
-class Color:
-    @staticmethod
-    def Rand(n=1, m=1):
-        return numpy.repeat(numpy.random.rand(n, 3), m, axis=0)
+class Color(Data):
+    def __new__(cls, r=0, g=0, b=0, a=1, n=()):
+        n = (n,) if type(n) is int else n
+        if isinstance(r, collections.Iterable):
+            n = *n, len(r)
+        elif isinstance(g, collections.Iterable):
+            n = *n, len(g)
+        elif isinstance(b, collections.Iterable):
+            n = *n, len(b)
+        elif isinstance(a, collections.Iterable):
+            n = *n, len(a)
+        ret = numpy.empty((*n, 4))
+        ret[..., 0] = r
+        ret[..., 1] = g
+        ret[..., 2] = b
+        ret[..., 3] = a
+        return ret.view(cls)
+
+    def __len__(self):
+        if self.ndim == 1:
+            return 1
+        return super().__len__()
+
+    @classmethod
+    def Rand(cls, *shape):
+        ret = numpy.random.rand(shape[0], 4).view(cls)
+        ret.a = 1
+        if len(shape) > 1:
+            return ret[:,numpy.newaxis].repeat(shape[-1],axis=1)
+        return ret
+
+    @property
+    def r(self):
+        return self[..., 0].view(numpy.ndarray)
+
+    @r.setter
+    def r(self, v):
+        self[..., 0] = v
+
+    @property
+    def g(self):
+        return self[..., 1].view(numpy.ndarray)
+
+    @g.setter
+    def g(self, v):
+        self[..., 1] = v
+
+    @property
+    def b(self):
+        return self[..., 2].view(numpy.ndarray)
+
+    @b.setter
+    def b(self, v):
+        self[..., 2] = v
+
+    @property
+    def a(self):
+        return self[..., 3].view(numpy.ndarray)
+
+    @a.setter
+    def a(self, v):
+        self[..., 3] = v
 
 
-class Triangle:
-    def __init__(self, n=1):
-        self.vertices = Vector3.Rand(n*3)
-        self.color = Color.Rand(n, 3)
+class Entity(Data):
+    def __new__(cls, *n):
+        return super().__new__(cls, *n, 7)
 
-    def render(self, page=""):
-        p = Space(page)
-        p.render_mesh(id(self), self.vertices.flatten().tolist(), self.color.flatten().tolist())
+    @property
+    def vertice(self):
+        return self[..., 0:3].view(Vector3)
 
+    @vertice.setter
+    def vertice(self, v):
+        self[..., 0:3] = v
 
-class Tetrahedron:
-    trianglar_index = [0, 1, 2, 0, 2, 3, 0, 1, 3, 1, 2, 3]
+    @property
+    def color(self):
+        return self[..., 3:7].view(Color)
 
-    def __init__(self, vertices):
-        assert len(vertices) == 4
-        self.vertices = vertices
-
-    def render(self, page=""):
-        p = Space(page)
-        p.render_mesh(
-            id(self),
-            self.vertices[self.trianglar_index].flatten().tolist(),
-            Color.Rand(),
-        )
+    @color.setter
+    def color(self, v):
+        self[..., 3:7] = v
 
 
-class Cube:
-    trianglar_index = [
-        0,
-        2,
-        1,
-        0,
-        4,
-        1,
-        0,
-        4,
-        2,
-        3,
-        2,
-        1,
-        5,
-        4,
-        1,
-        6,
-        4,
-        2,
-        5,
-        3,
-        7,
-        5,
-        3,
-        1,
-        6,
-        3,
-        7,
-        6,
-        3,
-        2,
-        6,
-        5,
-        7,
-        6,
-        5,
-        4,
-    ]
+class Mesh(Entity):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
+        ret.color=Color.Rand(*n)
+        cls.index = []
+        return ret
 
-    def __init__(self, n=1) -> None:
-        self.vertices = Vector3(
+    def p(self, i):
+        return self.vertice[...,i,:]
+
+    def render(self, page=None):
+        page = Space() if page is None else page
+        page.render_mesh(id(self), self.vertice[..., self.index, :].flatten(
+        ).tolist(), self.color[..., self.index, :].flatten().tolist())
+
+
+class LineSegment(Entity):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
+        ret.color = Color.Rand(*n)
+        return ret
+
+    @property
+    def start(self):
+        return self.vertice[...,::2,:].squeeze().view(Vector3)
+
+    @start.setter
+    def start(self,v):
+        self.vertice[...,::2,:].squeeze()[:]=v
+
+    @property
+    def end(self):
+        return self.vertice[...,1::2,:].squeeze().view(Vector3)
+
+    @end.setter
+    def end(self,v):
+        self.vertice[...,1::2,:].squeeze()[:]=v
+
+    def render(self, page=None):
+        page = page if page else Space()
+        page.render_line(id(self), self.vertice.flatten(
+        ).tolist(), self.color.flatten().tolist())
+
+
+class Point(Entity):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
+        ret.color = Color.Rand(*n)
+        return ret
+
+    def render(self, page=None):
+        page = page if page else Space()
+        page.render_point(id(self), self.vertice.flatten(
+        ).tolist(), self.color.flatten().tolist())
+
+
+class Triangle(Mesh):
+    def __new__(cls, *n):
+        ret=super().__new__(cls, *n, 3)
+        cls.index = [0,1,2]
+        return ret
+
+    @property
+    def p0(self):
+        return self.vertice[...,0,:]
+
+    @p0.setter
+    def p0(self,v):
+        self.vertice[...,0,:]=v
+
+    @property
+    def p1(self):
+        return self.vertice[...,1,:]
+
+    @p1.setter
+    def p1(self,v):
+        self.vertice[...,1,:]=v
+
+    @property
+    def p2(self):
+        return self.vertice[...,2,:]
+
+    @p2.setter
+    def p2(self,v):
+        self.vertice[...,2,:]=v
+
+class Tetrahedron(Mesh):
+    def __new__(cls, n=1):
+        ret = super().__new__(cls, n, 4)
+        cls.index = [0, 1, 2, 0, 2, 3, 0, 1, 3, 1, 2, 3]
+        return ret
+
+    # @property
+    def y(self,n):
+        return self.vertice[...,n,:]
+
+
+class Cube(Mesh):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n, 8)
+        cls.index = [0, 2, 1, 0, 4, 1, 0, 4, 2, 3, 2, 1, 5, 4, 1, 6,
+                     4, 2, 5, 3, 7, 5, 3, 1, 6, 3, 7, 6, 3, 2, 6, 5, 7, 6, 5, 4]
+        ret.vertice_base = Vector3(
             [
                 [0.5, 0.5, 0.5],
                 [-0.5, 0.5, 0.5],
@@ -593,78 +717,32 @@ class Cube:
                 [-0.5, -0.5, -0.5],
             ]
         )
-        self.transform = Transform3(n)
-        self.color = Color.Rand(n, len(self.trianglar_index))
-
-    def render(self, s=None):
-        s = Space() if not s else s
-        s.render_mesh(
-            id(self),
-            self.vertices.mt(self.transform)[:, self.trianglar_index]
-            .flatten()
-            .tolist(),
-            self.color.flatten().tolist(),
-        )
-        return s
+        ret.transform = Transform3.Rand(n)
+        ret.vertice = ret.vertice_base.mt(ret.transform)
+        return ret
 
 
-class DoubleTetrahedron:
-    trianglar_index = [2, 1, 0, 2, 1, 4, 3, 1, 0, 3, 1, 4, 3, 2, 0, 3, 2, 4]
+class Arrow(LineSegment):
+    head_base = Vector3(
+        [
+            [1, 0, 0],
+            [0.9, 0, 0.05],
+            [0.9, -0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
+            [0.9, 0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
+        ]
+    )
 
-    def __init__(self, start, end):
-        self.vertices = self.origin_vertices()
-        self.transform = Transform3.from_vector_change(
-            Vector3(), Vector3(x=1), start, end
-        )
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n, 2).view(cls)
+        ret.head = Tetrahedron(*n)
+        ret.head.color = ret.color[..., 0, numpy.newaxis, :]
+        return ret
 
-    @classmethod
-    def origin_vertices(cls):
-        direction = Vector3(x=1)
-        length = direction.norm()
-        neck_point = direction * 0.9
-        neck_size = length * 0.02
-        q = Quaternion.from_angle_axis(pi * 2 / 3, direction)
-        p0 = neck_point + direction.cross(Vector3(z=1)).unit() * neck_size
-        p1 = p0.mq(q)
-        p2 = p1.mq(q)
-        points = numpy.concatenate((Vector3(), p0, p1, p2, direction), axis=0)
-        return points.view(Vector3)
-
-    def render(self, space=None, color=None):
-        if not space:
-            space = Space()
-        if not color:
-            color = Color.Rand()
-        space.render_mesh(
-            id(self),
-            self.vertices.mt(self.transform)[:, self.trianglar_index]
-            .flatten()
-            .tolist(),
-            color,
-        )
-
-
-class Arrow:
-    def __init__(self, start, end):
-        self.head_vertices = Vector3(
-            [
-                [1, 0, 0],
-                [0.9, 0, 0.05],
-                [0.9, -0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
-                [0.9, 0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
-            ]
-        ).mt(Transform3.from_vector_change(Vector3(), Vector3(x=1), start, end))
-        self.line_vertices = start.insert(slice(len(end)), end)
-
-    def render(self, space=None, color=None):
-        space = space if space else Space()
-        color = color if color else Color.Rand(len(self.head_vertices)).tolist()
-        space.render_mesh(
-            id(self),
-            self.head_vertices[:, Tetrahedron.trianglar_index].flatten().tolist(),
-            color,
-        )
-        space.render_lines(id(self), self.line_vertices.flatten().tolist(), color)
+    def render(self, page=None):
+        page = page if page else Space()
+        self.head.vertice = self.head_base.mt(Transform3.from_vector_change(Vector3(), Vector3(x=1), self.start, self.end))
+        self.head.render(page)
+        super().render(page)
 
 
 class Plane:
