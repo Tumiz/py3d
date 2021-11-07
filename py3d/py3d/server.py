@@ -145,8 +145,8 @@ class Page:
 
 
 class Space(Page):
-    def render_point(self, index, vertice, color):
-        self.send_t("point", {"index":index, "vertice": vertice, "color": color})
+    def render_point(self, index, vertice, color, size):
+        self.send_t("point", {"index":index, "vertice": vertice, "color": color, "size": size})
 
     def render_mesh(self, index, vertice, color):
         self.send_t("mesh", {"index": index, "vertice": vertice, "color": color})
@@ -156,11 +156,6 @@ class Space(Page):
 
     def render_text(self, index, text, x, y, z, color):
         self.send_t("text", {"index":index, "text": text, "x": x, "y": y, "z":z, "color":color})
-
-
-class Chart(Page):
-    def plot(self, key, x, y=None):
-        self.send_t("plot", {"key": key, "x": x, "y": y})
 
 
 class Log(Page):

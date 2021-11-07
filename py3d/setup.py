@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="py3d",
-    version="0.0.7",
+    version="0.0.11",
     description="a 3d library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -14,9 +14,8 @@ setup(
     author_email="hh11698@163.com",
     python_requires=">=3.5.0",
     url="https://github.com/Tumiz/scenario",
-    install_requires=["numpy","tornado"],
+    install_requires=["numpy","tornado","ipython"],
     packages=find_packages(),
-    py_modules=["py3d"],
     data_files=[
         ("/py3d/static",["py3d/static/logo.png","py3d/static/bundle.js"]),
         ("/py3d",["py3d/viewer.html"])

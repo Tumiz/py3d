@@ -1,38 +1,9 @@
-const CHART = require("chart.js")
-CHART.Chart.register(CHART.ScatterController, CHART.LinearScale, CHART.PointElement, CHART.LineElement, CHART.Tooltip)
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
 var ws = new WebSocket("ws://localhost:"+port_+"/ws/"+id_);
 ws.onopen=()=>{console.log("connected")}
 console.log("ready")
-
-const create_chart = () => {
-    console.log("create_chart")
-    const canvas = create_canvas("chart")
-    var ctx = canvas.getContext('2d');
-    let config = {
-        type: 'scatter',
-        data: {
-            datasets: [],
-        },
-        options: {
-            elements: {
-                line: {
-                    tension: 0 // 禁用贝塞尔曲线
-                }
-            },
-            animation: {
-                duration: 0 // 一般动画时间
-            },
-            hover: {
-                animationDuration: 0 // 悬停项目时动画的持续时间
-            },
-            responsiveAnimationDuration: 0, // 调整大小后的动画持续时间
-        }
-    }
-    return new CHART.Chart(ctx, config)
-}
 const create_canvas = (name) => {
     let canvas = document.createElement("canvas")
     canvas.id = name
@@ -104,34 +75,6 @@ methods.clear = (time, data) => {
     document.body.innerHTML = ""
     this.chart = undefined
 }
-methods.plot = (time, data) => {
-    if (!this.chart) {
-        this.chart = create_chart()
-        this.chart.indexes = {}
-    }
-    let index = -1
-    if (data.key in this.chart.indexes) {
-        index = this.chart.indexes[data.key]
-    } else {
-        index = Object.keys(this.chart.indexes).length
-        this.chart.indexes[data.key] = index
-        let rand_color = '#' + (Math.random() * 0xffffff << 0).toString(16)
-        this.chart.data.datasets.push({
-            label: data.key,
-            data: [],
-            borderWidth: 1,
-            showLine: true,
-            borderColor: rand_color,
-            pointBackgroundColor: rand_color,
-        })
-    }
-    if (data.y != null) {
-        this.chart.data.datasets[index].data.push({ x: data.x, y: data.y })
-    } else {
-        this.chart.data.datasets[index].data.push({ x: time, y: data.x })
-    }
-    this.chart.update()
-}
 methods.info = (time, data) => {
     var new_div = document.createElement("div")
     document.body.appendChild(new_div)
@@ -157,7 +100,7 @@ methods.point = (time, data) => {
         mesh.name = data.index
         this.chart.add(mesh)
     }
-    mesh.set(data.vertice,data.color)
+    mesh.set(data.vertice,data.color,data.size)
 }
 methods.mesh = (time, data) => {
     if (!this.chart) {

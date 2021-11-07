@@ -1,8 +1,10 @@
 import collections
 import numpy
-from server import Space
+from .server import Space
 
 pi = numpy.arccos(-1)
+def rand(*shape):
+    return numpy.full(shape, None)
 
 class Data(numpy.ndarray):
     # usually, d1 is the number of entities, and d3 is the size of one element.  
@@ -28,22 +30,32 @@ class Data(numpy.ndarray):
 
 class Vector3(Data):
     def __new__(cls, x=0, y=0, z=0, n=()):
-        n=(n,) if type(n) is int else n
-        if isinstance(x, collections.Iterable):
-            array = numpy.array(x)
-            if array.ndim > 1 and array.shape[-1] == 3:
-                return array.view(cls)
-            shape = *n,len(x),3
-        elif isinstance(y, collections.Iterable):
-            shape = *n,len(y),3
-        elif isinstance(z, collections.Iterable):
-            shape = *n,len(z),3
+        x_ = numpy.array(x)
+        if x_.ndim > 1 and x_.shape[-1] == 3:
+            return x_.view(cls)
+        y_ = numpy.array(y)
+        z_ = numpy.array(z)
+        shapes=sorted(collections.Counter((x_.shape,y_.shape,z_.shape)).items(),key=lambda v:v[1])
+        if len(shapes) > 2:
+            assert "at least two dimesions should have same shape"
+        if len(shapes) > 1:
+            shape = shapes[0][0]+shapes[1][0]
+            if x_.shape == shapes[0][0]:
+                x_=x_.reshape(x_.shape+(1,)*len(shapes[1][0]))
+            if y_.shape == shapes[0][0]:
+                y_=y_.reshape(y_.shape+(1,)*len(shapes[1][0]))
+            if z_.shape == shapes[0][0]:
+                z_=z_.reshape(z_.shape+(1,)*len(shapes[1][0]))
         else:
-            shape = *n,3
+            shape = shapes[0][0]
+        n=(n,) if type(n) is int else n
+        shape = n + shape + (3,)
         ret = super().__new__(cls, *shape)
-        ret.x = numpy.array(x).squeeze()
-        ret.y = numpy.array(y).squeeze()
-        ret.z = numpy.array(z).squeeze()
+        ret.x = x_
+        ret.y = y_
+        ret.z = z_
+        rand_part = numpy.isnan(ret)
+        ret[rand_part]=numpy.random.rand(*ret[rand_part].shape)
         return ret.view(cls)
 
     def __len__(self):
@@ -160,16 +172,14 @@ class Vector3(Data):
         return numpy.insert(self, 3, 1, axis=self.ndim-1)
 
     def as_scaling_matrix(self) -> numpy.ndarray:
-        n = len(self)
-        ret = numpy.full((n, 4, 4), numpy.eye(4)).squeeze()
+        ret = numpy.full(self.n + (4, 4), numpy.eye(4)).squeeze()
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
         ret[..., 2, 2] = self[..., 2]
         return ret
 
     def as_translation_matrix(self):
-        n = len(self)
-        ret = numpy.full((n, 4, 4), numpy.eye(4)).squeeze()
+        ret = numpy.full(self.n + (4, 4), numpy.eye(4)).squeeze()
         ret[..., 3, 0] = self[..., 0]
         ret[..., 3, 1] = self[..., 1]
         ret[..., 3, 2] = self[..., 2]
@@ -252,7 +262,6 @@ class Vector3(Data):
         vertice=numpy.repeat(self, 2, axis=self.ndim-2)[..., 1:-1, :].view(Vector3)
         line = LineSegment(*vertice.n)
         line.vertice = vertice
-        print(vertice.n,line.vertice.n,line.color.n)
         return line
 
     def as_linesegment(self):
@@ -447,9 +456,12 @@ class Rotation3(Data):
     def I(self):
         return numpy.linalg.inv(self)
 
+    @property
+    def n(self):
+        return self.shape[:-2]
+
     def to_matrix44(self):
-        ret = numpy.full((len(self), 4, 4) if self.ndim >
-                         2 else (4, 4), numpy.eye(4))
+        ret = numpy.full((*self.n, 4, 4), numpy.eye(4))
         ret[..., 0:3, 0:3] = self
         return ret
 
@@ -481,6 +493,10 @@ class Transform3(Data):
         ret.translation = p0_ - p0
         ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix33()
         return ret
+
+    @property
+    def n(self):
+        return self.shape[:-2]
 
     @property
     def translation(self):
@@ -650,7 +666,8 @@ class LineSegment(Entity):
 class Point(Entity):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.color = Color.Rand(*n)
+        print(ret.color.shape,)
+        ret.size = 1
         return ret
 
     def render(self, page=None):
