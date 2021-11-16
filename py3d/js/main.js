@@ -27,7 +27,7 @@ const init_3d_canvas = (canvas) => {
     });
     console.log(canvas.width, canvas.height)
     const aspect = canvas.width / canvas.height
-    let perspCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
+    let perspCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 10000);
     perspCamera.up.set(0, 0, 1)
     perspCamera.position.set(0, 0, 30)
     let Z = perspCamera.position.length();

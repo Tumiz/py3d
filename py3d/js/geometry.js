@@ -54,10 +54,12 @@ export class Mesh extends THREE.Mesh {
 		super(geometry, material);
 	}
 	set(points, color = undefined) {
-		this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(points), 3))
-		this.geometry.computeVertexNormals()//lambert need to know face directions
-		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
+		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points,3))
 		this.geometry.verticesNeedUpdate = true
+		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
+		this.geometry.colorsNeedUpdate = true
+		this.geometry.computeVertexNormals()//lambert need to know face directions
+		this.geometry.computeBoundingSphere()
 	}
 }
 
@@ -67,16 +69,16 @@ export class Points extends THREE.Points {
 		const material = new THREE.PointsMaterial({
 			vertexColors: true,
 			transparent: true,
-			size: 0.1
 		})
 		super(geometry, material)
 	}
 	set(points, color = undefined, size = undefined) {
 		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
-		this.geometry.computeBoundingSphere()
 		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
+		this.geometry.computeBoundingSphere()
 		if (size) {
 			this.material.size = size
+			this.material.needsUpdate = true
 		}
 		return this
 	}

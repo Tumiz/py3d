@@ -3,8 +3,29 @@ import numpy
 from .server import Space
 
 pi = numpy.arccos(-1)
-def rand(*shape):
-    return numpy.full(shape, None)
+
+def sorted_sizes(*sizes):     
+    return list(dict(sorted(collections.Counter(sizes).items(),key=lambda v:v[1])).keys())
+    
+def merge_shapes(x,y,z):
+    ret=[]
+    ndim=max(len(x),len(y),len(z))
+    for i in range(ndim):
+        sizes = []
+        sizes.append(x[-1-i]) if len(x)>i else None
+        sizes.append(y[-1-i]) if len(y)>i else None
+        sizes.append(z[-1-i]) if len(z)>i else None
+        ret=sorted_sizes(*sizes)+ret
+    return ret
+
+def force_assgin(v1,v2):
+    try:
+        numpy.copyto(v1,v2)
+    except:
+        if v1.size == v2.size:
+            numpy.copyto(v1,v2.reshape(v1.shape))
+        else:
+            numpy.copyto(v1,v2[:,numpy.newaxis])
 
 class Data(numpy.ndarray):
     # usually, d1 is the number of entities, and d3 is the size of one element.  
@@ -35,27 +56,13 @@ class Vector3(Data):
             return x_.view(cls)
         y_ = numpy.array(y)
         z_ = numpy.array(z)
-        shapes=sorted(collections.Counter((x_.shape,y_.shape,z_.shape)).items(),key=lambda v:v[1])
-        if len(shapes) > 2:
-            assert "at least two dimesions should have same shape"
-        if len(shapes) > 1:
-            shape = shapes[0][0]+shapes[1][0]
-            if x_.shape == shapes[0][0]:
-                x_=x_.reshape(x_.shape+(1,)*len(shapes[1][0]))
-            if y_.shape == shapes[0][0]:
-                y_=y_.reshape(y_.shape+(1,)*len(shapes[1][0]))
-            if z_.shape == shapes[0][0]:
-                z_=z_.reshape(z_.shape+(1,)*len(shapes[1][0]))
-        else:
-            shape = shapes[0][0]
+        shape=merge_shapes(x_.shape,y_.shape,z_.shape)
         n=(n,) if type(n) is int else n
-        shape = n + shape + (3,)
+        shape = *n, *shape, 3
         ret = super().__new__(cls, *shape)
         ret.x = x_
         ret.y = y_
         ret.z = z_
-        rand_part = numpy.isnan(ret)
-        ret[rand_part]=numpy.random.rand(*ret[rand_part].shape)
         return ret.view(cls)
 
     def __len__(self):
@@ -100,7 +107,7 @@ class Vector3(Data):
 
     @x.setter
     def x(self, v):
-        self[..., 0] = v
+        force_assgin(self[..., 0],v)
 
     @property
     def y(self):
@@ -108,7 +115,7 @@ class Vector3(Data):
 
     @y.setter
     def y(self, v):
-        self[..., 1] = v
+        force_assgin(self[..., 1],v)
 
     @property
     def z(self):
@@ -116,7 +123,7 @@ class Vector3(Data):
 
     @z.setter
     def z(self, v):
-        self[..., 2] = v
+        force_assgin(self[..., 2],v)
 
     def norm(self) -> numpy.ndarray:  # norm
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
@@ -268,6 +275,9 @@ class Vector3(Data):
         line = LineSegment(*self.n)
         line.vertice = self
         return line
+
+    def as_mesh(self):
+        return Triangle.from_indexed(self)
 
 
 class Quaternion(numpy.ndarray):
@@ -571,7 +581,7 @@ class Color(Data):
 
     @r.setter
     def r(self, v):
-        self[..., 0] = v
+        force_assgin(self[..., 0], v)
 
     @property
     def g(self):
@@ -579,7 +589,7 @@ class Color(Data):
 
     @g.setter
     def g(self, v):
-        self[..., 1] = v
+        force_assgin(self[..., 1], v)
 
     @property
     def b(self):
@@ -587,7 +597,7 @@ class Color(Data):
 
     @b.setter
     def b(self, v):
-        self[..., 2] = v
+        force_assgin(self[..., 2], v)
 
     @property
     def a(self):
@@ -595,12 +605,17 @@ class Color(Data):
 
     @a.setter
     def a(self, v):
-        self[..., 3] = v
+        force_assgin(self[..., 3], v)
 
 
 class Entity(Data):
     def __new__(cls, *n):
-        return super().__new__(cls, *n, 7)
+        ret = super().__new__(cls, *n, 7)
+        return ret
+
+    @property
+    def n(self):
+        return self.shape[:-2] if len(self.shape) > 2 else (1,)
 
     @property
     def vertice(self):
@@ -608,7 +623,7 @@ class Entity(Data):
 
     @vertice.setter
     def vertice(self, v):
-        self[..., 0:3] = v
+        force_assgin(self[..., 0:3], v)
 
     @property
     def color(self):
@@ -616,29 +631,39 @@ class Entity(Data):
 
     @color.setter
     def color(self, v):
-        self[..., 3:7] = v
+        force_assgin(self[..., 3:7], v)
 
-
-class Mesh(Entity):
+class Triangle(Entity):
     def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        ret.color=Color.Rand(*n)
-        cls.index = []
+        ret=super().__new__(cls, *n, 3)
+        ret.color = Color.Rand(*n, 3)
+        ret.index = slice(None)
         return ret
 
-    def p(self, i):
-        return self.vertice[...,i,:]
+    @classmethod
+    def from_indexed(cls,v):
+        ret=super().__new__(cls, *v.n)
+        ret.vertice = v
+        ret.color = 1
+        ret.index = slice(None)
+        return ret
+
+    def p(self, i, v=None):
+        if v is None:
+            return self.vertice[...,i,:]
+        else:
+            self.vertice[...,i,:]=v
 
     def render(self, page=None):
         page = Space() if page is None else page
-        page.render_mesh(id(self), self.vertice[..., self.index, :].flatten(
-        ).tolist(), self.color[..., self.index, :].flatten().tolist())
+        page.render_mesh(id(self), self.vertice[...,self.index,:].flatten(
+        ).tolist(), self.color[...,self.index,:].flatten().tolist())
 
 
 class LineSegment(Entity):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.color = Color.Rand(*n)
+        ret.color = Color.Rand(*ret.n)
         return ret
 
     @property
@@ -666,47 +691,16 @@ class LineSegment(Entity):
 class Point(Entity):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        print(ret.color.shape,)
-        ret.size = 1
+        ret.color = Color.Rand(*ret.n)
+        ret.point_size=0.1
         return ret
 
     def render(self, page=None):
         page = page if page else Space()
         page.render_point(id(self), self.vertice.flatten(
-        ).tolist(), self.color.flatten().tolist())
+        ).tolist(), self.color.flatten().tolist(), self.point_size)
 
-
-class Triangle(Mesh):
-    def __new__(cls, *n):
-        ret=super().__new__(cls, *n, 3)
-        cls.index = [0,1,2]
-        return ret
-
-    @property
-    def p0(self):
-        return self.vertice[...,0,:]
-
-    @p0.setter
-    def p0(self,v):
-        self.vertice[...,0,:]=v
-
-    @property
-    def p1(self):
-        return self.vertice[...,1,:]
-
-    @p1.setter
-    def p1(self,v):
-        self.vertice[...,1,:]=v
-
-    @property
-    def p2(self):
-        return self.vertice[...,2,:]
-
-    @p2.setter
-    def p2(self,v):
-        self.vertice[...,2,:]=v
-
-class Tetrahedron(Mesh):
+class Tetrahedron(Triangle):
     def __new__(cls, n=1):
         ret = super().__new__(cls, n, 4)
         cls.index = [0, 1, 2, 0, 2, 3, 0, 1, 3, 1, 2, 3]
@@ -717,7 +711,7 @@ class Tetrahedron(Mesh):
         return self.vertice[...,n,:]
 
 
-class Cube(Mesh):
+class Cube(Triangle):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n, 8)
         cls.index = [0, 2, 1, 0, 4, 1, 0, 4, 2, 3, 2, 1, 5, 4, 1, 6,
