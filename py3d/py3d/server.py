@@ -15,6 +15,15 @@ from typing import Any
 from IPython.display import IFrame, display
 
 
+def get_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
+
 def address_in_use(port, ip="127.0.0.1"):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -30,7 +39,7 @@ def address_in_use(port, ip="127.0.0.1"):
 class IndexHandler(tornado.web.RequestHandler):
     def get(self, v):
         #         print("Index",v,self.request)
-        self.render("viewer.html", port=Page.port, ID=v)
+        self.render("viewer.html", ID=v)
 
 
 class StaticHandler(tornado.web.StaticFileHandler):
@@ -49,11 +58,12 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         self.server = None
 
     def open(self, v):
+        # v is string always
         if v in Page.connections:
             self.server = Page.connections[v]
             self.server.clients.append(self)
             self.write_message(json.dumps(self.server.cache))
-        # print("ws open",v,self.request,self.server.clients)
+#         print("ws open",v,self.request,self.server.clients)
 
     def on_close(self):
         if self.server:
@@ -74,6 +84,7 @@ def log(*msg):
 
 
 class Page:
+    host = get_ip()
     port = 8000
     server = None
     connections = dict()
@@ -95,7 +106,7 @@ class Page:
             instance.name = name
             instance.clients = []
             instance.cache = []
-            instance.url = "http://localhost:" + str(cls.port) + "/view/" + name
+            instance.url = "http://"+cls.host+":" + str(cls.port) + "/view/" + name
             instance.iframe = IFrame(src=instance.url, width="100%", height="600px")
             print("click", instance.url, "to view in browser")
             cls.connections[name] = instance

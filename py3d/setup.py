@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="py3d",
-    version="0.0.11",
+    version="0.0.14",
     description="a 3d library",
     long_description=long_description,
     long_description_content_type="text/markdown",

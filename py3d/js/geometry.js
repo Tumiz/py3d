@@ -93,6 +93,7 @@ export class Lines extends THREE.LineSegments {
 	}
 	set(points, color) {
 		this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3))
+		this.geometry.verticesNeedUpdate = true
 		this.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 4))
 		return this
 	}

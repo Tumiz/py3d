@@ -1,9 +1,11 @@
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
-var ws = new WebSocket("ws://localhost:"+port_+"/ws/"+id_);
-ws.onopen=()=>{console.log("connected")}
-console.log("ready")
+var ws = new WebSocket("ws://"+window.location.host+"/ws/"+id_);
+ws.onopen=()=>{
+    this.chart=init_3d_canvas(create_canvas("3dcanvas"))
+    console.log("ready")
+}
 const create_canvas = (name) => {
     let canvas = document.createElement("canvas")
     canvas.id = name
@@ -12,7 +14,7 @@ const create_canvas = (name) => {
     document.body.onresize = (ev) => {
         canvas.width = document.body.clientWidth
         canvas.height = document.body.clientHeight
-        canvas.onresize(ev)
+//         canvas.onresize(ev)
         console.log(canvas.width, canvas.height)
     }
     document.body.appendChild(canvas)
@@ -91,9 +93,6 @@ methods.warn = (time, data) => {
 }
 methods.point = (time, data) => {
     console.log(time,data)
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
-    }
     let mesh = this.chart.getObjectByName(data.index)
     if (!mesh){
         mesh = new GEO.Points
@@ -103,9 +102,6 @@ methods.point = (time, data) => {
     mesh.set(data.vertice,data.color,data.size)
 }
 methods.mesh = (time, data) => {
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
-    }
     let mesh = this.chart.getObjectByName(data.index)
     if (!mesh){
         mesh = new GEO.Mesh
@@ -115,17 +111,15 @@ methods.mesh = (time, data) => {
     mesh.set(data.vertice,data.color)
 }
 methods.line = (time, data) => {
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
+    let line = this.chart.getObjectByName(data.index)
+    if (!line){
+        line = new GEO.Lines
+        line.name = data.index
+        this.chart.add(line)
     }
-    const mesh = new GEO.Lines
-    mesh.set(data.vertice,data.color)
-    this.chart.add(mesh)
+    line.set(data.vertice,data.color)
 }
 methods.text = (time, data) => {
-    if (!this.chart) {
-        this.chart = init_3d_canvas(create_canvas("3d_canvas"))
-    }
     const div=document.createElement("div")
     div.innerHTML=data.text
     div.style.left=data.x+"px"
