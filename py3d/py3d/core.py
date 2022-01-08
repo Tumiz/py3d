@@ -1,10 +1,10 @@
 import collections
+from os import write
 import numpy
-from numpy.core.fromnumeric import shape
+import csv
 from .server import Space
 
 pi = numpy.arccos(-1)
-
 
 def sorted_sizes(*sizes):
     return tuple(list(dict(sorted(collections.Counter(sizes).items(), key=lambda v: v[1])).keys()))
@@ -46,18 +46,19 @@ class Data(numpy.ndarray):
     def n(self):
         return self.shape[:-1] if self.ndim > 1 else (1,)
 
-    def inflate(self, repeats, split=True):
-        if self.ndim == 1:
-            return numpy.full((repeats, self.shape[0]), self).view(Data)
-        elif self.ndim == 2:
-            if split:
-                return numpy.repeat(self[:, numpy.newaxis], repeats, axis=1)
-            else:
-                return numpy.repeat(self, repeats, axis=0)
-        elif self.ndim == 3:
-            return numpy.repeat(self, repeats, axis=1)
-        else:
-            raise "bad data shape"
+    @classmethod
+    def load(cls,path):
+        return numpy.load(path).view(cls)
+
+    def save(self,path):
+        numpy.save(path,self)
+
+    @classmethod
+    def load_csv(cls,path):
+        return numpy.loadtxt(path,delimiter=',').view(cls)
+        
+    def save_csv(self,path):
+        numpy.savetxt(path,self,delimiter=',')
 
 
 class Vector3(Data):

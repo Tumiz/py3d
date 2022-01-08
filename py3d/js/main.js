@@ -1,10 +1,13 @@
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
-var ws = new WebSocket("ws://"+window.location.host+"/ws/"+id_);
+var ws = new WebSocket("ws://"+window.location.host+"/ws/"+id_)
+var scene = init_3d_canvas(create_canvas("3dcanvas"))
 ws.onopen=()=>{
-    this.chart=init_3d_canvas(create_canvas("3dcanvas"))
     console.log("ready")
+}
+ws.onclose=(e)=>{
+    console.log(e)
 }
 const create_canvas = (name) => {
     let canvas = document.createElement("canvas")
@@ -74,8 +77,9 @@ ws.onmessage = (message) => {
 const methods = {}
 methods.clear = (time, data) => {
     console.log(time, "clear")
-    document.body.innerHTML = ""
-    this.chart = undefined
+    if(scene){
+        scene.clear()
+    }
 }
 methods.info = (time, data) => {
     var new_div = document.createElement("div")
@@ -93,29 +97,29 @@ methods.warn = (time, data) => {
 }
 methods.point = (time, data) => {
     console.log(time,data)
-    let mesh = this.chart.getObjectByName(data.index)
+    let mesh = scene.getObjectByName(data.index)
     if (!mesh){
         mesh = new GEO.Points
         mesh.name = data.index
-        this.chart.add(mesh)
+        scene.add(mesh)
     }
     mesh.set(data.vertice,data.color,data.size)
 }
 methods.mesh = (time, data) => {
-    let mesh = this.chart.getObjectByName(data.index)
+    let mesh = scene.getObjectByName(data.index)
     if (!mesh){
         mesh = new GEO.Mesh
         mesh.name = data.index
-        this.chart.add(mesh)
+        scene.add(mesh)
     }
     mesh.set(data.vertice,data.color)
 }
 methods.line = (time, data) => {
-    let line = this.chart.getObjectByName(data.index)
+    let line = scene.getObjectByName(data.index)
     if (!line){
         line = new GEO.Lines
         line.name = data.index
-        this.chart.add(line)
+        scene.add(line)
     }
     line.set(data.vertice,data.color)
 }

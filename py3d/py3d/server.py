@@ -106,9 +106,9 @@ class Page:
             instance.name = name
             instance.clients = []
             instance.cache = []
-            instance.url = "http://"+cls.host+":" + str(cls.port) + "/view/" + name
-            instance.iframe = IFrame(src=instance.url, width="100%", height="600px")
-            print("click", instance.url, "to view in browser")
+            instance.url = "http://{}:" + str(cls.port) + "/view/" + name
+            instance.iframe = IFrame(src=instance.url.format("127.0.0.1"), width="100%", height="600px")
+            print("click", instance.url.format("127.0.0.1"), "or", instance.url.format(get_ip()), "to view in browser")
             cls.connections[name] = instance
             return instance
 
