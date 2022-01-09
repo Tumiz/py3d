@@ -1,14 +1,28 @@
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
+
 var ws = new WebSocket("ws://"+window.location.host+"/ws/"+id_)
-var scene = init_3d_canvas(create_canvas("3dcanvas"))
-ws.onopen=()=>{
-    console.log("ready")
+if(ws){
+    ws.onopen=()=>{
+        console.log("ready")
+    }
+    ws.onclose=(e)=>{
+        console.log(e)
+    }
+    ws.onmessage = (message) => {
+        console.log(message)
+        try {
+            const cmds = JSON.parse(message.data.replace(/"/g, '\"'))
+            for (let cmd of cmds) {
+                methods[cmd.method](cmd.time, cmd.data)
+            }
+        } catch (e) {
+            console.log(e,message.data)
+        }
+    }
 }
-ws.onclose=(e)=>{
-    console.log(e)
-}
+
 const create_canvas = (name) => {
     let canvas = document.createElement("canvas")
     canvas.id = name
@@ -63,17 +77,7 @@ const init_3d_canvas = (canvas) => {
     animate()
     return scene
 }
-ws.onmessage = (message) => {
-    console.log(message)
-    try {
-        const cmds = JSON.parse(message.data.replace(/"/g, '\"'))
-        for (let cmd of cmds) {
-            methods[cmd.method](cmd.time, cmd.data)
-        }
-    } catch (e) {
-        console.log(e,message.data)
-    }
-}
+var scene = init_3d_canvas(create_canvas("3dcanvas"))
 const methods = {}
 methods.clear = (time, data) => {
     console.log(time, "clear")

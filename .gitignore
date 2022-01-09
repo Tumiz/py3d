@@ -6,3 +6,5 @@ testbench.ipynb
 tests
 node_modules
 *.swp
+build
+dist
