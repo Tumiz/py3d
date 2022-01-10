@@ -1,3 +1,4 @@
+// Copyright (c) Tumiz. Distributed under the terms of the GPL-3.0 License.
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
@@ -31,12 +32,12 @@ const create_canvas = (name) => {
     document.body.onresize = (ev) => {
         canvas.width = document.body.clientWidth
         canvas.height = document.body.clientHeight
-//         canvas.onresize(ev)
         console.log(canvas.width, canvas.height)
     }
     document.body.appendChild(canvas)
     return canvas
 }
+
 const init_3d_canvas = (canvas) => {
     const scene = new THREE.Scene()
     scene.background = "white"

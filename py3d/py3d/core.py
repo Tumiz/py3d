@@ -1,3 +1,5 @@
+# Copyright (c) Tumiz.
+# Distributed under the terms of the GPL-3.0 License.
 import collections
 import numpy
 from .server import Space
@@ -14,21 +16,23 @@ def merge_shapes(*shapes):
     for i in range(ndim):
         sizes = []
         for s in shapes:
-            if len(s) == 1 and s[-1] ==1:
+            if len(s) == 1 and s[-1] == 1:
                 continue
             if len(s) > i:
                 sizes.append(s[-1-i])
         ret = sorted_sizes(*sizes) + ret
     return ret
 
+
 def force_assgin(v1, v2):
     try:
         numpy.copyto(v1, v2)
     except:
         if v1.size == v2.size:
-            v1[:]=v2.reshape(v1.shape)
+            v1[:] = v2.reshape(v1.shape)
         else:
-            v1[:]=v2[:, numpy.newaxis]
+            v1[:] = v2[:, numpy.newaxis]
+
 
 class Data(numpy.ndarray):
     # usually, d1 is the number of entities, and d3 is the size of one element.
@@ -45,18 +49,18 @@ class Data(numpy.ndarray):
         return self.shape[:-1] if self.ndim > 1 else (1,)
 
     @classmethod
-    def load(cls,path):
+    def load(cls, path):
         return numpy.load(path).view(cls)
 
-    def save(self,path):
-        numpy.save(path,self)
+    def save(self, path):
+        numpy.save(path, self)
 
     @classmethod
-    def load_csv(cls,path):
-        return numpy.loadtxt(path,delimiter=',').view(cls)
-        
-    def save_csv(self,path):
-        numpy.savetxt(path,self,delimiter=',')
+    def load_csv(cls, path):
+        return numpy.loadtxt(path, delimiter=',').view(cls)
+
+    def save_csv(self, path):
+        numpy.savetxt(path, self, delimiter=',')
 
 
 class Vector3(Data):
@@ -90,18 +94,18 @@ class Vector3(Data):
     @classmethod
     def Rand(cls, *n):
         return numpy.random.rand(*n, 3).view(cls)
-    
+
     @classmethod
     def Rectangle(cls):
         return numpy.array([
-            [1,1,0],
-            [-1,1,0],
-            [-1,-1,0],
-            [1,-1,0]]).view(cls)
-    
+            [1, 1, 0],
+            [-1, 1, 0],
+            [-1, -1, 0],
+            [1, -1, 0]]).view(cls)
+
     @classmethod
     def RectangleIndexed(cls):
-        return cls.Rectangle()[[0,1,2,2,3,0]]
+        return cls.Rectangle()[[0, 1, 2, 2, 3, 0]]
 
     @property
     def x(self):
@@ -126,17 +130,17 @@ class Vector3(Data):
     @z.setter
     def z(self, v):
         force_assgin(self[..., 2], v)
-        
+
     @property
     def H(self):
         # Homogeneous vector, a 3D vector has 4 numbers
         return numpy.insert(self, 3, 1, axis=self.ndim-1)
-    
+
     @property
     def M(self):
         # mean vector
         return super().mean(axis=self.ndim-2)
-    
+
     @property
     def U(self):
         # unit vector, direction vector
@@ -145,12 +149,12 @@ class Vector3(Data):
 
     def norm(self) -> numpy.ndarray:  # norm
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
-    
+
     def SST(self):
         return ((self-self.M).norm()**2).sum()
 
     def append(self, v) -> numpy.ndarray:
-        return numpy.concatenate((self,v),axis=0).view(self.__class__)
+        return numpy.concatenate((self, v), axis=0).view(self.__class__)
 
     def insert(self, pos, v) -> numpy.ndarray:
         # wouldnt change self
@@ -230,7 +234,7 @@ class Vector3(Data):
         return self + (plane.position[:, numpy.newaxis] - self).vector_projection(
             plane.normal[:, numpy.newaxis]
         )
-    
+
     def as_scaling(self) -> numpy.ndarray:
         ret = Transform(*self.n)
         ret[..., 0, 0] = self[..., 0]
@@ -248,7 +252,8 @@ class Vector3(Data):
     def as_point(self, color=None):
         entity = Point(*self.n)
         entity.vertice = self
-        if color is not None: entity.color=color
+        if color is not None:
+            entity.color = color
         return entity
 
     def as_vector(self, start=0):
@@ -468,21 +473,22 @@ class Rotation3(Data):
         ret = numpy.full((*self.n, 4, 4), numpy.eye(4))
         ret[..., 0:3, 0:3] = self
         return ret
-    
+
+
 class Projection(Data):
-    
+
     @classmethod
-    def Orthogonal(cls,t,b,l,r,f,n):
+    def Orthogonal(cls, t, b, l, r, f, n):
         ret = numpy.eye(4)
-        ret[...,0,0]=2/(r-l)
-        ret[...,1,1]=2/(t-b)
-        ret[...,2,2]=2/(n-f)
+        ret[..., 0, 0] = 2/(r-l)
+        ret[..., 1, 1] = 2/(t-b)
+        ret[..., 2, 2] = 2/(n-f)
         return ret.view(cls)
 
 
 class Transform(Data):
     def __new__(cls, *n):
-        return numpy.full(n + (4,4), numpy.eye(4)).squeeze().view(cls)
+        return numpy.full(n + (4, 4), numpy.eye(4)).squeeze().view(cls)
 
     def __len__(self):
         if self.ndim == 2:
@@ -610,7 +616,7 @@ class Geometry(Data):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n, 7)
         return ret
-    
+
     @property
     def n(self):
         return self.shape[:-2] if len(self.shape) > 2 else (1,)
@@ -632,17 +638,17 @@ class Geometry(Data):
         force_assgin(self[..., 3:7], v)
 
 
-class Mesh:  
+class Mesh:
     def __init__(self, *n):
-        self.geometry=Geometry(*n)
+        self.geometry = Geometry(*n)
         self.geometry.color = Color.Rand(*self.geometry.n)
         self.transform = Transform(*self.geometry.n)
         self.index = slice(None)
-        
+
     def __getitem__(self, *n):
-        ret=Mesh(*n)
-        ret.geometry=self.geometry[n]
-        ret.transform=self.transform[n]
+        ret = Mesh(*n)
+        ret.geometry = self.geometry[n]
+        ret.transform = self.transform[n]
         return ret
 
     @classmethod
@@ -658,10 +664,12 @@ class Mesh:
             self.geometry.vertice[..., i, :] = v
 
     def render(self, page=None):
-        if page is None: page = Space(str(id(self)))
+        if page is None:
+            page = Space(str(id(self)))
         vertice = self.geometry.vertice.mt(self.transform)
         page.render_mesh(id(self), vertice[..., self.index, :].ravel(
         ).tolist(), self.geometry.color[..., self.index, :].ravel().tolist())
+
 
 class Triangle(Mesh):
     def __new__(cls, *n):
@@ -691,7 +699,8 @@ class LineSegment(Geometry):
         self.vertice[..., 1::2, :].squeeze()[:] = v
 
     def render(self, page=None):
-        if page is None: page=Space(str(id(self)))
+        if page is None:
+            page = Space(str(id(self)))
         page.render_line(id(self), self.vertice.ravel(
         ).tolist(), self.color.ravel().tolist())
 
@@ -704,7 +713,8 @@ class Point(Geometry):
         return ret
 
     def render(self, page=None):
-        if page is None: page= Space(str(id(self)))
+        if page is None:
+            page = Space(str(id(self)))
         page.render_point(id(self), self.vertice.ravel(
         ).tolist(), self.color.ravel().tolist(), self.point_size)
 
@@ -716,21 +726,56 @@ class Tetrahedron(Mesh):
         return ret
 
 
-class Cube(Mesh): 
-    index = [0, 2, 1, 0, 4, 1, 0, 4, 2, 3, 2, 1, 5, 4, 1, 6,
-                     4, 2, 5, 3, 7, 5, 3, 1, 6, 3, 7, 6, 3, 2, 6, 5, 7, 6, 5, 4]
+class Cube(Mesh):
     vertice_base = Vector3([
-            [0.5, 0.5, 0.5],
-            [-0.5, 0.5, 0.5],
-            [0.5, -0.5, 0.5],
-            [-0.5, -0.5, 0.5],
-            [0.5, 0.5, -0.5],
-            [-0.5, 0.5, -0.5],
-            [0.5, -0.5, -0.5],
-            [-0.5, -0.5, -0.5]])
+        [0.5, 0.5, 0.5],
+        [-0.5, 0.5, 0.5],
+        [0.5, -0.5, 0.5],
+        [-0.5, -0.5, 0.5],
+        [0.5, 0.5, -0.5],
+        [-0.5, 0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [-0.5, -0.5, -0.5]])
+
     def __init__(self, *n):
         super().__init__(*n, 8)
         self.geometry.vertice = self.vertice_base
+        self.index = [3,
+                      2,
+                      0,
+                      3,
+                      0,
+                      1,
+                      5,
+                      0,
+                      1,
+                      5,
+                      4,
+                      0,
+                      5,
+                      3,
+                      1,
+                      5,
+                      3,
+                      7,
+                      6,
+                      2,
+                      0,
+                      6,
+                      4,
+                      0,
+                      6,
+                      3,
+                      2,
+                      6,
+                      3,
+                      7,
+                      6,
+                      5,
+                      4,
+                      6,
+                      5,
+                      7]
 
 
 class Arrow(LineSegment):
@@ -768,27 +813,28 @@ class Plane(Data):
     @property
     def position(self):
         return self[..., 0:3].view(Vector3)
-    
+
     @position.setter
-    def position(self,v):
+    def position(self, v):
         force_assgin(self[..., 0:3], v)
 
     @property
     def normal(self):
         return self[..., 3:6].view(Vector3)
-    
+
     @normal.setter
-    def normal(self,v):
+    def normal(self, v):
         force_assgin(self[..., 3:6], v)
-        
+
     @property
     def color(self):
-        return self[...,6:10].view(Color)
-    
+        return self[..., 6:10].view(Color)
+
     @color.setter
-    def color(self,v):
-        self[...,6:10]=v
-        
+    def color(self, v):
+        self[..., 6:10] = v
+
     def as_mesh(self):
-        transform=Transform.from_vector_change(Vector3(),Vector3(z=1),self.position,self.position+self.normal)
+        transform = Transform.from_vector_change(
+            Vector3(), Vector3(z=1), self.position, self.position+self.normal)
         return Mesh.from_indexed(Vector3.RectangleIndexed().mt(transform))
