@@ -1,28 +1,12 @@
 // Copyright (c) Tumiz. Distributed under the terms of the GPL-3.0 License.
+const head = document.getElementsByTagName("head")[0]
+const logo = document.createElement("link")
+logo.rel = 'icon'
+logo.href = require("./logo.png")
+head.appendChild(logo)
 const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
-
-var ws = new WebSocket("ws://"+window.location.host+"/ws/"+id_)
-if(ws){
-    ws.onopen=()=>{
-        console.log("ready")
-    }
-    ws.onclose=(e)=>{
-        console.log(e)
-    }
-    ws.onmessage = (message) => {
-        console.log(message)
-        try {
-            const cmds = JSON.parse(message.data.replace(/"/g, '\"'))
-            for (let cmd of cmds) {
-                methods[cmd.method](cmd.time, cmd.data)
-            }
-        } catch (e) {
-            console.log(e,message.data)
-        }
-    }
-}
 
 const create_canvas = (name) => {
     let canvas = document.createElement("canvas")
@@ -82,7 +66,7 @@ var scene = init_3d_canvas(create_canvas("3dcanvas"))
 const methods = {}
 methods.clear = (time, data) => {
     console.log(time, "clear")
-    if(scene){
+    if (scene) {
         scene.clear()
     }
 }
@@ -101,40 +85,67 @@ methods.warn = (time, data) => {
     div.style.color = "orange"
 }
 methods.point = (time, data) => {
-    console.log(time,data)
+    console.log(time, data)
     let mesh = scene.getObjectByName(data.index)
-    if (!mesh){
+    if (!mesh) {
         mesh = new GEO.Points
         mesh.name = data.index
         scene.add(mesh)
     }
-    mesh.set(data.vertice,data.color,data.size)
+    mesh.set(data.vertice, data.color, data.size)
 }
 methods.mesh = (time, data) => {
     let mesh = scene.getObjectByName(data.index)
-    if (!mesh){
+    if (!mesh) {
         mesh = new GEO.Mesh
         mesh.name = data.index
         scene.add(mesh)
     }
-    mesh.set(data.vertice,data.color)
+    mesh.set(data.vertice, data.color)
 }
 methods.line = (time, data) => {
     let line = scene.getObjectByName(data.index)
-    if (!line){
+    if (!line) {
         line = new GEO.Lines
         line.name = data.index
         scene.add(line)
     }
-    line.set(data.vertice,data.color)
+    line.set(data.vertice, data.color)
 }
 methods.text = (time, data) => {
-    const div=document.createElement("div")
-    div.innerHTML=data.text
-    div.style.left=data.x+"px"
-    div.style.top=data.y+"px"
-    div.style.color=data.color
-    div.style.position="absolute"
+    const div = document.createElement("div")
+    div.innerHTML = data.text
+    div.style.left = data.x + "px"
+    div.style.top = data.y + "px"
+    div.style.color = data.color
+    div.style.position = "absolute"
     document.body.appendChild(div)
-    console.log(data.x,data.y,data.text,data.color)
+    console.log(data.x, data.y, data.text, data.color)
+}
+
+if (commands == undefined) {
+    var ws = new WebSocket("ws://" + window.location.host + "/ws/" + document.title)
+    if (ws) {
+        ws.onopen = () => {
+            console.log("ready")
+        }
+        ws.onclose = (e) => {
+            console.log(e)
+        }
+        ws.onmessage = (message) => {
+            try {
+                const cmd = JSON.parse(message.data)
+                methods[cmd.method](cmd.time, cmd.data)
+            } catch (e) {
+                console.log(e)
+            }
+        }
+    }
+} else {
+    let t0 = -1
+    for (const cmd of commands) {
+        const timeout = t0 > 0 ? (cmd.time - t0) * 1e3 : 0
+        setTimeout(() => methods[cmd.method](cmd.time, cmd.data), timeout)
+        if (t0 < 0) t0 = cmd.time
+    }
 }

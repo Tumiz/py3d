@@ -235,6 +235,15 @@ class Vector3(Data):
             plane.normal[:, numpy.newaxis]
         )
 
+    def interp(self, xp, x):
+        i=numpy.searchsorted(xp,x)
+        x0=xp[i-1]
+        x1=xp[i]
+        d=(x-x0)/x1-x0
+        f0=self[i-1]
+        f1=self[i]
+        return d*f0+(1-d)*f1
+
     def as_scaling(self) -> numpy.ndarray:
         ret = Transform(*self.n)
         ret[..., 0, 0] = self[..., 0]
@@ -509,6 +518,52 @@ class Transform(Data):
         ret.translation = p0_ - p0
         ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix33()
         return ret
+    
+    # rotate around body frame's axis
+    @classmethod
+    def from_eular_intrinsic(cls, x=0, y=0, z=0):
+        return cls.Rz(z) @ cls.Ry(y) @ cls.Rx(x)
+
+    # rotate around parent frame's axis
+    @classmethod
+    def from_eular_extrinsic(cls, x=0, y=0, z=0):
+        return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
+    
+    @classmethod
+    def Rx(cls, a, n=()):
+        a=numpy.array(a)
+        ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
+        cos = numpy.cos(a) 
+        sin = numpy.sin(a)
+        ret[..., 1, 1] = cos
+        ret[..., 1, 2] = sin
+        ret[..., 2, 1] = -sin
+        ret[..., 2, 2] = cos
+        return ret.view(cls)
+
+    @classmethod
+    def Ry(cls, a, n=()):
+        a=numpy.array(a)
+        ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
+        cos = numpy.cos(a) 
+        sin = numpy.sin(a)
+        ret[..., 0, 0] = cos
+        ret[..., 0, 2] = -sin
+        ret[..., 2, 0] = sin
+        ret[..., 2, 2] = cos
+        return ret.view(cls)
+
+    @classmethod
+    def Rz(cls, a, n=()):
+        a=numpy.array(a)
+        ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
+        cos = numpy.cos(a) 
+        sin = numpy.sin(a)
+        ret[..., 0, 0] = cos
+        ret[..., 0, 1] = sin
+        ret[..., 1, 0] = -sin
+        ret[..., 1, 1] = cos
+        return ret.view(cls)
 
     @property
     def n(self):
