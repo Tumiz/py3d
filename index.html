@@ -25,7 +25,29 @@ stable means it will have less dependeces and modules, and it will be fully test
 <li>
 customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
 </li>
-
+Here is an example
+<code>
+  <pre>
+    from py3d import Cube,Vector3,Color,Space
+    c=Cube(2)
+    s=Space("c", online=True)
+    c[0].color=Color(b=0.5,g=0.3)
+    c[1].color=Color(r=1)
+    c[0].transform.translation=Vector3(0,0,0.53)
+    c[1].transform.translation=Vector3(20,-3,0.85)
+    c.transform.scaling=Vector3([[2.075,0.78,1.06],[0.8,0.3,1.7]])
+    from time import sleep
+    t=0
+    dt=0.1
+    while t<2:
+        c.transform[0].translation+=Vector3(x=6)*dt
+        c.transform[1].translation+=Vector3(y=1)*dt
+        c.render(s)
+        sleep(dt)
+        t+=dt
+  </pre>
+</code>
+<iframe src="eg1.html" style="width: 1000px;height: 500px;"></iframe>
 </body>
 </html>
 
