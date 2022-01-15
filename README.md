@@ -1,37 +1,40 @@
 **Scenario** is a python library that helps to build simple environments for simulation of agents.
 
 # Note
-I'm now refacing this project, so if you want to use scenario, please checkout tag v0.0.0 for a stable release.
-Besides, you can also have a look at the minimum version -- py3d. It's a independed package with classes I seperated from this project. It focusses on dealing with points, lines and planes in batches. And it is also very easy to install, without clone this project, just `pip install py3d -i https://pypi.org/simple`. Its documents locates in [introduction of py3d](py3d/doc/introduction.ipynb) of this project.
 
-Demands wanted! Please tell me you ideas, requirements or suggestions by open issues. I want to hear your voice.
-如果你有更好的想法、建议或者需求请通过issue告诉我，我想听到用户的声音。
+I'm now refacing this project, so if you want to use scenario, please checkout tag v0.0.0 for a stable release.
+Besides, you can also have a look at the minimum version -- py3d. It's a independed package with classes I seperated from this project. It focusses on dealing with points, lines and planes in batches. And it is also very easy to install, without clone this project, just `pip install py3d`. For more information, please visit [https://tumiz.github.io/scenario/](https://tumiz.github.io/scenario/)For more information,
 
 # Features
-☑ Jupyter support\
-☑ Kinematics emulate\
-☑ Tiny 2D rendering, view from top\
-☑ Smooth 3D rendering\
-☑ Full control of simulation loop\
-☑ No ipc in simulation loop, python environment\
-☑ Simulation without rendering\
-☑ Apis to handle transforms: translation, rotation and scaling\
-☑ Apis to handle quaternion, axis-angle, and eular angles
+
+* Jupyter support
+* Kinematics emulate
+* 3D rendering
+* Full control of simulation loop
+* No interprocess communication in simulation loop, pure python environment
+* Able to simulation without rendering
+* APIs to handle transforms: translation, rotation, scaling and projection
 
 # Install
+
 **Ubuntu (Recommended):**
+
 ```shell
 pip install git+git://github.com/Tumiz/scenario.git
 ```
+
 **Windows**:
+
 ```
 git clone https://github.com/tumiz/scenario.git
 cd scenario
 pip install -e .
 ```
-install pytorch following instructions from [pytorch website](https://pytorch.org/get-started/locally/) 
+
+install pytorch following instructions from [pytorch website](https://pytorch.org/get-started/locally/)
 
 **Example 1**: a dynamic spiral line
+
 ```python
 from scenario import *
 from time import sleep
@@ -51,9 +54,11 @@ while scen.t<10:
     scen.render()
     sleep(0.01)
 ```
+
 ![](doc/dynamic_line.gif)
 
 **Example 2**: rotate a child cube
+
 ```python
 from scenario import *
 from time import sleep
@@ -76,9 +81,11 @@ while scen.t<10:
     sleep(0.1)
     scen.render()
 ```
+
 ![](doc/local_rotation.gif)
 
 **Example 3**: A queue of agents.
+
 ```python
 from scenario import *
 from time import sleep
@@ -110,11 +117,13 @@ while scen.t<15:
     scen.render()
     sleep(0.1)
 ```
+
 ![](doc/queue.gif)
 
 [Here](doc/basics.ipynb) is an introduction to Scenario, read it for details.
 
 # Target Users
+
 * Students or engineers who want to test their algrithms in cases
 * For small companies
 * For unit test
