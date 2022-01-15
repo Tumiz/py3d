@@ -1,6 +1,6 @@
 # Copyright (c) Tumiz.
 # Distributed under the terms of the GPL-3.0 License.
-import os
+import pathlib
 import json
 import time
 import socket
@@ -87,10 +87,11 @@ class Page:
     host = get_ip()
     port = 8000
     server = None
+    path = pathlib.Path(__file__)
     connections = dict()
     __loop = None
 
-    def __new__(cls, name=""):
+    def __new__(cls, name="", online=True):
         name = name if name else str(uuid.uuid1())
         if Page.server is None:
             while address_in_use(Page.port):
@@ -104,12 +105,14 @@ class Page:
         else:
             instance = super().__new__(cls)
             instance.name = name
-            instance.clients = []
             instance.cache = []
-            instance.url = "http://{}:" + str(cls.port) + "/view/" + name
-            instance.iframe = IFrame(src=instance.url.format("127.0.0.1"), width="100%", height="600px")
-            print("click", instance.url.format("127.0.0.1"), "or", instance.url.format(get_ip()), "to view in browser")
-            cls.connections[name] = instance
+            instance.online = online
+            if online:
+                instance.clients = []
+                instance.url = "http://{}:" + str(cls.port) + "/view/" + name
+                instance.iframe = IFrame(src=instance.url.format("127.0.0.1"), width="100%", height="600px")
+                cls.connections[name] = instance
+                print("click", instance.url.format("127.0.0.1"), "or", instance.url.format(get_ip()), "to view in browser")
             return instance
 
     def send(self, msg):
@@ -123,7 +126,8 @@ class Page:
     def send_t(self, method, msg):
         cmd = {"method": method, "time": time.time(), "data": msg}
         self.cache.append(cmd)
-        self.send(json.dumps([cmd]))
+        if self.online:
+            self.send(json.dumps(cmd))
 
     def clear(self):
         self.send_t("clear", "")
@@ -132,12 +136,21 @@ class Page:
     def wait(self):
         input("Press enter to exit")
 
+    def save(self, path):
+        html=open(self.path.parent/'viewer.html','r')
+        bundlejs=open(self.path.parent/'static/bundle.js','r')
+        f=open(path,'w')
+        f.write(html.read().replace("{{ID}}",self.name).replace("undefined",str(self.cache)).replace("<script src=\"/static/bundle.js\"></script>","<script>"+bundlejs.read()+"</script>"))
+        html.close()
+        bundlejs.close() 
+        f.close()
+
     @classmethod
     def run(cls):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        static_path = os.path.join(os.path.dirname(__file__), "static")
-        template_path = os.path.join(os.path.dirname(__file__), ".")
+        static_path = str(cls.path.parent/"static")
+        template_path = str(cls.path.parent)
         app = tornado.web.Application(
             [
                 (r"/view/(.*)", IndexHandler),
@@ -167,7 +180,6 @@ class Space(Page):
 
     def render_text(self, index, text, x, y, z, color):
         self.send_t("text", {"index":index, "text": text, "x": x, "y": y, "z":z, "color":color})
-
 
 class Log(Page):
     def info(self, *msg):
