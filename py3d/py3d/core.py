@@ -236,13 +236,13 @@ class Vector3(Data):
         )
 
     def interp(self, xp, x):
-        i=numpy.searchsorted(xp,x)
+        i=numpy.searchsorted(xp,x).clip(1,len(xp)-1)
         x0=xp[i-1]
         x1=xp[i]
-        d=(x-x0)/x1-x0
+        d=((x-x0)/(x1-x0))[:,numpy.newaxis]
         f0=self[i-1]
         f1=self[i]
-        return d*f0+(1-d)*f1
+        return (1-d)*f0+d*f1
 
     def as_scaling(self) -> numpy.ndarray:
         ret = Transform(*self.n)
