@@ -1,55 +1,74 @@
 <!DOCTYPE html>
+
 <head>
   <script>
     var _hmt = _hmt || [];
-    (function() {
+    (function () {
       var hm = document.createElement("script");
       hm.src = "https://hm.baidu.com/hm.js?444208f50ebba09f31033fb98c3497b3";
-      var s = document.getElementsByTagName("script")[0]; 
+      var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
 </head>
+<style>
+  pre{
+    margin-left: 1em;
+    margin-right: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+    color: rgb(56, 54, 54);
+    background-color: lightgray;
+    font: 1em sans-serif;
+  }
+</style>
 <body>
-<h1>Scenario Tool Kit</h1> 
+  <h1>Scenario Tool Kit</h1>
+  <p>Scenario is a series of python libraries that helping building simulation environment easily and quickly.</p>
 
-<p>py3d -  a 3d computational geometry library.</p>
-
-<p>It is designed to be simple, stable and customizable:</p>
-<li>
-simple means api will be less than usual and progressive
-</li>
-<li>
-stable means it will have less dependeces and modules, and it will be fully tested
-</li>
-<li>
-customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
-</li>
-Here is an example
-<code>
+  <h2>py3d</h2>
+  <p>
+    py3d is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in
+    batches. 
+  </p>
+  <p>It is designed to be simple, stable and customizable:</p>
+  <li>
+    simple means api will be less than usual and progressive
+  </li>
+  <li>
+    stable means it will have less dependeces and modules, and it will be fully tested
+  </li>
+  <li>
+    customizable means it will be a libaray rather than an application, it only provide data structures and functions
+    handling basic geometry concepts
+  </li>
+  <h3>Installation</h3>
+  <pre>pip install py3d</pre>
+  <h3>  Here is an example
+  </h3>
   <pre>
-    from py3d import Cube,Vector3,Color,Space
-    c=Cube(2)
-    s=Space("c", online=True)
-    c[0].color=Color(b=0.5,g=0.3)
-    c[1].color=Color(r=1)
-    c[0].transform.translation=Vector3(0,0,0.53)
-    c[1].transform.translation=Vector3(20,-3,0.85)
-    c.transform.scaling=Vector3([[2.075,0.78,1.06],[0.8,0.3,1.7]])
-    from time import sleep
-    t=0
-    dt=0.1
-    while t<2:
-        c.transform[0].translation+=Vector3(x=6)*dt
-        c.transform[1].translation+=Vector3(y=1)*dt
-        c.render(s)
-        sleep(dt)
-        t+=dt
+from py3d import Cube,Vector3,Color,Space
+c=Cube(2)
+s=Space("c", online=True)
+c[0].color=Color(b=0.5,g=0.3)
+c[1].color=Color(r=1)
+c[0].transform.translation=Vector3(0,0,0.53)
+c[1].transform.translation=Vector3(20,-3,0.85)
+c.transform.scaling=Vector3([[2.075,0.78,1.06],[0.8,0.3,1.7]])
+from time import sleep
+t=0
+dt=0.1
+while t<2:
+    c.transform[0].translation+=Vector3(x=6)*dt
+    c.transform[1].translation+=Vector3(y=1)*dt
+    c.render(s)
+    sleep(dt)
+    t+=dt
   </pre>
-</code>
-<iframe src="eg1.html" style="width: 1000px;height: 500px;"></iframe>
+  <iframe src="eg1.html" style="width: 1000px;height: 500px;"></iframe>
+  <h3>API reference</h3>
+  <h4>Vector3</h1>
+  <p>Vector3 represents point or position, velocity and scale. Note! Angular velocity cant be represented by this type, it should be represented by Rotation3 which will indroduced in next section. It is a class inheriting numpy.ndarray, so it is also ndarray.</p>
 </body>
+
 </html>
-
-
-
