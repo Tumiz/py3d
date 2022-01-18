@@ -62,7 +62,8 @@ class WSHandler(tornado.websocket.WebSocketHandler):
         if v in Page.connections:
             self.server = Page.connections[v]
             self.server.clients.append(self)
-            self.write_message(json.dumps(self.server.cache))
+            if self.server.cache:
+                self.write_message(json.dumps(self.server.cache[-1]))
 #         print("ws open",v,self.request,self.server.clients)
 
     def on_close(self):
