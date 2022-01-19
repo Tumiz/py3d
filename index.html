@@ -12,24 +12,32 @@
   </script>
 </head>
 <style>
-  pre{
-    margin-left: 1em;
-    margin-right: 1em;
+  body{
+    padding: 2em;
+  }
+  .code {
     padding: 1em;
     border-radius: 1mm;
     color: rgb(56, 54, 54);
     background-color: lightgray;
     font: 1em sans-serif;
   }
+  .output {
+    padding: 1em;
+    color: rgb(56, 54, 54);
+    font: 1em sans-serif;
+  }
 </style>
+
 <body>
   <h1>Scenario Tool Kit</h1>
-  <p>Scenario [<a href="https://github.com/Tumiz/scenario">Github</a>] is a series of python libraries that helping building simulation environment easily and quickly.</p>
+  <p>Scenario [<a href="https://github.com/Tumiz/scenario">Github</a>] is a series of python libraries that helping
+    building simulation environment easily and quickly.</p>
 
   <h2>py3d</h2>
   <p>
     py3d is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in
-    batches. 
+    batches.
   </p>
   <p>It is designed to be simple, stable and customizable:</p>
   <li>
@@ -43,10 +51,10 @@
     handling basic geometry concepts
   </li>
   <h3>Installation</h3>
-  <pre>pip install py3d</pre>
-  <h3>  Here is an example
+  <pre class="code">pip install py3d</pre>
+  <h3> Here is an example
   </h3>
-  <pre>
+  <pre class="code">
 from py3d import Cube,Vector3,Color,Space
 c=Cube(2)
 s=Space("c", online=True)
@@ -67,8 +75,7 @@ while t<2:
 s.save("eg1.html")</pre>
   <iframe src="eg1.html" style="width: 1000px;height: 500px;"></iframe>
   <h3>API reference</h3>
-  <h4>Vector3</h1>
-  <p>Vector3 represents point or position, velocity and scale. Note! Angular velocity cant be represented by this type, it should be represented by Rotation3 which will indroduced in next section. It is a class inheriting numpy.ndarray, so it is also ndarray.</p>
+  <a href="examples/vector3.html">Vector3</a>
 </body>
 
 </html>
