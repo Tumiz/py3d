@@ -6,6 +6,7 @@ from .server import Space
 
 pi = numpy.arccos(-1)
 
+
 def sorted_sizes(*sizes):
     return tuple(list(dict(sorted(collections.Counter(sizes).items(), key=lambda v: v[1])).keys()))
 
@@ -189,7 +190,7 @@ class Vector3(Data):
     def cross(self, v: numpy.ndarray) -> numpy.ndarray:
         return numpy.cross(self, v).view(self.__class__)
 
-    def angle_to_vector(self, to: numpy.ndarray) -> float:
+    def angle_to_vector(self, to: numpy.ndarray) -> numpy.ndarray:
         cos = self.dot(to) / self.norm() / to.norm()
         return numpy.arccos(cos)
 
@@ -236,15 +237,15 @@ class Vector3(Data):
         )
 
     def interp(self, xp, x):
-        i=numpy.searchsorted(xp,x).clip(1,len(xp)-1)
-        x0=xp[i-1]
-        x1=xp[i]
-        d=((x-x0)/(x1-x0))[:,numpy.newaxis]
-        f0=self[i-1]
-        f1=self[i]
+        i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
+        x0 = xp[i-1]
+        x1 = xp[i]
+        d = ((x-x0)/(x1-x0))[:, numpy.newaxis]
+        f0 = self[i-1]
+        f1 = self[i]
         return (1-d)*f0+d*f1
 
-    def as_scaling(self) -> numpy.ndarray:
+    def as_scaling(self):
         ret = Transform(*self.n)
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
@@ -288,213 +289,6 @@ class Vector3(Data):
         return entity
 
 
-class Quaternion(numpy.ndarray):
-    # unit quaternion
-    def __new__(cls, w=1, x=0, y=0, z=0, n=None):
-        if isinstance(x, collections.Iterable):
-            n = len(x)
-        elif n is None:
-            n = 1
-        ret = numpy.empty((n, 4) if n > 1 else 4)
-        ret[..., 0] = w
-        if type(x) is Vector3:
-            ret[..., 1:4] = x
-        else:
-            ret[..., 1] = x
-            ret[..., 2] = y
-            ret[..., 3] = z
-        return ret.view(cls)
-
-    def __len__(self):
-        if self.ndim == 1:
-            return 1
-        return super().__getitem__(v)
-
-    @classmethod
-    def from_angle_axis(cls, angle, axis: Vector3):
-        angle = numpy.array(angle)
-        angle = angle.reshape((angle.size, 1))
-        n = angle.size if angle.size > 1 else len(axis)
-        ret = numpy.empty((n, 4) if n > 1 else 4)
-        half_angle = angle / 2
-        ret[..., 0] = numpy.cos(half_angle).flatten()
-        ret[..., 1:4] = axis.U * numpy.sin(half_angle)
-        return ret.view(cls)
-
-    @classmethod
-    def from_direction_change(cls, before, after):
-        axis = before.cross(after)
-        angle = before.angle_to_vector(after)
-        return cls.from_angle_axis(angle, axis)
-
-    @property
-    def I(self):
-        # inverse
-        ret = self.copy()
-        ret[..., 1:4] *= -1
-        return ret
-
-    @property
-    def w(self):
-        return self[..., 0].view(numpy.ndarray)
-
-    @property
-    def xyz(self):
-        return self[..., 1:4].view(Vector3)
-
-    def split(self, n=1):
-        return self.reshape(self.size // 4 // n, n, 4)
-
-    def wxyz(self, keepdims=False):
-        q = self.view(numpy.ndarray)
-        if keepdims:
-            return q[..., 0, numpy.newaxis], q[..., 1, numpy.newaxis], q[..., 2, numpy.newaxis], q[..., 3, numpy.newaxis]
-        else:
-            return q[..., 0], q[..., 1], q[..., 2], q[..., 3]
-
-    def mq(self, q, byrow=True):
-        # byrow: multiply by row
-        w, x, y, z = self.wxyz(not byrow)
-        w_, x_, y_, z_ = q.wxyz(self.ndim > 2)
-        shape = self.shape if byrow else (self.shape[0], q.shape[0], 4)
-        ret = numpy.empty(shape)
-        ret[..., 0] = w * w_ - x * x_ - y * y_ - z * z_
-        ret[..., 1] = w * x_ + x * w_ + y * z_ - z * y_
-        ret[..., 2] = w * y_ + y * w_ - x * z_ + z * x_
-        ret[..., 3] = w * z_ + z * w_ + x * y_ - y * x_
-        return ret.view(self.__class__)
-
-    def to_angle_axis(self):
-        return (
-            numpy.arccos(self[..., 0]) * 2,
-            self[..., 1:4].view(Vector3).U,
-        )
-
-    def to_matrix33(self):
-        w, x, y, z = self.view(numpy.ndarray).T
-        return numpy.array(
-            [
-                [
-                    1 - 2 * y ** 2 - 2 * z ** 2,
-                    -2 * w * z + 2 * x * y + x * y,
-                    2 * w * y + 2 * x * z,
-                ],
-                [
-                    2 * w * z + 2 * x * y,
-                    1 - 2 * x ** 2 - 2 * z ** 2,
-                    -2 * w * x + 2 * y * z,
-                ],
-                [
-                    -2 * w * y + 2 * x * z,
-                    2 * w * x + 2 * y * z,
-                    1 - 2 * x ** 2 - 2 * y ** 2,
-                ],
-            ]
-        ).T.view(Rotation3)
-
-
-class Rotation3(Data):
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n, 3, 3)
-        ret[:] = numpy.eye(3)
-        return ret
-
-    @classmethod
-    def Rand(cls, n=1):
-        return cls.Rx(numpy.random.rand(n))@cls.Ry(numpy.random.rand(n))@cls.Rz(numpy.random.rand(n))
-
-    # rotate around body frame's axis
-    @classmethod
-    def from_eular_intrinsic(cls, x=0, y=0, z=0):
-        return cls.Rz(z) @ cls.Ry(y) @ cls.Rx(x)
-
-    # rotate around parent frame's axis
-    @classmethod
-    def from_eular_extrinsic(cls, x=0, y=0, z=0):
-        return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
-
-    @classmethod
-    def from_angle_axis(cls, angle, axis):
-        return Quaternion.from_angle_axis(angle, axis).to_matrix33().view(cls)
-
-    @classmethod
-    def Rx(cls, a, n=1):
-        if isinstance(a, collections.Iterable):
-            n = len(a)
-        ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
-        cos = numpy.cos(a).flatten()
-        sin = numpy.sin(a).flatten()
-        ret[..., 1, 1] = cos
-        ret[..., 1, 2] = sin
-        ret[..., 2, 1] = -sin
-        ret[..., 2, 2] = cos
-        return ret.view(cls)
-
-    @classmethod
-    def Ry(cls, a, n=1):
-        if isinstance(a, collections.Iterable):
-            n = len(a)
-        ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
-        cos = numpy.cos(a).flatten()
-        sin = numpy.sin(a).flatten()
-        ret[..., 0, 0] = cos
-        ret[..., 0, 2] = -sin
-        ret[..., 2, 0] = sin
-        ret[..., 2, 2] = cos
-        return ret.view(cls)
-
-    @classmethod
-    def Rz(cls, a, n=1):
-        if isinstance(a, collections.Iterable):
-            n = len(a)
-        ret = numpy.full((n, 3, 3) if n > 1 else (3, 3), numpy.eye(3))
-        cos = numpy.cos(a).flatten()
-        sin = numpy.sin(a).flatten()
-        ret[..., 0, 0] = cos
-        ret[..., 0, 1] = sin
-        ret[..., 1, 0] = -sin
-        ret[..., 1, 1] = cos
-        return ret.view(cls)
-
-    def to_eular_extrinsic(self):
-        ret = numpy.zeros((len(self), 3))
-        ret[..., 0] = numpy.arctan2(self[..., 1, 2], self[..., 2, 2])
-        ret[..., 1] = numpy.arcsin(-self[..., 0, 2])
-        ret[..., 2] = numpy.arctan2(self[..., 0, 1], self[..., 0, 0])
-        return ret
-
-    def to_eular_intrinsic(self):
-        ret = numpy.zeros((len(self), 3))
-        ret[..., 0] = numpy.arctan2(self[..., 2, 1], self[..., 2, 2])
-        ret[..., 1] = numpy.arcsin(-self[..., 2, 0])
-        ret[..., 2] = numpy.arctan2(-self[..., 1, 0], self[..., 0, 0])
-        return ret
-
-    @property
-    def I(self):
-        return numpy.linalg.inv(self)
-
-    @property
-    def n(self):
-        return self.shape[:-2]
-
-    def to_matrix44(self):
-        ret = numpy.full((*self.n, 4, 4), numpy.eye(4))
-        ret[..., 0:3, 0:3] = self
-        return ret
-
-
-class Projection(Data):
-
-    @classmethod
-    def Orthogonal(cls, t, b, l, r, f, n):
-        ret = numpy.eye(4)
-        ret[..., 0, 0] = 2/(r-l)
-        ret[..., 1, 1] = 2/(t-b)
-        ret[..., 2, 2] = 2/(n-f)
-        return ret.view(cls)
-
-
 class Transform(Data):
     def __new__(cls, *n):
         return numpy.full(n + (4, 4), numpy.eye(4)).squeeze().view(cls)
@@ -505,35 +299,10 @@ class Transform(Data):
         return super().__len__(self)
 
     @classmethod
-    def Rand(cls, n=1):
-        return (Vector3.Rand(n).as_scaling()@Rotation3.Rand(n).to_matrix44()@Vector3.Rand(n).as_translation()).view(cls)
-
-    @classmethod
-    def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3):
-        d = p1 - p0
-        d_ = p1_ - p0_
-        s = d_.norm() / d.norm()
-        ret = Transform(*s.shape)
-        ret.scaling = Vector3(s, s, s).squeeze()
-        ret.translation = p0_ - p0
-        ret.rotation = Quaternion.from_direction_change(d, d_).to_matrix33()
-        return ret
-    
-    # rotate around body frame's axis
-    @classmethod
-    def from_eular_intrinsic(cls, x=0, y=0, z=0):
-        return cls.Rz(z) @ cls.Ry(y) @ cls.Rx(x)
-
-    # rotate around parent frame's axis
-    @classmethod
-    def from_eular_extrinsic(cls, x=0, y=0, z=0):
-        return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
-    
-    @classmethod
     def Rx(cls, a, n=()):
-        a=numpy.array(a)
+        a = numpy.array(a)
         ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a) 
+        cos = numpy.cos(a)
         sin = numpy.sin(a)
         ret[..., 1, 1] = cos
         ret[..., 1, 2] = sin
@@ -543,9 +312,9 @@ class Transform(Data):
 
     @classmethod
     def Ry(cls, a, n=()):
-        a=numpy.array(a)
+        a = numpy.array(a)
         ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a) 
+        cos = numpy.cos(a)
         sin = numpy.sin(a)
         ret[..., 0, 0] = cos
         ret[..., 0, 2] = -sin
@@ -555,14 +324,103 @@ class Transform(Data):
 
     @classmethod
     def Rz(cls, a, n=()):
-        a=numpy.array(a)
+        a = numpy.array(a)
         ret = numpy.full(n + a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a) 
+        cos = numpy.cos(a)
         sin = numpy.sin(a)
         ret[..., 0, 0] = cos
         ret[..., 0, 1] = sin
         ret[..., 1, 0] = -sin
         ret[..., 1, 1] = cos
+        return ret.view(cls)
+
+    @classmethod
+    def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3):
+        d: Vector3 = p1 - p0
+        d_: Vector3 = p1_ - p0_
+        s = d_.norm() / d.norm()
+        ret = Transform(*s.shape)
+        angle = d.angle_to_vector(d_).squeeze()
+        axis = d.cross(d_)
+        ret.scaling = Vector3(s, s, s).squeeze()
+        ret.translation = p0_ - p0
+        ret.rotation = cls.from_angle_axis(angle, axis)
+        return ret
+
+    @classmethod
+    def from_angle_axis(cls, angle, axis: Vector3):
+        angle = numpy.array(angle)
+        n = merge_shapes(angle.shape, axis.n)
+        q = numpy.empty(n+(4,))
+        half_angle = angle / 2
+        q[..., 0] = numpy.cos(half_angle)
+        q[..., 1:] = numpy.sin(half_angle)[..., numpy.newaxis] * axis.U
+        return cls.from_quaternion(q)
+
+    def to_angle_axis(self):
+        q = self.to_quaternion()
+        half_angle = numpy.arccos(q[..., 0])
+        axis = q[..., 1:]/numpy.sin(half_angle)[..., numpy.newaxis]
+        return half_angle*2, axis
+
+    @classmethod
+    def from_quaternion(cls, quaternion):
+        q = numpy.array(quaternion)
+        w = q[..., 0]
+        x = q[..., 1]
+        y = q[..., 2]
+        z = q[..., 3]
+        ret = cls(*(q.shape[:-1]))
+        ret[..., 0, 0] = 1 - 2 * y ** 2 - 2 * z ** 2
+        ret[..., 0, 1] = -2 * w * z + 2 * x * y + x * y
+        ret[..., 0, 2] = 2 * w * y + 2 * x * z
+        ret[..., 1, 0] = 2 * w * z + 2 * x * y
+        ret[..., 1, 1] = 1 - 2 * x ** 2 - 2 * z ** 2
+        ret[..., 1, 2] = -2 * w * x + 2 * y * z
+        ret[..., 2, 0] = -2 * w * y + 2 * x * z
+        ret[..., 2, 1] = 2 * w * x + 2 * y * z
+        ret[..., 2, 2] = 1 - 2 * x ** 2 - 2 * y ** 2
+        return ret
+
+    def to_quaternion(self):
+        q = numpy.empty(self.n+(4,))
+        q[..., 0] = w = (1+self[..., 0, 0]+self[..., 1, 1] +
+                         self[..., 2, 2])**0.5/2
+        q[..., 1] = (self[..., 2, 1]-self[..., 1, 2])/w/4
+        q[..., 2] = (self[..., 0, 2]-self[..., 2, 0])/w/4
+        q[..., 3] = (self[..., 1, 0]-self[..., 0, 1])/w/4
+        return q
+
+    # rotate around body frame's axis
+    @classmethod
+    def from_eular_intrinsic(cls, x=0, y=0, z=0):
+        return cls.Rz(z) @ cls.Ry(y) @ cls.Rx(x)
+
+    # rotate around parent frame's axis
+    @classmethod
+    def from_eular_extrinsic(cls, x=0, y=0, z=0):
+        return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
+
+    def to_eular_extrinsic(self):
+        ret = numpy.zeros((*self.n, 3))
+        ret[..., 0] = numpy.arctan2(self[..., 1, 2], self[..., 2, 2])
+        ret[..., 1] = numpy.arcsin(-self[..., 0, 2])
+        ret[..., 2] = numpy.arctan2(self[..., 0, 1], self[..., 0, 0])
+        return ret
+
+    def to_eular_intrinsic(self):
+        ret = numpy.zeros((*self.n, 3))
+        ret[..., 0] = numpy.arctan2(self[..., 2, 1], self[..., 2, 2])
+        ret[..., 1] = numpy.arcsin(-self[..., 2, 0])
+        ret[..., 2] = numpy.arctan2(-self[..., 1, 0], self[..., 0, 0])
+        return ret
+
+    @classmethod
+    def Orthogonal(cls, t, b, l, r, f, n):
+        ret = numpy.eye(4)
+        ret[..., 0, 0] = 2/(r-l)
+        ret[..., 1, 1] = 2/(t-b)
+        ret[..., 2, 2] = 2/(n-f)
         return ret.view(cls)
 
     @property
@@ -579,30 +437,31 @@ class Transform(Data):
 
     @property
     def scaling(self):
-        return numpy.linalg.norm(self[..., 0:3, 0:3], axis=1).view(Vector3)
+        return numpy.linalg.norm(self[..., 0:3, 0:3], axis=self.ndim-1).view(Vector3)
 
     @scaling.setter
-    def scaling(self, v):
+    def scaling(self, v: Vector3):
         self[:] = (
             v.as_scaling()
-            @ numpy.linalg.inv(self.scaling.as_scaling())
+            @ self.scaling.as_scaling().I
             @ self
         )
 
     @property
     def rotation(self):
-        return (
-            numpy.linalg.inv(self.scaling.as_scaling()[:, 0:3, 0:3])
-            @ self[:, 0:3, 0:3]
-        ).view(Rotation3)
+        return self.scaling.as_scaling().I @ self
 
     @rotation.setter
     def rotation(self, v):
         self[:] = (
             self.scaling.as_scaling()
-            @ v.to_matrix44()
+            @ v
             @ self.translation.as_translation()
         )
+
+    @property
+    def I(self):
+        return numpy.linalg.inv(self)
 
 
 class Color(Data):
