@@ -1,22 +1,20 @@
 import { TriangleFanDrawMode, VertexColors } from "three";
 
 const THREE = require("three")
-class Grid extends THREE.LineSegments {
+export class Grid extends THREE.LineSegments {
 	static attributes(step, divisions, centerLineColor, commonLineColor) {
 		const center = divisions / 2;
 		const halfSize = step * divisions / 2;
 		const vertices = []
 		const colors = [];
 		for (let i = 0, j = 0, k = - halfSize; i <= divisions; i++, k += step) {
-			vertices.push(- halfSize, 0, k, halfSize, 0, k);
-			vertices.push(k, 0, - halfSize, k, 0, halfSize);
+			vertices.push(- halfSize, k, 0, halfSize, k, 0);
+			vertices.push(k, - halfSize, 0, k, halfSize, 0);
 			const color = i === center ? centerLineColor : commonLineColor;
-
 			color.toArray(colors, j); j += 3;
 			color.toArray(colors, j); j += 3;
 			color.toArray(colors, j); j += 3;
 			color.toArray(colors, j); j += 3;
-
 		}
 		return {
 			"vertices": vertices,

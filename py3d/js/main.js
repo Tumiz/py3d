@@ -8,66 +8,75 @@ const THREE = require("three")
 const GEO = require("./geometry")
 const { OrbitControls } = require("./orbit")
 
-const create_canvas = (name) => {
-    let canvas = document.createElement("canvas")
-    canvas.id = name
-    canvas.width = document.body.clientWidth
-    canvas.height = document.body.clientHeight
-    document.body.onresize = (ev) => {
+class Viewer {
+    static create_canvas = (name) => {
+        let canvas = document.createElement("canvas")
+        canvas.id = name
         canvas.width = document.body.clientWidth
         canvas.height = document.body.clientHeight
-        console.log(canvas.width, canvas.height)
+        document.body.onresize = (ev) => {
+            canvas.width = document.body.clientWidth
+            canvas.height = document.body.clientHeight
+            console.log('resize canvas', name, canvas.width, canvas.height)
+        }
+        document.body.appendChild(canvas)
+        return canvas
     }
-    document.body.appendChild(canvas)
-    return canvas
+    constructor() {
+        this.scene = new THREE.Scene
+        this.tools = new THREE.Object3D
+        this.objects = new THREE.Object3D
+        this.scene.add(this.tools, this.objects)
+        this.canvas = Viewer.create_canvas("space")
+        let renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+        })
+        const aspect = this.canvas.width / this.canvas.height
+        let perspCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 10000);
+        perspCamera.up.set(0, 0, 1)
+        perspCamera.position.set(0, 0, 30)
+        let Z = perspCamera.position.length();
+        let depht_s = Math.tan(60 / 2.0 * Math.PI / 180.0) * 2.0
+        let size_y = depht_s * Z;
+        let size_x = depht_s * Z * aspect
+        let orthoCamera = new THREE.OrthographicCamera(
+            -size_x / 2, size_x / 2,
+            size_y / 2, -size_y / 2,
+            1, 1000);
+        orthoCamera.up.set(0, 0, 1)
+        orthoCamera.position.copy(perspCamera.position)
+        const light = new THREE.PointLight(0xffffff, 1)
+        const grid = new GEO.Grid()
+        grid.visible = false
+        this.tools.add(light, new THREE.AxesHelper(5), grid)
+        const btn_grid = document.getElementById("btn_grid")
+        btn_grid.onclick = () => { 
+            grid.visible = !grid.visible
+            btn_grid.style.backgroundColor = grid.visible ? "skyblue" : "lightgrey"
+             }
+        const control = new OrbitControls(perspCamera, orthoCamera, renderer.domElement)
+        const animate = () => {
+            light.position.copy(control.object.position)
+            requestAnimationFrame(animate)
+            renderer.render(this.scene, control.object);
+        }
+        this.canvas.onresize = (ev) => {
+            perspCamera.aspect = this.canvas.width / this.canvas.height
+            perspCamera.updateProjectionMatrix()
+            renderer.setSize(this.canvas.width, this.canvas.height)
+            console.log("canvas resize")
+        }
+        animate()
+    }
 }
 
-const init_3d_canvas = (canvas) => {
-    const scene = new THREE.Scene()
-    scene.background = "white"
-    let renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        antialias: true,
-    });
-    console.log(canvas.width, canvas.height)
-    const aspect = canvas.width / canvas.height
-    let perspCamera = new THREE.PerspectiveCamera(60, aspect, 0.1, 10000);
-    perspCamera.up.set(0, 0, 1)
-    perspCamera.position.set(0, 0, 30)
-    let Z = perspCamera.position.length();
-    let depht_s = Math.tan(60 / 2.0 * Math.PI / 180.0) * 2.0
-    let size_y = depht_s * Z;
-    let size_x = depht_s * Z * aspect
-    let orthoCamera = new THREE.OrthographicCamera(
-        -size_x / 2, size_x / 2,
-        size_y / 2, -size_y / 2,
-        1, 1000);
-    orthoCamera.up.set(0, 0, 1)
-    orthoCamera.position.copy(perspCamera.position)
-    let light = new THREE.PointLight(0xffffff, 1);
-    scene.add(light)
-    scene.add(new THREE.AxesHelper(5))
-    const control = new OrbitControls(perspCamera, orthoCamera, renderer.domElement)
-    let animate = function () {
-        light.position.copy(control.object.position)
-        requestAnimationFrame(animate)
-        renderer.render(scene, control.object);
-    }
-    canvas.onresize = (ev) => {
-        perspCamera.aspect = canvas.width / canvas.height
-        perspCamera.updateProjectionMatrix()
-        renderer.setSize(canvas.width, canvas.height)
-        console.log("canvas resize")
-    }
-    animate()
-    return scene
-}
-var scene = init_3d_canvas(create_canvas("3dcanvas"))
+const viewer = new Viewer()
 const methods = {}
 methods.clear = (time, data) => {
     console.log(time, "clear")
-    if (scene) {
-        scene.clear()
+    if (viewer.scene) {
+        viewer.objects.clear()
     }
 }
 methods.info = (time, data) => {
@@ -86,29 +95,29 @@ methods.warn = (time, data) => {
 }
 methods.point = (time, data) => {
     console.log(time, data)
-    let mesh = scene.getObjectByName(data.index)
+    let mesh = viewer.objects.getObjectByName(data.index)
     if (!mesh) {
         mesh = new GEO.Points
         mesh.name = data.index
-        scene.add(mesh)
+        viewer.objects.add(mesh)
     }
     mesh.set(data.vertice, data.color, data.size)
 }
 methods.mesh = (time, data) => {
-    let mesh = scene.getObjectByName(data.index)
+    let mesh = viewer.objects.getObjectByName(data.index)
     if (!mesh) {
         mesh = new GEO.Mesh
         mesh.name = data.index
-        scene.add(mesh)
+        viewer.objects.add(mesh)
     }
     mesh.set(data.vertice, data.color)
 }
 methods.line = (time, data) => {
-    let line = scene.getObjectByName(data.index)
+    let line = viewer.objects.getObjectByName(data.index)
     if (!line) {
         line = new GEO.Lines
         line.name = data.index
-        scene.add(line)
+        viewer.objects.add(line)
     }
     line.set(data.vertice, data.color)
 }

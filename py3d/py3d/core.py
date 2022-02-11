@@ -139,12 +139,12 @@ class Vector3(Data):
         return numpy.insert(self, 3, 1, axis=self.ndim-1)
 
     @property
-    def M(self):
+    def M(self)->Vector3:
         # mean vector
         return super().mean(axis=self.ndim-2)
 
     @property
-    def U(self):
+    def U(self)->Vector3:
         # unit vector, direction vector
         n = self.norm()
         return numpy.divide(self, n, where=n != 0)
