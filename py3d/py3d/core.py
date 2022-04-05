@@ -66,6 +66,7 @@ class Data(numpy.ndarray):
 
 
 class Vector3(Data):
+    'https://tumiz.github.io/scenario/examples/vector3.html'
     def __new__(cls, x=0, y=0, z=0, n=()):
         x_ = numpy.array(x)
         if x_.ndim > 1 and x_.shape[-1] == 3:
@@ -139,12 +140,12 @@ class Vector3(Data):
         return numpy.insert(self, 3, 1, axis=self.ndim-1)
 
     @property
-    def M(self)->Vector3:
+    def M(self) -> Vector3:
         # mean vector
         return super().mean(axis=self.ndim-2)
 
     @property
-    def U(self)->Vector3:
+    def U(self) -> Vector3:
         # unit vector, direction vector
         n = self.norm()
         return numpy.divide(self, n, where=n != 0)
@@ -255,7 +256,7 @@ class Vector3(Data):
         ret[..., 3, 2] = self[..., 2]
         return ret
 
-    def as_point(self, color=None):
+    def as_point(self, color=None) -> Point:
         entity = Point(*self.n)
         entity.vertice = self
         if color is not None:
@@ -491,14 +492,14 @@ class Transform(Data):
     @property
     def I(self) -> Transform:
         return numpy.linalg.inv(self)
-    
+
     @property
-    def forward(self)->Vector3:
+    def forward(self) -> Vector3:
         return Vector3(x=1).mt(self)
 
     def interp(self, xp, x) -> Transform:
         xp = numpy.array(xp)
-        x  = numpy.array(x)
+        x = numpy.array(x)
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]

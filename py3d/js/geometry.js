@@ -1,5 +1,3 @@
-import { TriangleFanDrawMode, VertexColors } from "three";
-
 const THREE = require("three")
 export class Grid extends THREE.LineSegments {
 	static attributes(step, divisions, centerLineColor, commonLineColor) {
@@ -60,14 +58,46 @@ export class Mesh extends THREE.Mesh {
 		this.geometry.computeBoundingSphere()
 	}
 }
+function generateSprite() {
+	var canvas = document.createElement('canvas');
+	canvas.width = 100;
+	canvas.height = 100;
 
+	var ctx = canvas.getContext('2d');
+	ctx.beginPath();
+	ctx.arc(50,50,40,0,2*Math.PI);
+	ctx.fillStyle="red";
+	ctx.fill(); 
+	ctx.stroke();
+
+	var texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	return texture;
+}
 export class Points extends THREE.Points {
 	constructor() {
 		const geometry = new THREE.BufferGeometry()
-		const material = new THREE.PointsMaterial({
-			vertexColors: true,
-			transparent: true,
-		})
+		const material = new THREE.ShaderMaterial( {
+			uniforms: {
+				pointTexture: { value: generateSprite() },
+			},
+			vertexShader: "\
+			attribute vec4 color;\
+			varying vec4 vColor;\
+			void main(){\
+				vColor = color;\
+				vec4 position_in_camera = modelViewMatrix * vec4( position, 1.0 );\
+				gl_PointSize = 200.0 / -position_in_camera.z;\
+				gl_Position = projectionMatrix * position_in_camera;\
+			}",
+			fragmentShader: "\
+			uniform sampler2D pointTexture;\
+			varying vec4 vColor;\
+			void main(){\
+				gl_FragColor = vColor;\
+				if ( texture2D( pointTexture, gl_PointCoord ).a < 0.9 ) discard;\
+			}"
+		} );
 		super(geometry, material)
 	}
 	set(points, color = undefined, size = undefined) {
