@@ -3,6 +3,7 @@
 from __future__ import annotations
 import collections
 import numpy
+from numpy import ndarray
 from .server import Space
 
 pi = numpy.arccos(-1)
@@ -269,7 +270,7 @@ class Vector3(Data):
         entity.end = self
         return entity
 
-    def as_line(self):
+    def as_line(self) -> LineSegment:
         vertice = numpy.repeat(self, 2, axis=self.ndim -
                                2)[..., 1:-1, :]
         entity = LineSegment(*vertice.n)
@@ -397,7 +398,7 @@ class Transform(Data):
         ret[..., 2, 2] = 1 - 2 * x ** 2 - 2 * y ** 2
         return ret
 
-    def to_quaternion(self):
+    def to_quaternion(self) -> ndarray:
         q = numpy.empty(self.n+(4,))
         q[..., 0] = w = (1+self[..., 0, 0]+self[..., 1, 1] +
                          self[..., 2, 2])**0.5/2
@@ -442,7 +443,7 @@ class Transform(Data):
         return ret.view(cls)
 
     @property
-    def n(self):
+    def n(self) -> list:
         return self.shape[:-2]
 
     @property
@@ -646,6 +647,7 @@ class Triangle(Mesh):
 class LineSegment(Geometry):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
+        ret.color = Color.Rand(*ret.n)
         return ret
 
     @property

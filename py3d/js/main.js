@@ -14,6 +14,7 @@ class Viewer {
         canvas.id = name
         canvas.width = document.body.clientWidth
         canvas.height = document.body.clientHeight
+        canvas.style.display = "block"
         document.body.onresize = (ev) => {
             canvas.width = document.body.clientWidth
             canvas.height = document.body.clientHeight
