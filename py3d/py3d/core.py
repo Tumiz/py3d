@@ -83,6 +83,12 @@ class Vector3(Data):
         ret.z = z_
         return ret
 
+    def __mul__(self, value) -> Vector3:
+        if type(value) == Transform:
+            return (self.H @ value)[..., 0:3].view(self.__class__)
+        else:
+            return super().__mul__(value)
+
     @classmethod
     def from_array(cls, v):
         array = numpy.array(v)
