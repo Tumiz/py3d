@@ -68,10 +68,10 @@ class Data(numpy.ndarray):
 
 class Vector3(Data):
     'https://tumiz.github.io/scenario/examples/vector3.html'
-    def __new__(cls, x=0, y=0, z=0, n=()):
+    def __new__(cls, xyz_list: list | numpy.ndarray = None, x=0, y=0, z=0, n=()):
+        if xyz_list is not None:
+            return numpy.array(xyz_list).view(cls)
         x_ = numpy.array(x)
-        if x_.ndim > 1 and x_.shape[-1] == 3:
-            return x_.view(cls)
         y_ = numpy.array(y)
         z_ = numpy.array(z)
         shape = merge_shapes(x_.shape, y_.shape, z_.shape)
@@ -88,18 +88,6 @@ class Vector3(Data):
             return (self.H @ value)[..., 0:3].view(self.__class__)
         else:
             return super().__mul__(value)
-
-    @classmethod
-    def from_array(cls, v):
-        array = numpy.array(v)
-        assert array.ndim == 1 or array.ndim == 2
-        if array.ndim == 1:
-            assert array.size % 3 == 0
-            tmp = array.reshape(array.size // 3, 3)
-            return tmp.view(cls)
-        else:
-            assert array.shape[1] == 3
-            return array.view(cls)
 
     @classmethod
     def Rand(cls, *n) -> Vector3:
@@ -303,16 +291,12 @@ class Transform(Data):
         return super().__len__(self)
 
     @classmethod
-    def from_translation(cls, x=0, y=0, z=0) -> Transform:
-        if type(x) is Vector3:
-            return x.as_translation()
-        return Vector3(x, y, z).as_translation()
+    def from_translation(cls, xyz_list: list | numpy.ndarray) -> Transform:
+        return Vector3(xyz_list).as_translation()
 
     @classmethod
-    def from_scaling(cls, x=0, y=0, z=0) -> Transform:
-        if type(x) is Vector3:
-            return x.as_scaling()
-        return Vector3(x, y, z).as_scaling()
+    def from_scaling(cls, xyz_list: list | numpy.ndarray) -> Transform:
+        return Vector3(xyz_list).as_scaling()
 
     @classmethod
     def Rx(cls, a, n=()) -> Transform:
@@ -326,6 +310,9 @@ class Transform(Data):
         ret[..., 2, 2] = cos
         return ret.view(cls)
 
+    def rx(self, a, n=()) -> Transform:
+        return self @ self.Rx(a, n)
+
     @classmethod
     def Ry(cls, a, n=()) -> Transform:
         a = numpy.array(a)
@@ -338,6 +325,9 @@ class Transform(Data):
         ret[..., 2, 2] = cos
         return ret.view(cls)
 
+    def ry(self, a, n=()) -> Transform:
+        return self @ self.Ry(a, n)
+
     @classmethod
     def Rz(cls, a, n=()) -> Transform:
         a = numpy.array(a)
@@ -349,6 +339,9 @@ class Transform(Data):
         ret[..., 1, 0] = -sin
         ret[..., 1, 1] = cos
         return ret.view(cls)
+
+    def rz(self, a, n=()) -> Transform:
+        return self @ self.Rz(a, n)
 
     @classmethod
     def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3) -> Transform:
@@ -368,8 +361,9 @@ class Transform(Data):
         return Transform.from_translation(-axis_point)@Transform.from_angle_axis(angle, axis_direction)@Transform.from_translation(axis_point)
 
     @classmethod
-    def from_angle_axis(cls, angle, axis: Vector3) -> Transform:
+    def from_angle_axis(cls, angle, axis: list|Vector3) -> Transform:
         angle = numpy.array(angle)
+        axis = Vector3(axis)
         n = merge_shapes(angle.shape, axis.n)
         q = numpy.empty(n+(4,))
         half_angle = angle / 2
@@ -386,7 +380,7 @@ class Transform(Data):
         return ha*2, axis
 
     @classmethod
-    def from_quaternion(cls, quaternion) -> Transform:
+    def from_quaternion(cls, quaternion : list|numpy.ndarray) -> Transform:
         q = numpy.array(quaternion)
         w = q[..., 0]
         x = q[..., 1]
@@ -394,13 +388,13 @@ class Transform(Data):
         z = q[..., 3]
         ret = cls(*(q.shape[:-1]))
         ret[..., 0, 0] = 1 - 2 * y ** 2 - 2 * z ** 2
-        ret[..., 0, 1] = 2 * w * z - 2 * x * y
+        ret[..., 0, 1] = 2 * w * z + 2 * x * y
         ret[..., 0, 2] = -2 * w * y + 2 * x * z
-        ret[..., 1, 0] = -2 * w * z - 2 * x * y
+        ret[..., 1, 0] = -2 * w * z + 2 * x * y
         ret[..., 1, 1] = 1 - 2 * x ** 2 - 2 * z ** 2
-        ret[..., 1, 2] = -2 * w * x + 2 * y * z
+        ret[..., 1, 2] = 2 * w * x + 2 * y * z
         ret[..., 2, 0] = 2 * w * y + 2 * x * z
-        ret[..., 2, 1] = 2 * w * x + 2 * y * z
+        ret[..., 2, 1] = -2 * w * x + 2 * y * z
         ret[..., 2, 2] = 1 - 2 * x ** 2 - 2 * y ** 2
         return ret
 
@@ -416,37 +410,45 @@ class Transform(Data):
             self[..., 0, 1]-self[..., 1, 0], 4*w, where=w != 0)
         return q
 
-    # rotate around body frame's axis
     @classmethod
-    def from_eular_intrinsic(cls, x=0, y=0, z=0) -> Transform:
-        return cls.Rz(z) @ cls.Ry(y) @ cls.Rx(x)
+    def from_euler(cls, sequence:str, angles_list: list | numpy.ndarray) -> Transform:
+        lo = sequence.lower()
+        v = numpy.array(angles_list)
+        m = {a: getattr(cls, "R" + a.lower()) for a in 'xyz'}
+        if sequence.islower():
+            return m[lo[0]](v[..., 0]) @ m[lo[1]](v[..., 1]) @ m[lo[2]](v[..., 2])
+        else:
+            return m[lo[2]](v[..., 2]) @ m[lo[1]](v[..., 1]) @ m[lo[0]](v[..., 0])
 
-    # rotate around parent frame's axis
-    @classmethod
-    def from_eular_extrinsic(cls, x=0, y=0, z=0) -> Transform:
-        return cls.Rx(x) @ cls.Ry(y) @ cls.Rz(z)
-
-    def to_eular_extrinsic(self):
+    def to_euler(self, sequence:str):
+        extrinsic = sequence.islower()
+        lo = sequence.lower()
         ret = numpy.zeros((*self.n, 3))
-        ret[..., 0] = numpy.arctan2(self[..., 1, 2], self[..., 2, 2])
-        ret[..., 1] = numpy.arcsin(-self[..., 0, 2])
-        ret[..., 2] = numpy.arctan2(self[..., 0, 1], self[..., 0, 0])
+        i = [0, 1, 2] if extrinsic else [2, 1, 0]
+        m = [0 if o=='x' else 1 if o=='y' else 2 for o in lo]
+        if not extrinsic:
+            m.reverse()
+        def f(x, y): return -1 if x-y == 2 or x - y == -1 else 1
+        a = [f(m[1], m[0]), f(m[2], m[0]), f(m[2], m[1])]
+        if a.count(-1) > 1:
+            b = [-1, 1, 1, -1, 1]
+        else:
+            b = [1, a[0], a[1], 1, a[2]]
+
+        ret[..., i[0]] = numpy.arctan2(
+            b[0]*self[..., m[1], m[2]], b[1]*self[..., 3-m[0]-m[1], m[2]])
+        ret[..., i[1]] = getattr(numpy, 'arccos' if m[0] == m[2] else 'arcsin')(
+            b[2]*self[..., m[0], m[2]])
+        ret[..., i[2]] = numpy.arctan2(
+            b[3]*self[..., m[0], m[1]], b[4]*self[..., m[0], 3-m[1]-m[2]]) 
         return ret
 
-    def to_eular_intrinsic(self):
-        ret = numpy.zeros((*self.n, 3))
-        ret[..., 0] = numpy.arctan2(self[..., 2, 1], self[..., 2, 2])
-        ret[..., 1] = numpy.arcsin(-self[..., 2, 0])
-        ret[..., 2] = numpy.arctan2(-self[..., 1, 0], self[..., 0, 0])
-        return ret
-
     @classmethod
-    def Orthogonal(cls, t, b, l, r, f, n):
-        ret = numpy.eye(4)
-        ret[..., 0, 0] = 2/(r-l)
-        ret[..., 1, 1] = 2/(t-b)
-        ret[..., 2, 2] = 2/(n-f)
-        return ret.view(cls)
+    def from_rpy(cls, angles_list:list|numpy.ndarray)->Transform:
+        return cls.from_euler('XYZ', angles_list)
+
+    def to_rpy(self):
+        return self.to_euler('XYZ')
 
     @property
     def n(self) -> list:
