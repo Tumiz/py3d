@@ -55,24 +55,24 @@
   <h3> Here is an example
   </h3>
   <pre class="code">
-from py3d import Cube,Vector3,Color,Space,Transform
-c=Cube(2)
-s=Space("c", online=True)
-c[0].color=Color(b=0.5,g=0.3)
-c[1].color=Color(r=1)
-c[0].transform.translation=Transform.from_translation(0,0,0.53)
-c[1].transform.translation=Transform.from_translation(20,-3,0.85)
-c.transform.scaling=Transform.from_scaling([[2.075,0.78,1.06],[0.8,0.3,1.7]])
-from time import sleep
-t=0
-dt=0.1
-while t<2:
-    c[0].transform.translation_vector+=Vector3(x=6)*dt
-    c[1].transform.translation_vector+=Vector3(y=1)*dt
-    c.render(s)
-    sleep(dt)
-    t+=dt
-s.save("eg1.html")</pre>
+    from py3d import Cube,Vector3,Color,Space,Transform
+    c=Cube(2)
+    s=Space("c", online=True)
+    c[0].color=Color(b=0.5,g=0.3)
+    c[1].color=Color(r=1)
+    c[0].transform.translation=Transform.from_translation([0,0,0.53])
+    c[1].transform.translation=Transform.from_translation([20,-3,0.85])
+    c.transform.scaling=Transform.from_scaling([[2.075,0.78,1.06],[0.8,0.3,1.7]])
+    from time import sleep
+    t=0
+    dt=0.1
+    while t<2:
+        c[0].transform.translation_vector+=Vector3(x=6)*dt
+        c[1].transform.translation_vector+=Vector3(y=1)*dt
+        c.render(s)
+        sleep(dt)
+        t+=dt
+    s.save("eg1.html")</pre>
   <iframe src="eg1.html" style="width: 1000px;height: 500px;"></iframe>
   <h3>API reference</h3>
   <a href="examples/vector3.html">Vector3</a><br>
