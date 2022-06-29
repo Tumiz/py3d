@@ -39,13 +39,8 @@ def force_assgin(v1, v2):
 
 class Data(numpy.ndarray):
     # usually, d1 is the number of entities, and d3 is the size of one element.
-    def __new__(cls, *shape):
-        return numpy.empty(shape).view(cls).copy()
-
-    def __len__(self):
-        if self.ndim == 1:
-            return 1
-        return super().__len__()
+    def __new__(cls, data:list|numpy.ndarray = [], n=()):
+        return numpy.tile(data, n + (1,)).view(cls)
 
     @property
     def n(self):
@@ -65,23 +60,36 @@ class Data(numpy.ndarray):
     def save_csv(self, path):
         numpy.savetxt(path, self, delimiter=',')
 
+class Vector(Data):
 
-class Vector3(Data):
+    def __new__(cls, data: list | numpy.ndarray = [], n=()):
+        return super().__new__(cls, data, n)
+
+    @property
+    def U(self) -> Vector:
+        # unit vector, direction vector
+        n = self.norm()
+        return numpy.divide(self, n, where=n != 0)
+
+    def norm(self) -> numpy.ndarray:  # norm
+        return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+
+
+class Vector3(Vector):
     'https://tumiz.github.io/scenario/examples/vector3.html'
-    def __new__(cls, xyz_list: list | numpy.ndarray = None, x=0, y=0, z=0, n=()):
-        if xyz_list is not None:
-            return numpy.array(xyz_list).view(cls)
-        x_ = numpy.array(x)
-        y_ = numpy.array(y)
-        z_ = numpy.array(z)
-        shape = merge_shapes(x_.shape, y_.shape, z_.shape)
-        n = (n,) if type(n) is int else n
-        shape = *n, *shape, 3
-        ret = super().__new__(cls, *shape)
-        ret.x = x_
-        ret.y = y_
-        ret.z = z_
-        return ret
+    def __new__(cls, data: list | numpy.ndarray = [] , x=0, y=0, z=0, n = ()):
+        if data:
+            return super().__new__(cls, data, n)
+        else:
+            x_:numpy.ndarray = numpy.array(x)
+            y_:numpy.ndarray = numpy.array(y)
+            z_:numpy.ndarray = numpy.array(z)
+            n += merge_shapes(x_.shape, y_.shape, z_.shape)
+            ret = super().__new__(cls, [0,0,0], n)
+            ret[..., 0] = x
+            ret[..., 1] = y
+            ret[..., 2] = z
+            return ret
 
     def __mul__(self, value) -> Vector3:
         if type(value) == Transform:
@@ -138,15 +146,6 @@ class Vector3(Data):
     def M(self) -> Vector3:
         # mean vector
         return super().mean(axis=self.ndim-2)
-
-    @property
-    def U(self) -> Vector3:
-        # unit vector, direction vector
-        n = self.norm()
-        return numpy.divide(self, n, where=n != 0)
-
-    def norm(self) -> numpy.ndarray:  # norm
-        return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
     def SST(self):
         return ((self-self.M).norm()**2).sum()
@@ -280,6 +279,9 @@ class Vector3(Data):
         entity = Mesh.from_indexed(self)
         return entity
 
+class Vector4(Data):
+    def __new__(cls, wxyz_list:list|numpy.ndarray, w=0,x=0,y=0,z=1, n=()):
+        return super().__new__(*n, 4)
 
 class Transform(Data):
     def __new__(cls, *n):
@@ -585,12 +587,12 @@ class Color(Data):
 
     @a.setter
     def a(self, v):
-        force_assgin(self[..., 3], v)
+        self[..., 3] = v
 
 
 class Geometry(Data):
     def __new__(cls, *n):
-        ret = super().__new__(cls, *n, 7)
+        ret = super().__new__(cls, [0,0,0,0,0,0,0], n)
         return ret
 
     @property
@@ -611,7 +613,8 @@ class Geometry(Data):
 
     @color.setter
     def color(self, v):
-        force_assgin(self[..., 3:7], v)
+        print("c",v)
+        self[..., 3:7] = v
 
 
 class Mesh:
@@ -684,7 +687,9 @@ class LineSegment(Geometry):
 class Point(Geometry):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.color = Color.Rand(*ret.n)
+        print(ret.shape, ret.n)
+        ret.color = Color.Rand(*n)
+        print(ret.color)
         ret.point_size = 0.1
         return ret
 
@@ -775,41 +780,3 @@ class Arrow(LineSegment):
             Vector3(), Vector3(x=1), self.start, self.end)
         self.head.render(page)
         super().render(page)
-
-
-class Plane(Data):
-    def __new__(cls, position=Vector3(), normal=Vector3(z=1), n=()):
-        n += merge_shapes(position.n, normal.n)
-        ret = super().__new__(cls, *n, 10)
-        ret.position = position
-        ret.normal = normal
-        return ret
-
-    @property
-    def position(self):
-        return self[..., 0:3].view(Vector3)
-
-    @position.setter
-    def position(self, v):
-        force_assgin(self[..., 0:3], v)
-
-    @property
-    def normal(self):
-        return self[..., 3:6].view(Vector3)
-
-    @normal.setter
-    def normal(self, v):
-        force_assgin(self[..., 3:6], v)
-
-    @property
-    def color(self):
-        return self[..., 6:10].view(Color)
-
-    @color.setter
-    def color(self, v):
-        self[..., 6:10] = v
-
-    def as_mesh(self):
-        transform = Transform.from_vector_change(
-            Vector3(), Vector3(z=1), self.position, self.position+self.normal)
-        return Mesh.from_indexed(Vector3.RectangleIndexed().mt(transform))
