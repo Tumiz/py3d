@@ -71,9 +71,22 @@ class Vector(Data):
         n = self.norm()
         return numpy.divide(self, n, where=n != 0)
 
+    @property
+    def H(self) -> Vector:
+        # Homogeneous vector
+        return numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1)
+
+    @property
+    def M(self) -> Vector:
+        # mean vector
+        return super().mean(axis=self.ndim-2)
+
     def norm(self) -> numpy.ndarray:  # norm
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
+    @classmethod
+    def Rand(cls, *n) -> Vector:
+        return numpy.random.rand(*n).view(cls)
 
 class Vector3(Vector):
     'https://tumiz.github.io/scenario/examples/vector3.html'
@@ -96,10 +109,6 @@ class Vector3(Vector):
             return (self.H @ value)[..., 0:3].view(self.__class__)
         else:
             return super().__mul__(value)
-
-    @classmethod
-    def Rand(cls, *n) -> Vector3:
-        return numpy.random.rand(*n, 3).view(cls)
 
     @classmethod
     def Rectangle(cls) -> Vector3:
@@ -137,15 +146,9 @@ class Vector3(Vector):
     def z(self, v):
         force_assgin(self[..., 2], v)
 
-    @property
-    def H(self):
-        # Homogeneous vector, a 3D vector has 4 numbers
-        return numpy.insert(self, 3, 1, axis=self.ndim-1)
-
-    @property
-    def M(self) -> Vector3:
-        # mean vector
-        return super().mean(axis=self.ndim-2)
+    @classmethod
+    def Rand(cls, *n) -> Vector3:
+        return super().Rand(*n, 3)
 
     def SST(self):
         return ((self-self.M).norm()**2).sum()
@@ -279,18 +282,10 @@ class Vector3(Vector):
         entity = Mesh.from_indexed(self)
         return entity
 
-class Vector4(Data):
-    def __new__(cls, wxyz_list:list|numpy.ndarray, w=0,x=0,y=0,z=1, n=()):
-        return super().__new__(*n, 4)
 
 class Transform(Data):
-    def __new__(cls, *n):
-        return numpy.full(n + (4, 4), numpy.eye(4)).squeeze().view(cls)
-
-    def __len__(self):
-        if self.ndim == 2:
-            return 1
-        return super().__len__(self)
+    def __new__(cls, data:list|numpy.ndarray = numpy.eye(4), n=()):
+        return super().__new__(cls, data, n + (1,))
 
     @classmethod
     def from_translation(cls, xyz_list: list | numpy.ndarray) -> Transform:
