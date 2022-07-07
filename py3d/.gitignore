@@ -1,7 +1,7 @@
 build
 dist
 *egg*
-bundle*
+bundle.js.*
 test
 __pycache__
 .*

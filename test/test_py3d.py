@@ -1,5 +1,8 @@
-from py3d.core import Cube
-
+def test_Data():
+    from py3d import Data
+    Data([1,2,3], n=(2,)).save("d.npy")
+    assert (Data.load("d.npy") == [[1,2,3],[1,2,3]]).all()
+    assert (Data([1,2,3], n=(2,))==[[1,2,3],[1,2,3]]).all()
 
 def test_vector():
     from py3d import Vector
@@ -68,6 +71,7 @@ def test_transform():
 def test_color():
     from py3d import Color
     assert Color.Rand(2).shape == (2, 4)
+    assert (Color(r=1) == [1,0,0,1]).all()
 
 
 def test_geometry():
