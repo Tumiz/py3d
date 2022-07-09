@@ -17,6 +17,10 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+
+      - name: install build twine
+        run: pip install build twine
+         
       - name: push to pypi
         run: |
           python3 -m build py3d
