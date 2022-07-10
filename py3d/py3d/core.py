@@ -38,13 +38,24 @@ def force_assgin(v1, v2):
 
 
 class Data(numpy.ndarray):
+    BASE_SHAPE = ()
     # usually, d1 is the number of entities, and d3 is the size of one element.
-    def __new__(cls, data:list|numpy.ndarray = [], n=()):
+
+    def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return numpy.tile(data, n + (1,)).view(cls)
 
     @property
     def n(self):
-        return self.shape[:-1] if self.ndim > 1 else (1,)
+        base_dims = len(self.BASE_SHAPE)
+        if base_dims:
+            return self.shape[:-base_dims]
+        else:
+            return self.shape
+
+    @classmethod
+    def Rand(cls, *n) -> Vector3:
+        n += cls.BASE_SHAPE
+        return numpy.random.rand(*n).view(cls)
 
     @classmethod
     def load(cls, path):
@@ -59,6 +70,7 @@ class Data(numpy.ndarray):
 
     def save_csv(self, path):
         numpy.savetxt(path, self, delimiter=',')
+
 
 class Vector(Data):
 
@@ -84,21 +96,19 @@ class Vector(Data):
     def norm(self) -> numpy.ndarray:  # norm
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
-    @classmethod
-    def Rand(cls, *n) -> Vector:
-        return numpy.random.rand(*n).view(cls)
 
 class Vector3(Vector):
+    BASE_SHAPE = 3,
     'https://tumiz.github.io/scenario/examples/vector3.html'
-    def __new__(cls, data: list | numpy.ndarray = [] , x=0, y=0, z=0, n = ()):
+    def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0, n=()):
         if data:
             return super().__new__(cls, data, n)
         else:
-            x_:numpy.ndarray = numpy.array(x)
-            y_:numpy.ndarray = numpy.array(y)
-            z_:numpy.ndarray = numpy.array(z)
+            x_: numpy.ndarray = numpy.array(x)
+            y_: numpy.ndarray = numpy.array(y)
+            z_: numpy.ndarray = numpy.array(z)
             n += merge_shapes(x_.shape, y_.shape, z_.shape)
-            ret = super().__new__(cls, [0,0,0], n)
+            ret = super().__new__(cls, [0, 0, 0], n)
             ret[..., 0] = x
             ret[..., 1] = y
             ret[..., 2] = z
@@ -109,18 +119,6 @@ class Vector3(Vector):
             return (self.H @ value)[..., 0:3].view(self.__class__)
         else:
             return super().__mul__(value)
-
-    @classmethod
-    def Rectangle(cls) -> Vector3:
-        return numpy.array([
-            [1, 1, 0],
-            [-1, 1, 0],
-            [-1, -1, 0],
-            [1, -1, 0]]).view(cls)
-
-    @classmethod
-    def RectangleIndexed(cls):
-        return cls.Rectangle()[[0, 1, 2, 2, 3, 0]]
 
     @property
     def x(self):
@@ -145,10 +143,6 @@ class Vector3(Vector):
     @z.setter
     def z(self, v):
         force_assgin(self[..., 2], v)
-
-    @classmethod
-    def Rand(cls, *n) -> Vector3:
-        return super().Rand(*n, 3)
 
     def SST(self):
         return ((self-self.M).norm()**2).sum()
@@ -284,7 +278,9 @@ class Vector3(Vector):
 
 
 class Transform(Data):
-    def __new__(cls, data:list|numpy.ndarray = numpy.eye(4), n=()):
+    BASE_SHAPE = 4, 4
+
+    def __new__(cls, data: list | numpy.ndarray = numpy.eye(4), n=()):
         return super().__new__(cls, data, n + (1,))
 
     @classmethod
@@ -358,7 +354,7 @@ class Transform(Data):
         return Transform.from_translation(-axis_point)@Transform.from_angle_axis(angle, axis_direction)@Transform.from_translation(axis_point)
 
     @classmethod
-    def from_angle_axis(cls, angle, axis: list|Vector3) -> Transform:
+    def from_angle_axis(cls, angle, axis: list | Vector3) -> Transform:
         angle = numpy.array(angle)
         axis = Vector3(axis)
         n = merge_shapes(angle.shape, axis.n)
@@ -377,7 +373,7 @@ class Transform(Data):
         return ha*2, axis
 
     @classmethod
-    def from_quaternion(cls, quaternion : list|numpy.ndarray) -> Transform:
+    def from_quaternion(cls, quaternion: list | numpy.ndarray) -> Transform:
         q = numpy.array(quaternion)
         w = q[..., 0]
         x = q[..., 1]
@@ -408,7 +404,7 @@ class Transform(Data):
         return q
 
     @classmethod
-    def from_euler(cls, sequence:str, angles_list: list | numpy.ndarray) -> Transform:
+    def from_euler(cls, sequence: str, angles_list: list | numpy.ndarray) -> Transform:
         lo = sequence.lower()
         v = numpy.array(angles_list)
         m = {a: getattr(cls, "R" + a.lower()) for a in 'xyz'}
@@ -417,14 +413,15 @@ class Transform(Data):
         else:
             return m[lo[2]](v[..., 2]) @ m[lo[1]](v[..., 1]) @ m[lo[0]](v[..., 0])
 
-    def to_euler(self, sequence:str):
+    def to_euler(self, sequence: str):
         extrinsic = sequence.islower()
         lo = sequence.lower()
         ret = numpy.zeros((*self.n, 3))
         i = [0, 1, 2] if extrinsic else [2, 1, 0]
-        m = [0 if o=='x' else 1 if o=='y' else 2 for o in lo]
+        m = [0 if o == 'x' else 1 if o == 'y' else 2 for o in lo]
         if not extrinsic:
             m.reverse()
+
         def f(x, y): return -1 if x-y == 2 or x - y == -1 else 1
         a = [f(m[1], m[0]), f(m[2], m[0]), f(m[2], m[1])]
         if a.count(-1) > 1:
@@ -437,19 +434,15 @@ class Transform(Data):
         ret[..., i[1]] = getattr(numpy, 'arccos' if m[0] == m[2] else 'arcsin')(
             b[2]*self[..., m[0], m[2]])
         ret[..., i[2]] = numpy.arctan2(
-            b[3]*self[..., m[0], m[1]], b[4]*self[..., m[0], 3-m[1]-m[2]]) 
+            b[3]*self[..., m[0], m[1]], b[4]*self[..., m[0], 3-m[1]-m[2]])
         return ret
 
     @classmethod
-    def from_rpy(cls, angles_list:list|numpy.ndarray)->Transform:
+    def from_rpy(cls, angles_list: list | numpy.ndarray) -> Transform:
         return cls.from_euler('XYZ', angles_list)
 
     def to_rpy(self):
         return self.to_euler('XYZ')
-
-    @property
-    def n(self) -> list:
-        return self.shape[:-2]
 
     @property
     def translation_vector(self) -> Vector3:
@@ -523,34 +516,29 @@ class Transform(Data):
         return self[i-1]@scaling@rotation@translation
 
 
-class Color(Data):
-    def __new__(cls, r=0, g=0, b=0, a=1, n=()):
-        n = (n,) if type(n) is int else n
-        if isinstance(r, collections.Iterable):
-            n = *n, len(r)
-        elif isinstance(g, collections.Iterable):
-            n = *n, len(g)
-        elif isinstance(b, collections.Iterable):
-            n = *n, len(b)
-        elif isinstance(a, collections.Iterable):
-            n = *n, len(a)
-        ret = numpy.empty((*n, 4))
-        ret[..., 0] = r
-        ret[..., 1] = g
-        ret[..., 2] = b
-        ret[..., 3] = a
+class Color(Vector):
+    BASE_SHAPE = (4,)
+
+    def __new__(cls, data: numpy.ndarray | list = [], r=0, g=0, b=0, a=1, n=()):
+        if data:
+            return super().__new__(cls, data, n)
+        else:
+            r_: numpy.ndarray = numpy.array(r)
+            g_: numpy.ndarray = numpy.array(g)
+            b_: numpy.ndarray = numpy.array(b)
+            a_: numpy.ndarray = numpy.array(a)
+            n += merge_shapes(r_.shape, g_.shape, b_.shape, a_.shape)
+            ret = super().__new__(cls, [0, 0, 0, 1], n)
+            ret[..., 0] = r
+            ret[..., 1] = g
+            ret[..., 2] = b
+            ret[..., 3] = a
         return ret.view(cls)
 
     def __len__(self):
         if self.ndim == 1:
             return 1
         return super().__len__()
-
-    @classmethod
-    def Rand(cls, *shape):
-        ret = numpy.random.rand(*shape, 4).view(cls)
-        ret.a = 1
-        return ret
 
     @property
     def r(self):
@@ -585,14 +573,11 @@ class Color(Data):
         self[..., 3] = v
 
 
-class Geometry(Data):
-    def __new__(cls, *n):
-        ret = super().__new__(cls, [0,0,0,0,0,0,0], n)
-        return ret
+class Geometry(Vector):
+    BASE_SHAPE = 7,
 
-    @property
-    def n(self):
-        return self.shape[:-2] if len(self.shape) > 2 else (1,)
+    def __new__(cls, *n):
+        return super().__new__(cls, [0.] * 7, n)
 
     @property
     def vertice(self):
@@ -600,7 +585,7 @@ class Geometry(Data):
 
     @vertice.setter
     def vertice(self, v):
-        force_assgin(self[..., 0:3], v)
+        self[..., 0:3] = v
 
     @property
     def color(self):
@@ -608,7 +593,6 @@ class Geometry(Data):
 
     @color.setter
     def color(self, v):
-        print("c",v)
         self[..., 3:7] = v
 
 
@@ -682,9 +666,7 @@ class LineSegment(Geometry):
 class Point(Geometry):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        print(ret.shape, ret.n)
         ret.color = Color.Rand(*n)
-        print(ret.color)
         ret.point_size = 0.1
         return ret
 
