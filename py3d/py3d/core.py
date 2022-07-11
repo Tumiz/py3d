@@ -86,7 +86,7 @@ class Vector(Data):
     @property
     def H(self) -> Vector:
         # Homogeneous vector
-        return numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1)
+        return numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1).view(Vector)
 
     @property
     def M(self) -> Vector:
@@ -114,11 +114,8 @@ class Vector3(Vector):
             ret[..., 2] = z
             return ret
 
-    def __mul__(self, value) -> Vector3:
-        if type(value) == Transform:
-            return (self.H @ value)[..., 0:3].view(self.__class__)
-        else:
-            return super().__mul__(value)
+    def __matmul__(self, value:Transform) -> Vector3:
+        return numpy.matmul(self.H, value)[..., 0:3].view(self.__class__)
 
     @property
     def x(self):
@@ -163,10 +160,6 @@ class Vector3(Vector):
 
     def cumsum(self) -> Vector3:
         return super().cumsum(axis=self.ndim-2)
-
-    def mt(self, v) -> Vector3:
-        # multiply transform
-        return (self.H @ v)[..., 0:3].view(self.__class__)
 
     def dot(self, v) -> Vector3:
         if type(v) is Vector3:

@@ -1,3 +1,6 @@
+from py3d.core import Vector3
+
+
 def test_Data():
     from py3d import Data
     Data([1, 2, 3], n=(2,)).save("d.npy")
@@ -31,7 +34,7 @@ def test_vector():
 
 
 def test_vector3():
-    from py3d import Vector3
+    from py3d import Vector3,Vector
     assert (Vector3() == [0, 0, 0]).all()
     assert (Vector3(x=1) == [1, 0, 0]).all()
     assert (Vector3(y=2) == [0, 2, 0]).all()
@@ -50,7 +53,7 @@ def test_vector3():
         [1, 2, 3, 1],
         [2, 3, 4, 1]
     ]).all()
-    assert type(Vector3(x=[1, 2]).H) == Vector3
+    assert type(Vector3(x=[1, 2]).H) == Vector
     assert type(Vector3.Rand(2, 3)) == Vector3
     assert Vector3.Rand(2, 3).shape == (2, 3, 3)
     assert Vector3.Rand(2, 3).n == (2, 3)
@@ -72,6 +75,8 @@ def test_transform():
     ]).all()
     assert Transform(n=(2, 3)).shape == (2, 3, 4, 4)
     assert Transform(n=(4, 5)).n == (4, 5)
+    assert ((Vector3(x=1).H @ Transform())[...,0:3] == Vector3(x=1)).all()
+    assert (Vector3(x=1) @ Transform() == Vector3(x=1)).all()
 
 
 def test_color():
