@@ -1,4 +1,4 @@
-from py3d.core import Vector3
+from numpy import allclose
 
 
 def test_Data():
@@ -11,7 +11,6 @@ def test_Data():
 
 def test_vector():
     from py3d import Vector
-    from numpy import allclose
     assert (Vector() == []).all()
     assert (Vector([0, 0, 0, 0]) == [0, 0, 0, 0]).all()
     assert (Vector([1, 2, -4]) == [1, 2, -4]).all()
@@ -34,7 +33,7 @@ def test_vector():
 
 
 def test_vector3():
-    from py3d import Vector3,Vector
+    from py3d import Vector3, Vector
     assert (Vector3() == [0, 0, 0]).all()
     assert (Vector3(x=1) == [1, 0, 0]).all()
     assert (Vector3(y=2) == [0, 2, 0]).all()
@@ -61,7 +60,7 @@ def test_vector3():
 
 
 def test_transform():
-    from py3d import Transform
+    from py3d import Transform, Vector3
     assert (Transform([
         [1., 0., 0.3, 0.],
         [0., 1., 0., 0.],
@@ -75,8 +74,12 @@ def test_transform():
     ]).all()
     assert Transform(n=(2, 3)).shape == (2, 3, 4, 4)
     assert Transform(n=(4, 5)).n == (4, 5)
-    assert ((Vector3(x=1).H @ Transform())[...,0:3] == Vector3(x=1)).all()
+    assert ((Vector3(x=1).H @ Transform())[..., 0:3] == Vector3(x=1)).all()
     assert (Vector3(x=1) @ Transform() == Vector3(x=1)).all()
+    p = Vector3([1, 2, 3])
+    T = Transform.from_translation([1, 2, 3])
+    R = Transform.from_euler("xyz", [0, 0, 1])
+    assert allclose(p @ T @ R, p @ (T@R))
 
 
 def test_color():

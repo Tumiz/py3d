@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="py3d",
-    version="0.0.30",
+    version="0.0.31",
     description="py3d is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in batches.",
     long_description=long_description,
     long_description_content_type="text/markdown",
