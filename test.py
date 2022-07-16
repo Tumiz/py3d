@@ -3,6 +3,7 @@ import nbformat
 import nbclient
 import nbconvert
 import argparse
+import html
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--destination","-d",default="docs")
@@ -22,4 +23,5 @@ for f in path_doc.glob("*"):
                 del nb.cells[i]
             i += 1
         body, resources = nbconvert.HTMLExporter().from_notebook_node(nb)
+        body = body.replace("<title>Notebook</title>","<title>Scenario {}</title>".format(f.stem))
         open(path_destination/(f.stem+".html"),"w").write(body)
