@@ -108,7 +108,7 @@ class Vector3(Vector):
             y_: numpy.ndarray = numpy.array(y)
             z_: numpy.ndarray = numpy.array(z)
             n += merge_shapes(x_.shape, y_.shape, z_.shape)
-            ret = super().__new__(cls, [0, 0, 0], n)
+            ret = super().__new__(cls, [0., 0., 0.], n)
             ret[..., 0] = x
             ret[..., 1] = y
             ret[..., 2] = z
@@ -227,14 +227,14 @@ class Vector3(Vector):
         return (1-d)*f0+d*f1
 
     def as_scaling(self):
-        ret = Transform(*self.n)
+        ret = Transform(n=self.n)
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
         ret[..., 2, 2] = self[..., 2]
         return ret
 
     def as_translation(self):
-        ret = Transform(*self.n)
+        ret = Transform(n=self.n)
         ret[..., 3, 0] = self[..., 0]
         ret[..., 3, 1] = self[..., 1]
         ret[..., 3, 2] = self[..., 2]

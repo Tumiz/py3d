@@ -19,12 +19,25 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: install pytest
-        run: pip install pytest
+      - name: install deps
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install jupyterlab
 
       - name: install py3d
-        run: pip install -e py3d
+        run: python3 -m pip install -e py3d
 
       - name: test
-        run: pytest -v test
+        run: python3 test.py -d docs
+
+      - name: commit docs
+        run: |
+          git config user.email "hh11698@163.com"
+          git config user.name "Tumiz"
+          git add docs
+          git commit -m "update docs"
+          git push
