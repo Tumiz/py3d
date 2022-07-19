@@ -80,7 +80,7 @@ class Vector(Data):
     @property
     def U(self) -> Vector:
         # unit vector, direction vector
-        n = self.norm()
+        n = self.L
         return numpy.divide(self, n, where=n != 0)
 
     @property
@@ -93,13 +93,18 @@ class Vector(Data):
         # mean vector
         return super().mean(axis=self.ndim-2)
 
-    def norm(self) -> numpy.ndarray:  # norm
+    @property
+    def L(self) -> Vector:
+        # length
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
+class Vector2(Vector):
+    BASE_SHAPE = 2,
+    def __new__(cls, data: list | numpy.ndarray = [], n=()):
+        return super().__new__(cls, data, n)
 
 class Vector3(Vector):
     BASE_SHAPE = 3,
-    'https://tumiz.github.io/scenario/examples/vector3.html'
     def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0, n=()):
         if data:
             return super().__new__(cls, data, n)
@@ -141,26 +146,6 @@ class Vector3(Vector):
     def z(self, v):
         force_assgin(self[..., 2], v)
 
-    def SST(self):
-        return ((self-self.M).norm()**2).sum()
-
-    def append(self, v) -> Vector3:
-        return numpy.concatenate((self, v), axis=0).view(self.__class__)
-
-    def insert(self, pos, v) -> Vector3:
-        # wouldnt change self
-        return numpy.insert(self, pos, v, axis=0)
-
-    def remove(self, pos) -> Vector3:
-        # wouldnt change self
-        return numpy.delete(self, pos, axis=0)
-
-    def diff(self, n=1) -> Vector3:
-        return numpy.diff(self, n, axis=0)
-
-    def cumsum(self) -> Vector3:
-        return super().cumsum(axis=self.ndim-2)
-
     def dot(self, v) -> Vector3:
         if type(v) is Vector3:
             product = self * v
@@ -172,7 +157,7 @@ class Vector3(Vector):
         return numpy.cross(self, v).view(self.__class__)
 
     def angle_to_vector(self, to: numpy.ndarray) -> Vector3:
-        cos = self.dot(to) / self.norm() / to.norm()
+        cos = self.dot(to) / self.L / to.L
         return numpy.arccos(cos)
 
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
@@ -191,15 +176,15 @@ class Vector3(Vector):
         return self.is_parallel_to_vector(normal)
 
     def scalar_projection(self, v: numpy.ndarray) -> float:
-        return self.dot(v) / v.norm()
+        return self.dot(v) / v.L
 
     def vector_projection(self, v: numpy.ndarray) -> Vector3:
-        return self.scalar_projection(v) * v / v.norm()
+        return self.scalar_projection(v) * v / v.L
 
     def distance_to_line(self, p0: numpy.ndarray, p1: numpy.ndarray) -> float:
         v0 = p1 - p0
         v1 = self - p0
-        return v0.cross(v1).norm() / v0.norm()
+        return v0.cross(v1).L / v0.L
 
     def distance_to_plane(self, n: numpy.ndarray, p: numpy.ndarray) -> float:
         # n: normal vector of the plane
@@ -333,7 +318,7 @@ class Transform(Data):
     def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3) -> Transform:
         d: Vector3 = p1 - p0
         d_: Vector3 = p1_ - p0_
-        s = d_.norm() / d.norm()
+        s = d_.L / d.L
         ret = Transform(*s.shape)
         angle = d.angle_to_vector(d_).squeeze()
         axis = d.cross(d_)
