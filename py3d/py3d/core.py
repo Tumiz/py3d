@@ -645,14 +645,13 @@ class Point(Geometry):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
         ret.color = Color.Rand(*n)
-        ret.point_size = 0.1
         return ret
 
     def render(self, page=None):
         if page is None:
             page = Space(str(id(self)))
         page.render_point(id(self), self.vertice.ravel(
-        ).tolist(), self.color.ravel().tolist(), self.point_size)
+        ).tolist(), self.color.ravel().tolist())
 
 
 class Tetrahedron(Mesh):

@@ -117,10 +117,6 @@ class Page:
             return instance
 
     def send(self, msg):
-        if len(self.clients) == 0:
-            display(self.iframe)
-        while len(self.clients) == 0:
-            time.sleep(0.1)
         for client in self.clients:
             self.__loop.add_callback(send_callback, client, msg)
 
@@ -170,7 +166,7 @@ class Page:
 
 
 class Space(Page):
-    def render_point(self, index, vertice, color, size):
+    def render_point(self, index, vertice, color, size=0):
         self.send_t("point", {"index":index, "vertice": vertice, "color": color, "size": size})
 
     def render_mesh(self, index, vertice, color):
