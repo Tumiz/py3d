@@ -3,7 +3,6 @@ import nbformat
 import nbclient
 import nbconvert
 import argparse
-import html
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--destination","-d",default="docs")

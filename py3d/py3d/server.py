@@ -117,6 +117,8 @@ class Page:
             return instance
 
     def send(self, msg):
+        if len(self.clients) == 0:
+            display(self.iframe)
         for client in self.clients:
             self.__loop.add_callback(send_callback, client, msg)
 
