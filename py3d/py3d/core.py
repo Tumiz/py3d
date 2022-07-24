@@ -98,13 +98,17 @@ class Vector(Data):
         # length
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
 
+
 class Vector2(Vector):
     BASE_SHAPE = 2,
+
     def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return super().__new__(cls, data, n)
 
+
 class Vector3(Vector):
     BASE_SHAPE = 3,
+
     def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0, n=()):
         if data:
             return super().__new__(cls, data, n)
@@ -119,7 +123,7 @@ class Vector3(Vector):
             ret[..., 2] = z
             return ret
 
-    def __matmul__(self, value:Transform) -> Vector3:
+    def __matmul__(self, value: Transform) -> Vector3:
         return numpy.matmul(self.H, value)[..., 0:3].view(self.__class__)
 
     @property
@@ -262,12 +266,12 @@ class Transform(Data):
         return super().__new__(cls, data, n + (1,))
 
     @classmethod
-    def from_translation(cls, xyz_list: list | numpy.ndarray) -> Transform:
-        return Vector3(xyz_list).as_translation()
+    def from_translation(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0, n=()) -> Transform:
+        return Vector3(xyz_list, x, y, z, n).as_translation()
 
     @classmethod
-    def from_scaling(cls, xyz_list: list | numpy.ndarray) -> Transform:
-        return Vector3(xyz_list).as_scaling()
+    def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0, n=()) -> Transform:
+        return Vector3(xyz_list, x, y, z, n).as_scaling()
 
     @classmethod
     def Rx(cls, a, n=()) -> Transform:
@@ -577,8 +581,8 @@ class Geometry(Vector):
 class Mesh:
     def __init__(self, *n):
         self.geometry = Geometry(*n)
-        self.geometry.color = Color.Rand(*self.geometry.n, 1)
-        self.transform = Transform(*self.geometry.n)
+        self.geometry.color = Color.Rand(*self.geometry.n)
+        self.transform = Transform(n=self.geometry.n)
         self.index = slice(None)
 
     def __getitem__(self, *n):
@@ -602,14 +606,15 @@ class Mesh:
     def render(self, page=None):
         if page is None:
             page = Space(str(id(self)))
-        vertice = self.geometry.vertice.mt(self.transform)
+        vertice = self.geometry.vertice @ self.transform
         page.render_mesh(id(self), vertice[..., self.index, :].ravel(
         ).tolist(), self.geometry.color[..., self.index, :].ravel().tolist())
 
 
 class Triangle(Mesh):
-    def __new__(cls, *n):
-        return super().__new__(*n, 3)
+    def __init__(self, *n):
+        super().__init__(*n, 3)
+        self.index = [0,1,2]
 
 
 class LineSegment(Geometry):

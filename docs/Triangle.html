@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Scenario Data</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Scenario Triangle</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14579,8 +14579,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Data">Data<a class="anchor-link" href="#Data">&#182;</a></h1><p><strong>Data</strong> is a data container that act as <strong>numpy.ndarry</strong>, and other data structures in py3d are based on it.</p>
-
+<h1 id="Triangle">Triangle<a class="anchor-link" href="#Triangle">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -14592,8 +14591,15 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Data</span>
-<span class="n">Data</span><span class="o">.</span><span class="n">Rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Triangle</span><span class="p">,</span><span class="n">Vector3</span><span class="p">,</span><span class="n">Color</span>
+<span class="n">t</span><span class="o">=</span><span class="n">Triangle</span><span class="p">()</span>
+<span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">vertice</span><span class="o">=</span><span class="n">Vector3</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+<span class="p">])</span>
+<span class="n">t</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">color</span><span class="o">=</span><span class="n">Color</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 
      </div>
@@ -14616,6 +14622,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Welcome to py3d world, please visit https://tumiz.github.io/scenario/ for more information
+click http://127.0.0.1:8000/view/140187702258320 or http://10.1.0.54:8000/view/140187702258320 to view in browser
 </pre>
 </div>
 </div>
@@ -14623,13 +14630,21 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
 
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([0.81354391])</pre>
+        <iframe
+            width="100%"
+            height="600px"
+            src="http://127.0.0.1:8000/view/140187702258320"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        
 </div>
 
 </div>
@@ -14643,11 +14658,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">Data</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">n</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,))</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;d.npy&quot;</span><span class="p">)</span>
-<span class="n">Data</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;d.npy&quot;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Transform</span>
+<span class="n">t</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_rpy</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 
      </div>
@@ -14665,78 +14681,27 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
 
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
 
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([[1, 2, 3],
-      [1, 2, 3]])</pre>
+        <iframe
+            width="100%"
+            height="600px"
+            src="http://127.0.0.1:8000/view/140187702258320"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        
 </div>
 
 </div>
 
 </div>
 
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">Data</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">n</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,))</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([[ 1. , -0.2,  3. ],
-      [ 1. , -0.2,  3. ]])</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-     </div>
-</div>
-</div>
 </div>
 
 </div>
