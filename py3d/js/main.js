@@ -48,9 +48,9 @@ class Viewer {
         orthoCamera.up.set(0, 0, 1)
         orthoCamera.position.copy(perspCamera.position)
         const light = new THREE.PointLight(0xffffff, 1)
-        const grid = new GEO.Grid()
+        const grid = new GEO.Grid(1, 100)
         grid.visible = false
-        this.tools.add(light, new THREE.AxesHelper(5), grid)
+        this.tools.add(light, new THREE.AxesHelper(50), grid)
         const btn_grid = document.getElementById("btn_grid")
         btn_grid.onclick = () => { 
             grid.visible = !grid.visible

@@ -5,13 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "test",
             "type": "python",
             "request": "launch",
-            "program": "/home/tumiz/anaconda3/bin/pytest",
+            "program": "test.py",
             "args": [
-                "-v",
-                "test"
+                "-b",
+                "py3d/doc/Triangle.ipynb"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
