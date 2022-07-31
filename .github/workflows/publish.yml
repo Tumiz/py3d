@@ -4,7 +4,9 @@ name: publish
 on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
-    branches: [ "master" ]
+    branches: ["master"]
+    paths:
+      - "py3d/**.py"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -20,7 +22,7 @@ jobs:
 
       - name: install build twine
         run: pip install build twine
-         
+
       - name: push to pypi
         run: |
           python3 -m build py3d
