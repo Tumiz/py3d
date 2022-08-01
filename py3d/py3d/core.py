@@ -478,6 +478,17 @@ class Transform(Data):
     def forward(self) -> Vector3:
         return Vector3(x=1).mt(self)
 
+    @classmethod
+    def from_perspective(cls, fov, aspect, near, far)-> Transform:
+        f = numpy.tan(pi * 0.5 - 0.5 * fov)
+        range_inv = 1.0 / (near - far)
+        return numpy.array([
+            [f / aspect, 0, 0, 0],
+            [0, f, 0, 0],
+            [0, 0, (near + far) * range_inv, -1],
+            [0, 0, near * far * range_inv * 2, 0]
+        ])
+
     def interp(self, xp, x) -> Transform:
         xp = numpy.array(xp)
         x = numpy.array(x)
@@ -657,6 +668,18 @@ class Point(Geometry):
             page = Space(str(id(self)))
         page.render_point(id(self), self.vertice.ravel(
         ).tolist(), self.color.ravel().tolist())
+
+class Camera(Mesh):
+    def __init__(self, *n):
+        super().__init__(*n)
+        self.projection = Transform()
+
+    def set_perspective(self, fov, aspect, near, far):
+        self.projection = Transform.from_perspective(fov, aspect, near, far)
+
+    @property
+    def matrix(self):
+        return self.transform.I @ self.projection
 
 
 class Tetrahedron(Mesh):
