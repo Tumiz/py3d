@@ -35,10 +35,9 @@ setup(
     author_email="hh11698@163.com",
     python_requires=">=3.7.0",
     url="https://tumiz.github.io/scenario/",
-    install_requires=["numpy", "tornado", "ipython"],
+    install_requires=["numpy", "ipython"],
     packages=find_packages(),
     data_files=[
-        ("/py3d/static", ["py3d/static/bundle.js"]),
         ("/py3d", ["py3d/viewer.html"])
     ],
     license="GPL-3.0 License"
