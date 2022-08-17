@@ -2,34 +2,51 @@
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<style>
-	.py3d_canvas {
-		width: 400px;
-		height: 400px;
-	}
 
-	.py3d_toolbar {
-		position: absolute;
-		top: 0;
-	}
-
-	.py3d_button {
-		width: 20px;
-		height: 20px;
-		border-radius: 3px;
-		position: relative;
-	}
-</style>
-
-<body>
-	<canvas id="PY3D_ID_view" class="py3d_canvas"></canvas>
-	<div class="py3d_toolbar">
-		<button type="button" class="py3d_button" id="PY3D_ID_zoom_in">+</button>
-		<button type="button" class="py3d_button" id="PY3D_ID_zoom_out">-</button>
-	</div>
-</body>
+<div id="PY3D_ID">
+</div>
 <script>
 	{
+		class ToolBar {
+			constructor() {
+				this.enable = false
+				this.bar = document.createElement("div")
+				this.btn_enable = document.createElement("button")
+				this.btn_enable.innerHTML = "ctrl"
+				this.btn_enable.style.width = "30px"
+				this.btn_enable.style.height = "20px"
+				this.btn_enable.style.border = "0px"
+				this.btn_enable.style.borderRadius = "3px"
+				this.btn_zoom_in = document.createElement("button")
+				this.btn_zoom_in.innerHTML = "+"
+				this.btn_zoom_in.style.width = "20px"
+				this.btn_zoom_in.style.height = "20px"
+				this.btn_zoom_in.style.border = "0px"
+				this.btn_zoom_in.style.borderRadius = "3px"
+				this.btn_zoom_in.style.display = "none"
+				this.btn_zoom_out = document.createElement("button")
+				this.btn_zoom_out.innerHTML = "-"
+				this.btn_zoom_out.style.width = "20px"
+				this.btn_zoom_out.style.height = "20px"
+				this.btn_zoom_out.style.border = "0px"
+				this.btn_zoom_out.style.borderRadius = "3px"
+				this.btn_zoom_out.style.display = "none"
+				this.btn_enable.onclick = (ev) => {
+					if (this.enable) {
+						this.btn_zoom_in.style.display = "none"
+						this.btn_zoom_out.style.display = "none"
+						this.enable = false
+						this.btn_enable.style.backgroundColor = ""
+					} else {
+						this.btn_zoom_in.style.display = "inline"
+						this.btn_zoom_out.style.display = "inline"
+						this.btn_enable.style.backgroundColor = "gray"
+						this.enable = true
+					}
+				}
+				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out)
+			}
+		}
 		class mat {
 			static identity() {
 				return [
@@ -116,20 +133,24 @@
 				this.center = []
 			}
 		}
-		class Renderer {
-			constructor(id) {
-				this.camera = new Camera(Math.PI / 3, 1, 1, 100)
+		class Viewer {
+			constructor() {
+				this.canvas_x = 0
+				this.canvas_y = 0
+				this.canvas = document.createElement("canvas")
+				this.canvas.style.width = "400px"
+				this.canvas.style.height = "300px"
+				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
 				this.camera.ry = 0
 				this.camera.rx = 0
-				this.canvas = document.getElementById(id)
-				this.canvas_x = 0
-				this.canvas_y = 0
-				document.getElementById("PY3D_ID_zoom_in").onclick = (ev) => {
-					this.camera.height += 10
+				this.toolbar = new ToolBar()
+				document.getElementById("PY3D_ID").append(this.canvas, this.toolbar.bar)
+				this.toolbar.btn_zoom_in.onclick = (ev) => {
+					this.camera.height += 1
 					this.render()
 				}
-				document.getElementById("PY3D_ID_zoom_out").onclick = (ev) => {
+				this.toolbar.btn_zoom_out.onclick = (ev) => {
 					this.camera.height -= 1
 					this.render()
 				}
@@ -145,17 +166,6 @@
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
-				}
-				this.canvas.onkeypress = (ev) => {
-					if (ev.ctrlKey) {
-						if (ev.key == "=") {
-							this.camera.height += 1
-						} else if (ev.key == "-") {
-							this.camera.height -= 1
-						} else {
-							console.log(ev.key, ev.keyCode, ev.which)
-						}
-					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -212,8 +222,8 @@
 				this.gl.drawArrays(this.gl.POINTS, 0, this.vertices_size)
 			}
 		}
-		const renderer = new Renderer("PY3D_ID_view")
-		renderer.set_program(`
+		const viewer = new Viewer()
+		viewer.set_program(`
 			attribute vec4 position;
 			attribute vec4 color;
 			varying vec4 v_color;
@@ -235,11 +245,11 @@
 			} 
 		`)
 
-		renderer.set_attribute("position",
+		viewer.set_attribute("position",
 			PY3D_VERTEX, 3)
-		renderer.set_attribute("color",
+		viewer.set_attribute("color",
 			PY3D_COLOR, 4)
-		renderer.render()
+		viewer.render()
 	}
 </script>
 

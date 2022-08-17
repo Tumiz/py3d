@@ -6,7 +6,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--destination", "-d", default="docs")
-parser.add_argument("--notebooks", "-b",
+parser.add_argument("--notebooks", "-n",
                     default=pathlib.Path(__file__).parent/"py3d/doc")
 args = parser.parse_args()
 
