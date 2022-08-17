@@ -4,7 +4,8 @@ from __future__ import annotations
 import collections
 import numpy
 from numpy import ndarray
-from .server import Space
+from IPython.display import display, HTML
+import pathlib
 
 pi = numpy.arccos(-1)
 
@@ -36,6 +37,11 @@ def force_assgin(v1, v2):
         else:
             v1[:] = v2[:, numpy.newaxis]
 
+def render(id, vertex, color):
+    pwd = pathlib.Path(__file__).parent
+    tmp = open(pwd/"viewer.html").read()
+    html = tmp.replace("PY3D_ID", "py3d_"+str(id)).replace("PY3D_VERTEX", str(vertex)).replace("PY3D_COLOR",str(color))
+    return display(HTML(html))
 
 class Data(numpy.ndarray):
     BASE_SHAPE = ()
@@ -479,15 +485,19 @@ class Transform(Data):
         return Vector3(x=1).mt(self)
 
     @classmethod
-    def from_perspective(cls, fov, aspect, near, far)-> Transform:
-        f = numpy.tan(pi * 0.5 - 0.5 * fov)
+    def from_perspective(cls, fovy, aspect, near, far)-> Transform:
+        f = 1 / numpy.tan(fovy/2)
         range_inv = 1.0 / (near - far)
         return numpy.array([
             [f / aspect, 0, 0, 0],
             [0, f, 0, 0],
-            [0, 0, (near + far) * range_inv, -1],
-            [0, 0, near * far * range_inv * 2, 0]
+            [0, 0, (near + far) * range_inv, 1],
+            [0, 0, -2 * near * far * range_inv , 0]
         ])
+
+    @classmethod
+    def from_orthographic(cls, l,r,t,b,n,f):
+        pass
 
     def interp(self, xp, x) -> Transform:
         xp = numpy.array(xp)
@@ -614,12 +624,8 @@ class Mesh:
         else:
             self.geometry.vertice[..., i, :] = v
 
-    def render(self, page=None):
-        if page is None:
-            page = Space(str(id(self)))
-        vertice = self.geometry.vertice @ self.transform
-        page.render_mesh(id(self), vertice[..., self.index, :].ravel(
-        ).tolist(), self.geometry.color[..., self.index, :].ravel().tolist())
+    def render(self):
+        render(id(self), self.geometry.vertice, self.geometry.color)
 
 
 class Triangle(Mesh):
@@ -650,12 +656,6 @@ class LineSegment(Geometry):
     def end(self, v):
         self.vertice[..., 1::2, :].squeeze()[:] = v
 
-    def render(self, page=None):
-        if page is None:
-            page = Space(str(id(self)))
-        page.render_line(id(self), self.vertice.ravel(
-        ).tolist(), self.color.ravel().tolist())
-
 
 class Point(Geometry):
     def __new__(cls, *n):
@@ -663,10 +663,8 @@ class Point(Geometry):
         ret.color = Color.Rand(*n)
         return ret
 
-    def render(self, page=None):
-        if page is None:
-            page = Space(str(id(self)))
-        page.render_point(id(self), self.vertice.ravel(
+    def render(self):
+        render(id(self), self.vertice.ravel(
         ).tolist(), self.color.ravel().tolist())
 
 class Camera(Mesh):
@@ -755,10 +753,3 @@ class Arrow(LineSegment):
         ret.head = Tetrahedron(*n)
         ret.head.color = ret.color[..., 0, numpy.newaxis, :]
         return ret
-
-    def render(self, page=None):
-        page = page if page else Space()
-        self.head.transform = Transform.from_vector_change(
-            Vector3(), Vector3(x=1), self.start, self.end)
-        self.head.render(page)
-        super().render(page)
