@@ -40,7 +40,7 @@ def force_assgin(v1, v2):
 def render(id, vertex, color):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY3D_ID", "py3d_"+str(id)).replace("PY3D_VERTEX", str(vertex)).replace("PY3D_COLOR",str(color))
+    html = tmp.replace("PY3D_ID", str(id)).replace("PY3D_VERTEX", str(vertex)).replace("PY3D_COLOR",str(color))
     return display(HTML(html))
 
 class Data(numpy.ndarray):
