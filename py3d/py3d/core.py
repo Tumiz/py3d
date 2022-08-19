@@ -276,7 +276,7 @@ class Transform(Data):
         return Vector3(xyz_list, x, y, z, n).as_translation()
 
     @classmethod
-    def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0, n=()) -> Transform:
+    def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=1, y=1, z=1, n=()) -> Transform:
         return Vector3(xyz_list, x, y, z, n).as_scaling()
 
     @classmethod
@@ -661,6 +661,7 @@ class Point(Geometry):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
         ret.color = Color.Rand(*n)
+        ret.color.a = 1
         return ret
 
     def render(self):
