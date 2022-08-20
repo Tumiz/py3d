@@ -14640,7 +14640,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id="140057752593552">
+<div id="140254506422624">
 </div>
 <script>
 	{
@@ -14782,7 +14782,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140057752593552").append(this.canvas, this.toolbar.bar)
+				document.getElementById("140254506422624").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14872,7 +14872,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * position;
+				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
@@ -14941,7 +14941,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id="140057752593552">
+<div id="140254506422624">
 </div>
 <script>
 	{
@@ -15083,7 +15083,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140057752593552").append(this.canvas, this.toolbar.bar)
+				document.getElementById("140254506422624").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15173,7 +15173,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * position;
+				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
