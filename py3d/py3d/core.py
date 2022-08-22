@@ -3,9 +3,9 @@
 from __future__ import annotations
 import collections
 import numpy
-from numpy import ndarray
 from IPython.display import display, HTML
 import pathlib
+import json
 
 pi = numpy.arccos(-1)
 
@@ -37,11 +37,13 @@ def force_assgin(v1, v2):
         else:
             v1[:] = v2[:, numpy.newaxis]
 
-def render(id, vertex, color):
+
+def render(**args):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY3D_ID", str(id)).replace("PY3D_VERTEX", str(vertex)).replace("PY3D_COLOR",str(color))
+    html = tmp.replace("PY#D", json.dumps(args))
     return display(HTML(html))
+
 
 class Data(numpy.ndarray):
     BASE_SHAPE = ()
@@ -248,11 +250,9 @@ class Vector3(Vector):
         entity.end = self
         return entity
 
-    def as_line(self) -> LineSegment:
-        vertice = numpy.repeat(self, 2, axis=self.ndim -
-                               2)[..., 1:-1, :]
-        entity = LineSegment(*vertice.n)
-        entity.vertice = vertice
+    def as_line(self) -> Line:
+        entity = Line(*self.n)
+        entity.vertice = self
         return entity
 
     def as_linesegment(self):
@@ -485,18 +485,18 @@ class Transform(Data):
         return Vector3(x=1).mt(self)
 
     @classmethod
-    def from_perspective(cls, fovy, aspect, near, far)-> Transform:
+    def from_perspective(cls, fovy, aspect, near, far) -> Transform:
         f = 1 / numpy.tan(fovy/2)
         range_inv = 1.0 / (near - far)
         return numpy.array([
             [f / aspect, 0, 0, 0],
             [0, f, 0, 0],
             [0, 0, (near + far) * range_inv, 1],
-            [0, 0, -2 * near * far * range_inv , 0]
+            [0, 0, -2 * near * far * range_inv, 0]
         ])
 
     @classmethod
-    def from_orthographic(cls, l,r,t,b,n,f):
+    def from_orthographic(cls, l, r, t, b, n, f):
         pass
 
     def interp(self, xp, x) -> Transform:
@@ -625,19 +625,25 @@ class Mesh:
             self.geometry.vertice[..., i, :] = v
 
     def render(self):
-        render(id(self), self.geometry.vertice, self.geometry.color)
+        render(id=id(self), mode="TRIANGLES", vertice=self.geometry.vertice.ravel(
+        ).tolist(), color=self.geometry.color.ravel().tolist())
 
 
 class Triangle(Mesh):
     def __init__(self, *n):
         super().__init__(*n, 3)
-        self.index = [0,1,2]
+        self.index = [0, 1, 2]
 
 
 class LineSegment(Geometry):
     def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        ret.color = Color.Rand(*ret.n)
+        ret: cls = super().__new__(cls, *n)
+        color_n = n[:-1]
+        if color_n:
+            ret.color: Color = Color.Rand(*color_n)[:, numpy.newaxis]
+        else:
+            ret.color = Color.Rand()
+        ret.color.a = 1
         return ret
 
     @property
@@ -656,6 +662,26 @@ class LineSegment(Geometry):
     def end(self, v):
         self.vertice[..., 1::2, :].squeeze()[:] = v
 
+    def render(self):
+        render(id=id(self), mode="LINES", vertice=self.vertice.ravel(
+        ).tolist(), color=self.color.ravel().tolist())
+
+
+class Line(Geometry):
+    def __new__(cls, *n):
+        ret: cls = super().__new__(cls, *n)
+        color_n = n[:-1]
+        if color_n:
+            ret.color: Color = Color.Rand(*color_n)[:, numpy.newaxis]
+        else:
+            ret.color = Color.Rand()
+        ret.color.a = 1
+        return ret
+
+    def render(self):
+        render(id=id(self), mode="LINE_STRIP", vertice=self.vertice.ravel(
+        ).tolist(), color=self.color.ravel().tolist())
+
 
 class Point(Geometry):
     def __new__(cls, *n):
@@ -665,8 +691,9 @@ class Point(Geometry):
         return ret
 
     def render(self):
-        render(id(self), self.vertice.ravel(
-        ).tolist(), self.color.ravel().tolist())
+        render(id=id(self), mode="POINTS", vertice=self.vertice.ravel(
+        ).tolist(), color=self.color.ravel().tolist())
+
 
 class Camera(Mesh):
     def __init__(self, *n):

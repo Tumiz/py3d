@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "test.py",
             "args": [
-                "-b",
+                "-n",
                 "py3d/doc/Triangle.ipynb"
             ],
             "console": "integratedTerminal",
