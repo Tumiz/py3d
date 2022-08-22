@@ -14465,10 +14465,6 @@ a.anchor-link {
   display: none;
 }
 
-.highlight  {
-  margin: 0.4em;
-}
-
 /* Input area styling */
 .jp-InputArea {
   overflow: hidden;
@@ -14478,9 +14474,26 @@ a.anchor-link {
   overflow: hidden;
 }
 
-.CodeMirror pre {
+.CodeMirror.cm-s-jupyter .highlight pre {
+/* weird, but --jp-code-padding defined to be 5px but 4px horizontal padding is hardcoded for pre.CodeMirror-line */
+  padding: var(--jp-code-padding) 4px;
   margin: 0;
-  padding: 0;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+
+}
+
+.jp-OutputArea-output pre {
+  line-height: inherit;
+  font-family: inherit;
+}
+
+.jp-RenderedText pre {
+  color: var(--jp-content-font-color1);
+  font-size: var(--jp-code-font-size);
 }
 
 /* Using table instead of flexbox so that we can use break-inside property */
@@ -14614,9 +14627,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -14626,9 +14637,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </pre>
 </div>
 </div>
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -14640,10 +14649,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id="140254506422624">
+<div class="py3d">
 </div>
 <script>
 	{
+		const data = {"id": 140492542809568, "mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -14782,7 +14792,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140254506422624").append(this.canvas, this.toolbar.bar)
+				const py3ds = document.getElementsByClassName("py3d")
+				py3ds[py3ds.length - 1].append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14856,7 +14867,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl.POINTS, 0, this.vertices_size)
+				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
 			}
 		}
 		const viewer = new Viewer()
@@ -14882,14 +14893,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			} 
 		`)
 
-		viewer.set_attribute("position",
-			[[ 4.  0.  0.]
- [ 0.  1.  0.]
- [ 0. -1.  0.]], 3)
-		viewer.set_attribute("color",
-			[[1. 0. 0. 1.]
- [1. 0. 0. 1.]
- [1. 0. 0. 1.]], 4)
+		viewer.set_attribute("position", data.vertice, 3)
+		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
@@ -14927,9 +14932,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -14941,10 +14944,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id="140254506422624">
+<div class="py3d">
 </div>
 <script>
 	{
+		const data = {"id": 140492542809568, "mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15083,7 +15087,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140254506422624").append(this.canvas, this.toolbar.bar)
+				const py3ds = document.getElementsByClassName("py3d")
+				py3ds[py3ds.length - 1].append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15157,7 +15162,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl.POINTS, 0, this.vertices_size)
+				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
 			}
 		}
 		const viewer = new Viewer()
@@ -15183,14 +15188,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			} 
 		`)
 
-		viewer.set_attribute("position",
-			[[ 4.  0.  0.]
- [ 0.  1.  0.]
- [ 0. -1.  0.]], 3)
-		viewer.set_attribute("color",
-			[[1. 0. 0. 1.]
- [1. 0. 0. 1.]
- [1. 0. 0. 1.]], 4)
+		viewer.set_attribute("position", data.vertice, 3)
+		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
@@ -15202,22 +15201,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 </div>
 
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-     </div>
-</div>
-</div>
 </div>
 
 </div>
