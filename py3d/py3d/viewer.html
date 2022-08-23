@@ -3,10 +3,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id="PY3D_ID">
+<div class="py3d">
 </div>
 <script>
 	{
+		const data = PY#D
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -145,7 +146,8 @@
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("PY3D_ID").append(this.canvas, this.toolbar.bar)
+				const py3ds = document.getElementsByClassName("py3d")
+				py3ds[py3ds.length - 1].append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -219,7 +221,7 @@
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl.POINTS, 0, this.vertices_size)
+				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
 			}
 		}
 		const viewer = new Viewer()
@@ -245,10 +247,8 @@
 			} 
 		`)
 
-		viewer.set_attribute("position",
-			PY3D_VERTEX, 3)
-		viewer.set_attribute("color",
-			PY3D_COLOR, 4)
+		viewer.set_attribute("position", data.vertice, 3)
+		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>

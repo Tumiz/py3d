@@ -14465,10 +14465,6 @@ a.anchor-link {
   display: none;
 }
 
-.highlight  {
-  margin: 0.4em;
-}
-
 /* Input area styling */
 .jp-InputArea {
   overflow: hidden;
@@ -14478,9 +14474,26 @@ a.anchor-link {
   overflow: hidden;
 }
 
-.CodeMirror pre {
+.CodeMirror.cm-s-jupyter .highlight pre {
+/* weird, but --jp-code-padding defined to be 5px but 4px horizontal padding is hardcoded for pre.CodeMirror-line */
+  padding: var(--jp-code-padding) 4px;
   margin: 0;
-  padding: 0;
+
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+
+}
+
+.jp-OutputArea-output pre {
+  line-height: inherit;
+  font-family: inherit;
+}
+
+.jp-RenderedText pre {
+  color: var(--jp-content-font-color1);
+  font-size: var(--jp-code-font-size);
 }
 
 /* Using table instead of flexbox so that we can use break-inside property */
@@ -14608,9 +14621,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
 <div class="jp-OutputArea-child">
-
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
@@ -14620,9 +14631,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </pre>
 </div>
 </div>
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
 
@@ -14630,12 +14639,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Point([[0.        , 0.        , 0.        , 0.75812391, 0.14971182,
-        0.17308116, 1.        ],
-       [0.        , 0.        , 0.        , 0.57955017, 0.41054981,
-        0.42750206, 1.        ],
-       [0.        , 0.        , 0.        , 0.18520232, 0.28552955,
-        0.4720216 , 1.        ]])</pre>
+<pre>Point([[0.        , 0.        , 0.        , 0.89594393, 0.63504939,
+        0.12615635, 1.        ],
+       [0.        , 0.        , 0.        , 0.88281996, 0.36448608,
+        0.11960266, 1.        ],
+       [0.        , 0.        , 0.        , 0.32306286, 0.42572468,
+        0.80054632, 1.        ]])</pre>
 </div>
 
 </div>
@@ -14668,9 +14677,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
     <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
@@ -14678,19 +14685,19 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Point([[[0.23444101, 0.2707512 , 0.25038774, 0.6111084 , 0.31403915,
-         0.94145742, 1.        ],
-        [0.69077361, 0.3794217 , 0.04559869, 0.46703488, 0.22133751,
-         0.12782704, 1.        ],
-        [0.69322998, 0.31396196, 0.93189972, 0.23557434, 0.58455381,
-         0.25049078, 1.        ]],
+<pre>Point([[[0.5610294 , 0.52244044, 0.29131024, 0.55287347, 0.40330032,
+         0.96792207, 1.        ],
+        [0.63833065, 0.95024099, 0.8757112 , 0.38305161, 0.82304676,
+         0.80652995, 1.        ],
+        [0.90388189, 0.04997904, 0.34861257, 0.24222943, 0.23446234,
+         0.01312429, 1.        ]],
 
-       [[0.47094724, 0.62509614, 0.30560775, 0.68508601, 0.03146555,
-         0.82495391, 1.        ],
-        [0.47934039, 0.84579464, 0.20402861, 0.12412313, 0.83245687,
-         0.98328985, 1.        ],
-        [0.5932136 , 0.8247855 , 0.8269753 , 0.86704574, 0.18413684,
-         0.52420803, 1.        ]]])</pre>
+       [[0.61249927, 0.2369987 , 0.96507269, 0.68946458, 0.1591577 ,
+         0.84356827, 1.        ],
+        [0.4783522 , 0.21080702, 0.04762298, 0.62081456, 0.84999258,
+         0.2533451 , 1.        ],
+        [0.22743952, 0.66868916, 0.95561351, 0.75375068, 0.16640975,
+         0.86823293, 1.        ]]])</pre>
 </div>
 
 </div>
