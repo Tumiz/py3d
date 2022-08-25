@@ -32,6 +32,12 @@
 				this.btn_zoom_out.style.border = "0px"
 				this.btn_zoom_out.style.borderRadius = "3px"
 				this.btn_zoom_out.style.display = "none"
+				this.tooltip = document.createElement("div")
+				this.tooltip.innerHTML = `
+				pan:  ctrl+mouse move<br/>
+				zoom: mouse wheel
+				`
+				this.tooltip.style.display = "none"
 				this.btn_enable.onclick = (ev) => {
 					if (this.enable) {
 						this.btn_zoom_in.style.display = "none"
@@ -45,7 +51,13 @@
 						this.enable = true
 					}
 				}
-				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out)
+				this.bar.onmouseenter = (ev) => {
+					this.tooltip.style.display = "block"
+				}
+				this.bar.onmouseleave = (ev) => {
+					this.tooltip.style.display = "none"
+				}
+				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
 			}
 		}
 		class mat {
@@ -168,6 +180,13 @@
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
+				}
+				this.canvas.onwheel = (ev) => {
+					if (ev.ctrlKey) {
+						ev.preventDefault()
+						this.camera.height -= ev.deltaY / 100
+						this.render()
+					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
