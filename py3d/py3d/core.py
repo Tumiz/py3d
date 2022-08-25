@@ -42,6 +42,8 @@ def render(**args):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
     html = tmp.replace("PY#D", json.dumps(args))
+    if "debug" in args and args["debug"]:
+        open("debug.html", "w").write(html)
     return display(HTML(html))
 
 
@@ -576,11 +578,15 @@ class Color(Vector):
         self[..., 3] = v
 
 
-class Geometry(Vector):
+class Point(Vector):
     BASE_SHAPE = 7,
 
     def __new__(cls, *n):
-        return super().__new__(cls, [0.] * 7, n)
+        ret = super().__new__(cls, [0.] * 7, n)
+        ret.color = Color.Rand(*n[:-1], 1)
+        ret.color.a = 1
+        ret.type = "POINTS"
+        return ret
 
     @property
     def vertice(self):
@@ -598,10 +604,14 @@ class Geometry(Vector):
     def color(self, v):
         self[..., 3:7] = v
 
+    def render(self):
+        render(mode=self.type, vertice=self.vertice.ravel(
+        ).tolist(), color=self.color.ravel().tolist())
+
 
 class Mesh:
     def __init__(self, *n):
-        self.geometry = Geometry(*n)
+        self.geometry = Point(*n)
         self.geometry.color = Color.Rand(*self.geometry.n)
         self.transform = Transform(n=self.geometry.n)
         self.index = slice(None)
@@ -624,26 +634,22 @@ class Mesh:
         else:
             self.geometry.vertice[..., i, :] = v
 
-    def render(self):
-        render(id=id(self), mode="TRIANGLES", vertice=self.geometry.vertice.ravel(
-        ).tolist(), color=self.geometry.color.ravel().tolist())
+    def render(self, **args):
+        render(id=id(self), mode="TRIANGLES", vertice=(self.geometry.vertice @ self.transform).ravel(
+        ).tolist(), color=self.geometry.color.ravel().tolist(), **args)
 
 
-class Triangle(Mesh):
-    def __init__(self, *n):
-        super().__init__(*n, 3)
-        self.index = [0, 1, 2]
-
-
-class LineSegment(Geometry):
+class Triangle(Point):
     def __new__(cls, *n):
-        ret: cls = super().__new__(cls, *n)
-        color_n = n[:-1]
-        if color_n:
-            ret.color: Color = Color.Rand(*color_n)[:, numpy.newaxis]
-        else:
-            ret.color = Color.Rand()
-        ret.color.a = 1
+        ret = super().__new__(cls, *n, 3)
+        ret.type = "TRIANGLES"
+        return ret
+
+
+class LineSegment(Point):
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
+        ret.type = "LINE_STRIP"
         return ret
 
     @property
@@ -662,37 +668,12 @@ class LineSegment(Geometry):
     def end(self, v):
         self.vertice[..., 1::2, :].squeeze()[:] = v
 
-    def render(self):
-        render(id=id(self), mode="LINES", vertice=self.vertice.ravel(
-        ).tolist(), color=self.color.ravel().tolist())
 
-
-class Line(Geometry):
-    def __new__(cls, *n):
-        ret: cls = super().__new__(cls, *n)
-        color_n = n[:-1]
-        if color_n:
-            ret.color: Color = Color.Rand(*color_n)[:, numpy.newaxis]
-        else:
-            ret.color = Color.Rand()
-        ret.color.a = 1
-        return ret
-
-    def render(self):
-        render(id=id(self), mode="LINE_STRIP", vertice=self.vertice.ravel(
-        ).tolist(), color=self.color.ravel().tolist())
-
-
-class Point(Geometry):
+class Line(Point):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.color = Color.Rand(*n)
-        ret.color.a = 1
+        ret.type = "LINES"
         return ret
-
-    def render(self):
-        render(id=id(self), mode="POINTS", vertice=self.vertice.ravel(
-        ).tolist(), color=self.color.ravel().tolist())
 
 
 class Camera(Mesh):
