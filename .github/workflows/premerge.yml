@@ -38,6 +38,6 @@ jobs:
         run: |
           git config user.email "hh11698@163.com"
           git config user.name "Tumiz"
-          git add docs
+          git add docs py3d/README.md
           git commit -m "update docs"
           git push

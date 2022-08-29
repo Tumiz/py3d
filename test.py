@@ -27,7 +27,10 @@ for f in docs:
             if "assert" in cell.source:
                 del nb.cells[i]
             i += 1
-        body, resources = nbconvert.HTMLExporter().from_notebook_node(nb)
+        body, _ = nbconvert.HTMLExporter().from_notebook_node(nb)
         body = body.replace("<title>Notebook</title>",
                             "<title>Scenario {}</title>".format(f.stem))
         open(path_destination/(f.stem+".html"), "w").write(body)
+        if f.name == "index.ipynb":
+            body, _ = nbconvert.MarkdownExporter().from_notebook_node(nb)
+            open("py3d/README.md", "w").write(body)
