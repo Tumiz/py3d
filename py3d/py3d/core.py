@@ -38,10 +38,10 @@ def force_assgin(v1, v2):
             v1[:] = v2[:, numpy.newaxis]
 
 
-def render(**args):
+def render(id, **args):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY#D", json.dumps(args))
+    html = tmp.replace("PY#D_ID", str(id)).replace("PY#D_ARGS", json.dumps(args))
     if "debug" in args and args["debug"]:
         open("debug.html", "w").write(html)
     return display(HTML(html))
@@ -605,7 +605,7 @@ class Point(Vector):
         self[..., 3:7] = v
 
     def render(self):
-        render(mode=self.type, vertice=self.vertice.ravel(
+        render(id=id(self), mode=self.type, vertice=self.vertice.ravel(
         ).tolist(), color=self.color.ravel().tolist())
 
 
@@ -649,7 +649,7 @@ class Triangle(Point):
 class LineSegment(Point):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.type = "LINE_STRIP"
+        ret.type = "LINES"
         return ret
 
     @property
@@ -672,7 +672,7 @@ class LineSegment(Point):
 class Line(Point):
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.type = "LINES"
+        ret.type = "LINE_STRIP"
         return ret
 
 

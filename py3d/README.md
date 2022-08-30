@@ -15,15 +15,6 @@ It is under development and unstable currently. But it is designed to be simple,
 ```
 pip install py3d
 ```
-<script>
-var _hmt = _hmt || [];
-(function() {
-  var hm = document.createElement("script");
-  hm.src = "https://hm.baidu.com/hm.js?444208f50ebba09f31033fb98c3497b3";
-  var s = document.getElementsByTagName("script")[0]; 
-  s.parentNode.insertBefore(hm, s);
-})();
-</script>
 
 ### API reference
 
