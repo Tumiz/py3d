@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div class="py3d">
+<div id=140645753560128>
 </div>
 <script>
 	{
-		const data = PY#D
+		const data = {"mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -14687,20 +14687,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					if (this.enable) {
 						this.btn_zoom_in.style.display = "none"
 						this.btn_zoom_out.style.display = "none"
+						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
 						this.btn_zoom_in.style.display = "inline"
 						this.btn_zoom_out.style.display = "inline"
+						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
-				}
-				this.bar.onmouseenter = (ev) => {
-					this.tooltip.style.display = "block"
-				}
-				this.bar.onmouseleave = (ev) => {
-					this.tooltip.style.display = "none"
 				}
 				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
 			}
@@ -14798,13 +14794,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas = document.createElement("canvas")
 				this.canvas.style.width = "400px"
 				this.canvas.style.height = "300px"
+				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				const py3ds = document.getElementsByClassName("py3d")
-				py3ds[py3ds.length - 1].append(this.canvas, this.toolbar.bar)
+				document.getElementById(140645753560128).append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14816,9 +14812,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
+					this.canvas.tabIndex = 0
+					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (ev.ctrlKey) {
+					if (this.toolbar.enable) {
 						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
 						this.render()
@@ -14827,11 +14825,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (ev.ctrlKey) {
+					if (this.toolbar.enable) {
 						ev.preventDefault()
 						this.camera.height -= ev.deltaY / 100
 						this.render()
 					}
+				}
+				this.canvas.onkeydown = (ev) => {
+					this.toolbar.btn_enable.click()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -14962,11 +14963,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div class="py3d">
+<div id=140645753560128>
 </div>
 <script>
 	{
-		const data = PY#D
+		const data = {"mode": "TRIANGLES", "vertice": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15001,20 +15002,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					if (this.enable) {
 						this.btn_zoom_in.style.display = "none"
 						this.btn_zoom_out.style.display = "none"
+						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
 						this.btn_zoom_in.style.display = "inline"
 						this.btn_zoom_out.style.display = "inline"
+						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
-				}
-				this.bar.onmouseenter = (ev) => {
-					this.tooltip.style.display = "block"
-				}
-				this.bar.onmouseleave = (ev) => {
-					this.tooltip.style.display = "none"
 				}
 				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
 			}
@@ -15112,13 +15109,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas = document.createElement("canvas")
 				this.canvas.style.width = "400px"
 				this.canvas.style.height = "300px"
+				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				const py3ds = document.getElementsByClassName("py3d")
-				py3ds[py3ds.length - 1].append(this.canvas, this.toolbar.bar)
+				document.getElementById(140645753560128).append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15130,9 +15127,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
+					this.canvas.tabIndex = 0
+					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (ev.ctrlKey) {
+					if (this.toolbar.enable) {
 						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
 						this.render()
@@ -15141,11 +15140,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (ev.ctrlKey) {
+					if (this.toolbar.enable) {
 						ev.preventDefault()
 						this.camera.height -= ev.deltaY / 100
 						this.render()
 					}
+				}
+				this.canvas.onkeydown = (ev) => {
+					this.toolbar.btn_enable.click()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
