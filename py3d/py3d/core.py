@@ -6,6 +6,7 @@ import numpy
 from IPython.display import display, HTML
 import pathlib
 import json
+import uuid
 
 pi = numpy.arccos(-1)
 
@@ -38,10 +39,10 @@ def force_assgin(v1, v2):
             v1[:] = v2[:, numpy.newaxis]
 
 
-def render(id, **args):
+def render(**args):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY#D_ID", str(id)).replace("PY#D_ARGS", json.dumps(args))
+    html = tmp.replace("PY#D_ID", str(uuid.uuid1())).replace("PY#D_ARGS", json.dumps(args))
     if "debug" in args and args["debug"]:
         open("debug.html", "w").write(html)
     return display(HTML(html))
@@ -604,39 +605,9 @@ class Point(Vector):
     def color(self, v):
         self[..., 3:7] = v
 
-    def render(self):
-        render(id=id(self), mode=self.type, vertice=self.vertice.ravel(
-        ).tolist(), color=self.color.ravel().tolist())
-
-
-class Mesh:
-    def __init__(self, *n):
-        self.geometry = Point(*n)
-        self.geometry.color = Color.Rand(*self.geometry.n)
-        self.transform = Transform(n=self.geometry.n)
-        self.index = slice(None)
-
-    def __getitem__(self, *n):
-        ret = Mesh(*n)
-        ret.geometry = self.geometry[n]
-        ret.transform = self.transform[n]
-        return ret
-
-    @classmethod
-    def from_indexed(cls, v):
-        ret = cls(*v.n)
-        ret.geometry.vertice = v
-        return ret
-
-    def p(self, i, v=None):
-        if v is None:
-            return self.geometry.vertice[..., i, :]
-        else:
-            self.geometry.vertice[..., i, :] = v
-
     def render(self, **args):
-        render(id=id(self), mode="TRIANGLES", vertice=(self.geometry.vertice @ self.transform).ravel(
-        ).tolist(), color=self.geometry.color.ravel().tolist(), **args)
+        render(id=id(self), mode=self.type, vertice=self.vertice.ravel(
+        ).tolist(), color=self.color.ravel().tolist(), **args)
 
 
 class Triangle(Point):
@@ -675,7 +646,35 @@ class Line(Point):
         ret.type = "LINE_STRIP"
         return ret
 
+class Mesh:
+    def __init__(self, *n):
+        self.geometry = Point(*n)
+        self.geometry.color = Color.Rand(*self.geometry.n)
+        self.transform = Transform(n=self.geometry.n)
+        self.index = slice(None)
 
+    def __getitem__(self, *n):
+        ret = Mesh(*n)
+        ret.geometry = self.geometry[n]
+        ret.transform = self.transform[n]
+        return ret
+
+    @classmethod
+    def from_indexed(cls, v):
+        ret = cls(*v.n)
+        ret.geometry.vertice = v
+        return ret
+
+    def p(self, i, v=None):
+        if v is None:
+            return self.geometry.vertice[..., i, :]
+        else:
+            self.geometry.vertice[..., i, :] = v
+
+    def render(self, **args):
+        render(id=id(self), mode="TRIANGLES", vertice=(self.geometry.vertice @ self.transform).ravel(
+        ).tolist(), color=self.geometry.color.ravel().tolist(), **args)
+        
 class Camera(Mesh):
     def __init__(self, *n):
         super().__init__(*n)

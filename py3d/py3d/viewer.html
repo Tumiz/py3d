@@ -155,7 +155,7 @@
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById(PY#D_ID).append(this.canvas, this.toolbar.bar)
+				document.getElementById("PY#D_ID").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -187,7 +187,14 @@
 					}
 				}
 				this.canvas.onkeydown = (ev) => {
-					this.toolbar.btn_enable.click()
+					if (!this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
+				}
+				this.canvas.onkeyup = (ev) => {
+					if (this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
