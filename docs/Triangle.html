@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=140645753560128>
+<div id=206f2bbe-2a09-11ed-a9ec-91f18c6f1dc3>
 </div>
 <script>
 	{
-		const data = {"mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0]}
+		const data = {"id": 140045177683008, "mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -14800,7 +14800,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById(140645753560128).append(this.canvas, this.toolbar.bar)
+				document.getElementById("206f2bbe-2a09-11ed-a9ec-91f18c6f1dc3").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14832,7 +14832,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					}
 				}
 				this.canvas.onkeydown = (ev) => {
-					this.toolbar.btn_enable.click()
+					if (!this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
+				}
+				this.canvas.onkeyup = (ev) => {
+					if (this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -14963,11 +14970,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=140645753560128>
+<div id=206f2bbf-2a09-11ed-a9ec-91f18c6f1dc3>
 </div>
 <script>
 	{
-		const data = {"mode": "TRIANGLES", "vertice": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0, 0.6916651229275382, 0.08747512911641153, 0.7982102349561252, 1.0]}
+		const data = {"id": 140045177683008, "mode": "TRIANGLES", "vertice": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15115,7 +15122,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById(140645753560128).append(this.canvas, this.toolbar.bar)
+				document.getElementById("206f2bbf-2a09-11ed-a9ec-91f18c6f1dc3").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15147,7 +15154,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					}
 				}
 				this.canvas.onkeydown = (ev) => {
-					this.toolbar.btn_enable.click()
+					if (!this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
+				}
+				this.canvas.onkeyup = (ev) => {
+					if (this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
