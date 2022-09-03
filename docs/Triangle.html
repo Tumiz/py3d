@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=206f2bbe-2a09-11ed-a9ec-91f18c6f1dc3>
+<div id=e510fd76-2b53-11ed-88e7-c93021216e03>
 </div>
 <script>
 	{
-		const data = {"id": 140045177683008, "mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0]}
+		const data = {"id": 140548520825152, "mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0, 0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0, 0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -14794,13 +14794,15 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas = document.createElement("canvas")
 				this.canvas.style.width = "400px"
 				this.canvas.style.height = "300px"
+				this.canvas.width = 400
+				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("206f2bbe-2a09-11ed-a9ec-91f18c6f1dc3").append(this.canvas, this.toolbar.bar)
+				document.getElementById("e510fd76-2b53-11ed-88e7-c93021216e03").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14884,7 +14886,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			render() {
 				this.gl.clearColor(0, 0, 0, 0)
 				// this.gl.clearDepth(1.0);                 // Clear everything
-				// this.gl.enable(this.gl.DEPTH_TEST);
+				this.gl.enable(this.gl.DEPTH_TEST);
 				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
@@ -14970,11 +14972,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=206f2bbf-2a09-11ed-a9ec-91f18c6f1dc3>
+<div id=e510fd77-2b53-11ed-88e7-c93021216e03>
 </div>
 <script>
 	{
-		const data = {"id": 140045177683008, "mode": "TRIANGLES", "vertice": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0, 0.578826148667956, 0.8869895142407458, 0.5953253234108469, 1.0]}
+		const data = {"id": 140548520825152, "mode": "TRIANGLES", "vertice": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0, 0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0, 0.45021060703554583, 0.5084804474615178, 0.5001316287707801, 1.0]}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15116,13 +15118,15 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas = document.createElement("canvas")
 				this.canvas.style.width = "400px"
 				this.canvas.style.height = "300px"
+				this.canvas.width = 400
+				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("206f2bbf-2a09-11ed-a9ec-91f18c6f1dc3").append(this.canvas, this.toolbar.bar)
+				document.getElementById("e510fd77-2b53-11ed-88e7-c93021216e03").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15206,7 +15210,332 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			render() {
 				this.gl.clearColor(0, 0, 0, 0)
 				// this.gl.clearDepth(1.0);                 // Clear everything
-				// this.gl.enable(this.gl.DEPTH_TEST);
+				this.gl.enable(this.gl.DEPTH_TEST);
+				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
+				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+				this.gl.useProgram(this.program)
+				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
+				this.set_uniform("longitude_view", mat.ry(-this.camera.ry))
+				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
+				this.set_uniform("projection", this.camera.projection)
+				this.set_uniform("right_to_left", mat.right_to_left())
+				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
+			}
+		}
+		const viewer = new Viewer()
+		viewer.set_program(`
+			attribute vec4 position;
+			attribute vec4 color;
+			varying vec4 v_color;
+			uniform mat4 projection;
+			uniform mat4 longitude_view;
+			uniform mat4 latitude_view;
+			uniform mat4 height_view;
+			uniform mat4 right_to_left;
+			void main(void) {
+				v_color = color;
+				gl_PointSize = 1.0;
+				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
+			}
+		`, `
+			precision mediump float;
+			varying vec4 v_color;
+			void main(void) {
+				gl_FragColor = v_color;
+			} 
+		`)
+
+		viewer.set_attribute("position", data.vertice, 3)
+		viewer.set_attribute("color", data.color, 4)
+		viewer.render()
+	}
+</script>
+
+</html>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Transform</span>
+<span class="n">t</span><span class="o">=</span><span class="n">Triangle</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">t</span><span class="o">.</span><span class="n">vertice</span> <span class="o">=</span> <span class="n">Vector3</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span> <span class="o">@</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_translation</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<!DOCTYPE html>
+<html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>py3d</title>
+
+<div id=e510fd78-2b53-11ed-88e7-c93021216e03>
+</div>
+<script>
+	{
+		const data = {"id": 140548571789504, "mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.5921650168520777, 0.2855257050649861, 0.43405533177886046, 1.0, 0.5921650168520777, 0.2855257050649861, 0.43405533177886046, 1.0, 0.5921650168520777, 0.2855257050649861, 0.43405533177886046, 1.0, 0.6577299880420001, 0.631271438466429, 0.026079020917408435, 1.0, 0.6577299880420001, 0.631271438466429, 0.026079020917408435, 1.0, 0.6577299880420001, 0.631271438466429, 0.026079020917408435, 1.0]}
+		class ToolBar {
+			constructor() {
+				this.enable = false
+				this.bar = document.createElement("div")
+				this.btn_enable = document.createElement("button")
+				this.btn_enable.innerHTML = "ctrl"
+				this.btn_enable.style.width = "30px"
+				this.btn_enable.style.height = "20px"
+				this.btn_enable.style.border = "0px"
+				this.btn_enable.style.borderRadius = "3px"
+				this.btn_zoom_in = document.createElement("button")
+				this.btn_zoom_in.innerHTML = "+"
+				this.btn_zoom_in.style.width = "20px"
+				this.btn_zoom_in.style.height = "20px"
+				this.btn_zoom_in.style.border = "0px"
+				this.btn_zoom_in.style.borderRadius = "3px"
+				this.btn_zoom_in.style.display = "none"
+				this.btn_zoom_out = document.createElement("button")
+				this.btn_zoom_out.innerHTML = "-"
+				this.btn_zoom_out.style.width = "20px"
+				this.btn_zoom_out.style.height = "20px"
+				this.btn_zoom_out.style.border = "0px"
+				this.btn_zoom_out.style.borderRadius = "3px"
+				this.btn_zoom_out.style.display = "none"
+				this.tooltip = document.createElement("div")
+				this.tooltip.innerHTML = `
+				pan:  ctrl+mouse move<br/>
+				zoom: mouse wheel
+				`
+				this.tooltip.style.display = "none"
+				this.btn_enable.onclick = (ev) => {
+					if (this.enable) {
+						this.btn_zoom_in.style.display = "none"
+						this.btn_zoom_out.style.display = "none"
+						this.tooltip.style.display = "none"
+						this.enable = false
+						this.btn_enable.style.backgroundColor = ""
+					} else {
+						this.btn_zoom_in.style.display = "inline"
+						this.btn_zoom_out.style.display = "inline"
+						this.tooltip.style.display = "block"
+						this.btn_enable.style.backgroundColor = "gray"
+						this.enable = true
+					}
+				}
+				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
+			}
+		}
+		class mat {
+			static identity() {
+				return [
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 1]
+			}
+			static right_to_left() {
+				return [
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, -1, 0,
+					0, 0, 0, 1]
+			}
+			static orthographic(l, r, t, b, n, f) {
+				return [
+					2 / (r - l), 0, 0, 0,
+					0, 2 / (t - b), 0, 0,
+					0, 0, 2 / (n - f), 0,
+					(l + r) / (l - r), (t + b) / (b - t), (n + f) / (f - n), 1]
+			}
+			static perspective(fovy, aspect, near, far) {
+				const f = 1 / Math.tan(fovy / 2)
+				const range_inv = 1.0 / (near - far)
+				return [
+					f / aspect, 0, 0, 0,
+					0, f, 0, 0,
+					0, 0, (near + far) * range_inv, 1,
+					0, 0, -2 * near * far * range_inv, 0]
+			}
+			static translation(x, y, z) {
+				return [
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					x, y, z, 1]
+			}
+			static rz(a) {
+				const cos = Math.cos(a)
+				const sin = Math.sin(a)
+				return [
+					cos, sin, 0, 0,
+					-sin, cos, 0, 0,
+					0, 0, 1, 0,
+					0, 0, 0, 1]
+			}
+			static ry(a) {
+				const cos = Math.cos(a)
+				const sin = Math.sin(a)
+				return [
+					cos, 0, -sin, 0,
+					0, 1, 0, 0,
+					sin, 0, cos, 0,
+					0, 0, 0, 1]
+			}
+			static rx(a) {
+				const cos = Math.cos(a)
+				const sin = Math.sin(a)
+				return [
+					1, 0, 0, 0,
+					0, cos, sin, 0,
+					0, -sin, cos, 0,
+					0, 0, 0, 1]
+			}
+			static matmul(m, v) {
+				console.assert(m.length == 16 && v.length == 4, m, v)
+				let ret = []
+				for (let j of [0, 1, 2, 3]) {
+					ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12] * v[3])
+				}
+				return ret
+			}
+		}
+		class Camera {
+			PESPECTIVE = 0
+			ORTHOGRAPHIC = 1
+			constructor(fovy, aspect, near, far) {
+				this.type = this.PESPECTIVE
+				this.projection = mat.perspective(fovy, aspect, near, far)
+				this.height = 10
+				this.ry = 0
+				this.latitude = 0
+				this.center = []
+			}
+		}
+		class Viewer {
+			constructor() {
+				this.canvas_x = 0
+				this.canvas_y = 0
+				this.canvas = document.createElement("canvas")
+				this.canvas.style.width = "400px"
+				this.canvas.style.height = "300px"
+				this.canvas.width = 400
+				this.canvas.height = 300
+				this.canvas.style.outlineWidth = 0
+				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
+				this.camera.height = -10
+				this.camera.ry = 0
+				this.camera.rx = 0
+				this.toolbar = new ToolBar()
+				document.getElementById("e510fd78-2b53-11ed-88e7-c93021216e03").append(this.canvas, this.toolbar.bar)
+				this.toolbar.btn_zoom_in.onclick = (ev) => {
+					this.camera.height += 1
+					this.render()
+				}
+				this.toolbar.btn_zoom_out.onclick = (ev) => {
+					this.camera.height -= 1
+					this.render()
+				}
+				this.canvas.onmouseenter = (ev) => {
+					this.canvas_x = ev.clientX
+					this.canvas_y = ev.clientY
+					this.canvas.tabIndex = 0
+					this.canvas.focus()
+				}
+				this.canvas.onmousemove = (ev) => {
+					if (this.toolbar.enable) {
+						this.camera.ry += (ev.clientX - this.canvas_x) / 100
+						this.camera.rx += (ev.clientY - this.canvas_y) / 100
+						this.render()
+					}
+					this.canvas_x = ev.clientX
+					this.canvas_y = ev.clientY
+				}
+				this.canvas.onwheel = (ev) => {
+					if (this.toolbar.enable) {
+						ev.preventDefault()
+						this.camera.height -= ev.deltaY / 100
+						this.render()
+					}
+				}
+				this.canvas.onkeydown = (ev) => {
+					if (!this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
+				}
+				this.canvas.onkeyup = (ev) => {
+					if (this.toolbar.enable) {
+						this.toolbar.btn_enable.click()
+					}
+				}
+				this.gl = this.canvas.getContext("webgl")
+				if (!this.gl) {
+					alert("webgl not work")
+				}
+				this.program = this.gl.createProgram()
+				this.vertices_size = 0
+			}
+			set_attribute(name, array, item_size) {
+				const buffer = this.gl.createBuffer()
+				this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
+				this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(array), this.gl.STATIC_DRAW)
+				const location = this.gl.getAttribLocation(this.program, name)
+				this.gl.enableVertexAttribArray(location)
+				this.gl.vertexAttribPointer(location, item_size, this.gl.FLOAT, false, 0, 0)
+				this.vertices_size = array.length / item_size
+			}
+			set_uniform(name, array) {
+				const location = this.gl.getUniformLocation(this.program, name)
+				this.gl.uniformMatrix4fv(location, false, array)
+			}
+			set_shader(type, code) {
+				const shader = this.gl.createShader(type)
+				this.gl.shaderSource(shader, code)
+				this.gl.compileShader(shader)
+				this.gl.attachShader(this.program, shader)
+			}
+			set_fragment_shader(code) {
+				this.set_shader(this.gl.FRAGMENT_SHADER, code)
+			}
+			set_vertex_shader(code) {
+				this.set_shader(this.gl.VERTEX_SHADER, code)
+			}
+			set_program(vertex_shader_code, fragment_shader_code) {
+				this.set_vertex_shader(vertex_shader_code)
+				this.set_fragment_shader(fragment_shader_code)
+				this.gl.linkProgram(this.program)
+				if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
+					alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
+				}
+			}
+			render() {
+				this.gl.clearColor(0, 0, 0, 0)
+				// this.gl.clearDepth(1.0);                 // Clear everything
+				this.gl.enable(this.gl.DEPTH_TEST);
 				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
