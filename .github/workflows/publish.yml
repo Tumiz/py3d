@@ -6,7 +6,7 @@ on:
   push:
     branches: ["master"]
     paths:
-      - "py3d/**.py"
+      - "py3d/py3d"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:

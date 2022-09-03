@@ -42,7 +42,8 @@ def force_assgin(v1, v2):
 def render(**args):
     pwd = pathlib.Path(__file__).parent
     tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY#D_ID", str(uuid.uuid1())).replace("PY#D_ARGS", json.dumps(args))
+    html = tmp.replace("PY#D_ID", str(uuid.uuid1())).replace(
+        "PY#D_ARGS", json.dumps(args))
     if "debug" in args and args["debug"]:
         open("debug.html", "w").write(html)
     return display(HTML(html))
@@ -50,7 +51,6 @@ def render(**args):
 
 class Data(numpy.ndarray):
     BASE_SHAPE = ()
-    # usually, d1 is the number of entities, and d3 is the size of one element.
 
     def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return numpy.tile(data, n + (1,)).view(cls)
@@ -523,7 +523,7 @@ class Transform(Data):
 
 
 class Color(Vector):
-    BASE_SHAPE = (4,)
+    BASE_SHAPE = 4,
 
     def __new__(cls, data: numpy.ndarray | list = [], r=0, g=0, b=0, a=1, n=()):
         if data:
@@ -581,12 +581,12 @@ class Color(Vector):
 
 class Point(Vector):
     BASE_SHAPE = 7,
+    TYPE = "POINTS"
 
     def __new__(cls, *n):
-        ret = super().__new__(cls, [0.] * 7, n)
-        ret.color = Color.Rand(*n[:-1], 1)
+        ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
+        ret.color = Color.Rand(*(n[:-1] if len(cls.BASE_SHAPE) == 1 else n), 1)
         ret.color.a = 1
-        ret.type = "POINTS"
         return ret
 
     @property
@@ -606,21 +606,24 @@ class Point(Vector):
         self[..., 3:7] = v
 
     def render(self, **args):
-        render(id=id(self), mode=self.type, vertice=self.vertice.ravel(
+        render(id=id(self), mode=self.TYPE, vertice=self.vertice.ravel(
         ).tolist(), color=self.color.ravel().tolist(), **args)
 
 
 class Triangle(Point):
+    BASE_SHAPE = 3, 7
+    TYPE = "TRIANGLES"
+
     def __new__(cls, *n):
-        ret = super().__new__(cls, *n, 3)
-        ret.type = "TRIANGLES"
+        ret = super().__new__(cls, *n)
         return ret
 
 
 class LineSegment(Point):
+    TYPE = "LINES"
+
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.type = "LINES"
         return ret
 
     @property
@@ -641,10 +644,12 @@ class LineSegment(Point):
 
 
 class Line(Point):
+    TYPE = "LINE_STRIP"
+
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
-        ret.type = "LINE_STRIP"
         return ret
+
 
 class Mesh:
     def __init__(self, *n):
@@ -674,7 +679,8 @@ class Mesh:
     def render(self, **args):
         render(id=id(self), mode="TRIANGLES", vertice=(self.geometry.vertice @ self.transform).ravel(
         ).tolist(), color=self.geometry.color.ravel().tolist(), **args)
-        
+
+
 class Camera(Mesh):
     def __init__(self, *n):
         super().__init__(*n)
