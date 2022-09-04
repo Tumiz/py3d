@@ -258,8 +258,13 @@ class Vector3(Vector):
         entity.vertice = self
         return entity
 
-    def as_linesegment(self):
+    def as_linesegment(self) -> LineSegment:
         entity = LineSegment(*self.n)
+        entity.vertice = self
+        return entity
+
+    def as_triangle(self):
+        entity = Triangle(*self.n[:-1])
         entity.vertice = self
         return entity
 
@@ -579,7 +584,7 @@ class Color(Vector):
         self[..., 3] = v
 
 
-class Point(Vector):
+class Point(Data):
     BASE_SHAPE = 7,
     TYPE = "POINTS"
 
@@ -642,6 +647,28 @@ class LineSegment(Point):
     def end(self, v):
         self.vertice[..., 1::2, :].squeeze()[:] = v
 
+    @classmethod
+    def Car(cls, *n):
+        ret = Vector3([
+            [-1, 1, 0],
+            [-1, 1, 0.8],
+            [0, 1, 1.6],
+            [2, 1, 1.6],
+            [5, 1, 0.8],
+            [5, 1, 0],
+            [-1, -1, 0],
+            [-1, -1, 0],
+            [-1, -1, 0.8],
+            [0, -1, 1.6],
+            [2, -1, 1.6],
+            [5, -1, 0.8],
+            [5, -1, 0],
+            [-1, -1, 0]
+        ])
+        index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
+                 10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
+        return ret[index].as_linesegment()
+
 
 class Line(Point):
     TYPE = "LINE_STRIP"
@@ -651,40 +678,24 @@ class Line(Point):
         return ret
 
 
-class Mesh:
-    def __init__(self, *n):
-        self.geometry = Point(*n)
-        self.geometry.color = Color.Rand(*self.geometry.n)
-        self.transform = Transform(n=self.geometry.n)
-        self.index = slice(None)
+class Mesh(Point):
+    TYPE = "TRIANGLES"
 
-    def __getitem__(self, *n):
-        ret = Mesh(*n)
-        ret.geometry = self.geometry[n]
-        ret.transform = self.transform[n]
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
         return ret
 
     @classmethod
     def from_indexed(cls, v):
         ret = cls(*v.n)
-        ret.geometry.vertice = v
+        ret.vertice = v
         return ret
 
-    def p(self, i, v=None):
-        if v is None:
-            return self.geometry.vertice[..., i, :]
-        else:
-            self.geometry.vertice[..., i, :] = v
 
-    def render(self, **args):
-        render(id=id(self), mode="TRIANGLES", vertice=(self.geometry.vertice @ self.transform).ravel(
-        ).tolist(), color=self.geometry.color.ravel().tolist(), **args)
-
-
-class Camera(Mesh):
+class Camera:
     def __init__(self, *n):
-        super().__init__(*n)
-        self.projection = Transform()
+        self.transform = Transform(*n)
+        self.projection = Transform(*n)
 
     def set_perspective(self, fov, aspect, near, far):
         self.projection = Transform.from_perspective(fov, aspect, near, far)
