@@ -6,7 +6,7 @@ import numpy
 from IPython.display import display, HTML
 import pathlib
 import json
-import uuid
+
 
 pi = numpy.arccos(-1)
 
@@ -39,14 +39,21 @@ def force_assgin(v1, v2):
             v1[:] = v2[:, numpy.newaxis]
 
 
-def render(**args):
-    pwd = pathlib.Path(__file__).parent
-    tmp = open(pwd/"viewer.html").read()
-    html = tmp.replace("PY#D_ID", str(uuid.uuid1())).replace(
-        "PY#D_ARGS", json.dumps(args))
-    if "debug" in args and args["debug"]:
-        open("debug.html", "w").write(html)
-    return display(HTML(html))
+class Viewer:
+    tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
+    def __init__(self) -> None:
+        self.cache = {}
+        self.display = display(display_id="viewer")
+        
+    def render_args(self, **args):
+        self.cache.update(args)
+        html = self.tmp.replace("PY#D_ID", str(id(self))).replace(
+            "PY#D_ARGS", json.dumps(self.cache))
+        self.display.update(HTML(html))
+
+    def render(self, obj:Point, **args):
+        self.render_args(id=id(obj), mode=obj.TYPE, vertice=obj.vertice.ravel(
+        ).tolist(), color=obj.color.ravel().tolist(), **args)
 
 class Data(numpy.ndarray):
     BASE_SHAPE = ()
@@ -597,7 +604,7 @@ class Point(Data):
         return ret
 
     @property
-    def vertice(self):
+    def vertice(self) -> Vector3:
         return self[..., 0:3].view(Vector3)
 
     @vertice.setter
@@ -605,7 +612,7 @@ class Point(Data):
         self[..., 0:3] = v
 
     @property
-    def color(self):
+    def color(self) -> Color:
         return self[..., 3:7].view(Color)
 
     @color.setter
@@ -613,8 +620,7 @@ class Point(Data):
         self[..., 3:7] = v
 
     def render(self, **args):
-        render(id=id(self), mode=self.TYPE, vertice=self.vertice.ravel(
-        ).tolist(), color=self.color.ravel().tolist(), **args)
+        Viewer().render(self, **args)
 
 
 class Triangle(Point):
