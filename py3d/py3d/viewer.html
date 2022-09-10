@@ -250,7 +250,12 @@
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
+				for (let id in data) {
+					let obj = data[id]
+					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("color", obj.color, 4)
+					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+				}
 			}
 		}
 		const viewer = new Viewer()
@@ -275,9 +280,6 @@
 				gl_FragColor = v_color;
 			} 
 		`)
-
-		viewer.set_attribute("position", data.vertice, 3)
-		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
