@@ -2,11 +2,12 @@
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
 import collections
+import uuid
 import numpy
-from IPython.display import display, HTML
+from IPython.display import display, update_display, HTML
 import pathlib
 import json
-
+import uuid
 
 pi = numpy.arccos(-1)
 
@@ -43,13 +44,16 @@ class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
     def __init__(self) -> None:
         self.cache = {}
-        self.display = display(display_id="viewer")
+        self.id = str(uuid.uuid1())
+        display(display_id=self.id)
         
-    def render_args(self, **args):
-        self.cache.update(args)
-        html = self.tmp.replace("PY#D_ID", str(id(self))).replace(
+    def render_args(self, id, **args):
+        self.cache[id]=args
+        html = self.tmp.replace("PY#D_ID", self.id).replace(
             "PY#D_ARGS", json.dumps(self.cache))
-        self.display.update(HTML(html))
+        if "debug" in args and args["debug"]:
+            open(self.id+".html","w").write(html)
+        update_display(HTML(html), display_id=self.id)
 
     def render(self, obj:Point, **args):
         self.render_args(id=id(obj), mode=obj.TYPE, vertice=obj.vertice.ravel(
@@ -676,6 +680,18 @@ class LineSegment(Point):
         index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
                  10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
         return ret[index].as_linesegment()
+
+    @classmethod
+    def Grid(cls, size=5) -> LineSegment:
+        point = Vector3(x=[-size,size], y = -size)
+        point @= Transform.from_translation(y=range(2*size+1))
+        point = point.reshape(point.size//3,3)
+        point @= Transform.from_rpy([[0,0,0],[0,0,pi/2]])
+        grid=point.as_linesegment()
+        grid.color = Color(a=1)
+        grid[0].color[size*2:size*2+2] = Color(r=[0,1])
+        grid[1].color[size*2:size*2+2] = Color(g=[0,1])
+        return grid
 
 
 class Line(Point):

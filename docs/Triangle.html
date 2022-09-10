@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=140067675177504>
+<div id=2e73d518-30ab-11ed-8e7e-d385bbadff49>
 </div>
 <script>
 	{
-		const data = {"id": 140067709139136, "mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0]}
+		const data = {"139881593292352": {"mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0]}}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -14802,7 +14802,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140067675177504").append(this.canvas, this.toolbar.bar)
+				document.getElementById("2e73d518-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -14895,7 +14895,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
+				for (let id in data) {
+					let obj = data[id]
+					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("color", obj.color, 4)
+					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+				}
 			}
 		}
 		const viewer = new Viewer()
@@ -14920,9 +14925,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				gl_FragColor = v_color;
 			} 
 		`)
-
-		viewer.set_attribute("position", data.vertice, 3)
-		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
@@ -14972,11 +14974,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=140067675177504>
+<div id=2e73d519-30ab-11ed-8e7e-d385bbadff49>
 </div>
 <script>
 	{
-		const data = {"id": 140067709139136, "mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0]}
+		const data = {"139881593292352": {"mode": "TRIANGLES", "vertice": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0]}}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15126,7 +15128,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140067675177504").append(this.canvas, this.toolbar.bar)
+				document.getElementById("2e73d519-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15219,7 +15221,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
+				for (let id in data) {
+					let obj = data[id]
+					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("color", obj.color, 4)
+					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+				}
 			}
 		}
 		const viewer = new Viewer()
@@ -15244,9 +15251,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				gl_FragColor = v_color;
 			} 
 		`)
-
-		viewer.set_attribute("position", data.vertice, 3)
-		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
@@ -15297,11 +15301,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=140067675177504>
+<div id=2e73d51a-30ab-11ed-8e7e-d385bbadff49>
 </div>
 <script>
 	{
-		const data = {"id": 140067709139136, "mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.4602806880428072, 0.13801094021467242, 0.41513176144341835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0, 0.03165994783915205, 0.4676967368933935, 0.8707857011807835, 1.0]}
+		const data = {"139881593911488": {"mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0]}}
 		class ToolBar {
 			constructor() {
 				this.enable = false
@@ -15451,7 +15455,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("140067675177504").append(this.canvas, this.toolbar.bar)
+				document.getElementById("2e73d51a-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
 				this.toolbar.btn_zoom_in.onclick = (ev) => {
 					this.camera.height += 1
 					this.render()
@@ -15544,7 +15548,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				this.gl.drawArrays(this.gl[data.mode], 0, this.vertices_size)
+				for (let id in data) {
+					let obj = data[id]
+					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("color", obj.color, 4)
+					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+				}
 			}
 		}
 		const viewer = new Viewer()
@@ -15569,9 +15578,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				gl_FragColor = v_color;
 			} 
 		`)
-
-		viewer.set_attribute("position", data.vertice, 3)
-		viewer.set_attribute("color", data.color, 4)
 		viewer.render()
 	}
 </script>
