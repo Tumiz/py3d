@@ -14648,35 +14648,43 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=2e73d518-30ab-11ed-8e7e-d385bbadff49>
+<div id=8b957f78-3509-11ed-9d2b-dbd0b81b175a>
 </div>
 <script>
 	{
-		const data = {"139881593292352": {"mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0]}}
+		const cache = {"0": {"140535507285440": {"mode": "TRIANGLES", "vertice": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0, 0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0, 0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0]}}}
+		class TimeBar {
+			constructor() {
+				this.bar = document.createElement("div")
+				this.ts = Object.keys(cache)
+				this.frames = Object.values(cache)
+				this.current_frame = this.frames[this.frames.length - 1]
+				this.slider = document.createElement("input")
+				this.slider.type = "range"
+				this.slider.style.width = "380px"
+				this.slider.style.verticalAlign = "middle"
+				this.slider.style.height = "2px"
+				this.slider.min = 0
+				this.slider.max = this.ts.length - 1
+				this.slider.value = this.slider.min
+				this.slider.style.display = "inline"
+				this.time = document.createElement("div")
+				this.time.style.display = "inline"
+				this.time.innerHTML = this.ts[this.slider.value]
+				this.bar.append(this.slider, this.time)
+				this.bar.style.display = this.ts.length > 1 ? "block" : "none"
+			}
+		}
 		class ToolBar {
 			constructor() {
-				this.enable = false
 				this.bar = document.createElement("div")
+				this.enable = false
 				this.btn_enable = document.createElement("button")
 				this.btn_enable.innerHTML = "ctrl"
 				this.btn_enable.style.width = "30px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
 				this.btn_enable.style.borderRadius = "3px"
-				this.btn_zoom_in = document.createElement("button")
-				this.btn_zoom_in.innerHTML = "+"
-				this.btn_zoom_in.style.width = "20px"
-				this.btn_zoom_in.style.height = "20px"
-				this.btn_zoom_in.style.border = "0px"
-				this.btn_zoom_in.style.borderRadius = "3px"
-				this.btn_zoom_in.style.display = "none"
-				this.btn_zoom_out = document.createElement("button")
-				this.btn_zoom_out.innerHTML = "-"
-				this.btn_zoom_out.style.width = "20px"
-				this.btn_zoom_out.style.height = "20px"
-				this.btn_zoom_out.style.border = "0px"
-				this.btn_zoom_out.style.borderRadius = "3px"
-				this.btn_zoom_out.style.display = "none"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				pan:  ctrl+mouse move<br/>
@@ -14685,20 +14693,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.tooltip.style.display = "none"
 				this.btn_enable.onclick = (ev) => {
 					if (this.enable) {
-						this.btn_zoom_in.style.display = "none"
-						this.btn_zoom_out.style.display = "none"
 						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
-						this.btn_zoom_in.style.display = "inline"
-						this.btn_zoom_out.style.display = "inline"
 						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
 				}
-				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
+				this.bar.append(this.btn_enable, this.tooltip)
 			}
 		}
 		class mat {
@@ -14802,15 +14806,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("2e73d518-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
-				this.toolbar.btn_zoom_in.onclick = (ev) => {
-					this.camera.height += 1
-					this.render()
-				}
-				this.toolbar.btn_zoom_out.onclick = (ev) => {
-					this.camera.height -= 1
-					this.render()
-				}
+				this.timebar = new TimeBar()
+				document.getElementById("8b957f78-3509-11ed-9d2b-dbd0b81b175a").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14842,6 +14839,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					if (this.toolbar.enable) {
 						this.toolbar.btn_enable.click()
 					}
+				}
+				this.timebar.slider.oninput = (ev) => {
+					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
+					this.timebar.time.innerHTML = this.timebar.ts[this.timebar.slider.value]
+					this.render()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -14895,8 +14897,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let id in data) {
-					let obj = data[id]
+				for (let obj_id in this.timebar.current_frame) {
+					let obj = this.timebar.current_frame[obj_id]
 					this.set_attribute("position", obj.vertice, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -14974,35 +14976,43 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=2e73d519-30ab-11ed-8e7e-d385bbadff49>
+<div id=8b957f79-3509-11ed-9d2b-dbd0b81b175a>
 </div>
 <script>
 	{
-		const data = {"139881593292352": {"mode": "TRIANGLES", "vertice": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0, 0.2953404394236575, 0.7334130402603861, 0.07708360993209207, 1.0]}}
+		const cache = {"0": {"140535507285440": {"mode": "TRIANGLES", "vertice": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0, 0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0, 0.3760099753216676, 0.0026185019767285267, 0.7941456319108542, 1.0]}}}
+		class TimeBar {
+			constructor() {
+				this.bar = document.createElement("div")
+				this.ts = Object.keys(cache)
+				this.frames = Object.values(cache)
+				this.current_frame = this.frames[this.frames.length - 1]
+				this.slider = document.createElement("input")
+				this.slider.type = "range"
+				this.slider.style.width = "380px"
+				this.slider.style.verticalAlign = "middle"
+				this.slider.style.height = "2px"
+				this.slider.min = 0
+				this.slider.max = this.ts.length - 1
+				this.slider.value = this.slider.min
+				this.slider.style.display = "inline"
+				this.time = document.createElement("div")
+				this.time.style.display = "inline"
+				this.time.innerHTML = this.ts[this.slider.value]
+				this.bar.append(this.slider, this.time)
+				this.bar.style.display = this.ts.length > 1 ? "block" : "none"
+			}
+		}
 		class ToolBar {
 			constructor() {
-				this.enable = false
 				this.bar = document.createElement("div")
+				this.enable = false
 				this.btn_enable = document.createElement("button")
 				this.btn_enable.innerHTML = "ctrl"
 				this.btn_enable.style.width = "30px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
 				this.btn_enable.style.borderRadius = "3px"
-				this.btn_zoom_in = document.createElement("button")
-				this.btn_zoom_in.innerHTML = "+"
-				this.btn_zoom_in.style.width = "20px"
-				this.btn_zoom_in.style.height = "20px"
-				this.btn_zoom_in.style.border = "0px"
-				this.btn_zoom_in.style.borderRadius = "3px"
-				this.btn_zoom_in.style.display = "none"
-				this.btn_zoom_out = document.createElement("button")
-				this.btn_zoom_out.innerHTML = "-"
-				this.btn_zoom_out.style.width = "20px"
-				this.btn_zoom_out.style.height = "20px"
-				this.btn_zoom_out.style.border = "0px"
-				this.btn_zoom_out.style.borderRadius = "3px"
-				this.btn_zoom_out.style.display = "none"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				pan:  ctrl+mouse move<br/>
@@ -15011,20 +15021,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.tooltip.style.display = "none"
 				this.btn_enable.onclick = (ev) => {
 					if (this.enable) {
-						this.btn_zoom_in.style.display = "none"
-						this.btn_zoom_out.style.display = "none"
 						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
-						this.btn_zoom_in.style.display = "inline"
-						this.btn_zoom_out.style.display = "inline"
 						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
 				}
-				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
+				this.bar.append(this.btn_enable, this.tooltip)
 			}
 		}
 		class mat {
@@ -15128,15 +15134,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("2e73d519-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
-				this.toolbar.btn_zoom_in.onclick = (ev) => {
-					this.camera.height += 1
-					this.render()
-				}
-				this.toolbar.btn_zoom_out.onclick = (ev) => {
-					this.camera.height -= 1
-					this.render()
-				}
+				this.timebar = new TimeBar()
+				document.getElementById("8b957f79-3509-11ed-9d2b-dbd0b81b175a").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15168,6 +15167,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					if (this.toolbar.enable) {
 						this.toolbar.btn_enable.click()
 					}
+				}
+				this.timebar.slider.oninput = (ev) => {
+					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
+					this.timebar.time.innerHTML = this.timebar.ts[this.timebar.slider.value]
+					this.render()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -15221,8 +15225,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let id in data) {
-					let obj = data[id]
+				for (let obj_id in this.timebar.current_frame) {
+					let obj = this.timebar.current_frame[obj_id]
 					this.set_attribute("position", obj.vertice, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -15301,35 +15305,43 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=2e73d51a-30ab-11ed-8e7e-d385bbadff49>
+<div id=8b957f7a-3509-11ed-9d2b-dbd0b81b175a>
 </div>
 <script>
 	{
-		const data = {"139881593911488": {"mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.34422916311810314, 0.8450159410629764, 0.5947048183386086, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0, 0.9574429834722916, 0.8492864480065542, 0.3525901242644732, 1.0]}}
+		const cache = {"0": {"140535658948800": {"mode": "TRIANGLES", "vertice": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.8487930109210122, 0.7766949973556532, 0.5544161459709178, 1.0, 0.8487930109210122, 0.7766949973556532, 0.5544161459709178, 1.0, 0.8487930109210122, 0.7766949973556532, 0.5544161459709178, 1.0, 0.37219376117026526, 0.6155576677983838, 0.5519709980045217, 1.0, 0.37219376117026526, 0.6155576677983838, 0.5519709980045217, 1.0, 0.37219376117026526, 0.6155576677983838, 0.5519709980045217, 1.0]}}}
+		class TimeBar {
+			constructor() {
+				this.bar = document.createElement("div")
+				this.ts = Object.keys(cache)
+				this.frames = Object.values(cache)
+				this.current_frame = this.frames[this.frames.length - 1]
+				this.slider = document.createElement("input")
+				this.slider.type = "range"
+				this.slider.style.width = "380px"
+				this.slider.style.verticalAlign = "middle"
+				this.slider.style.height = "2px"
+				this.slider.min = 0
+				this.slider.max = this.ts.length - 1
+				this.slider.value = this.slider.min
+				this.slider.style.display = "inline"
+				this.time = document.createElement("div")
+				this.time.style.display = "inline"
+				this.time.innerHTML = this.ts[this.slider.value]
+				this.bar.append(this.slider, this.time)
+				this.bar.style.display = this.ts.length > 1 ? "block" : "none"
+			}
+		}
 		class ToolBar {
 			constructor() {
-				this.enable = false
 				this.bar = document.createElement("div")
+				this.enable = false
 				this.btn_enable = document.createElement("button")
 				this.btn_enable.innerHTML = "ctrl"
 				this.btn_enable.style.width = "30px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
 				this.btn_enable.style.borderRadius = "3px"
-				this.btn_zoom_in = document.createElement("button")
-				this.btn_zoom_in.innerHTML = "+"
-				this.btn_zoom_in.style.width = "20px"
-				this.btn_zoom_in.style.height = "20px"
-				this.btn_zoom_in.style.border = "0px"
-				this.btn_zoom_in.style.borderRadius = "3px"
-				this.btn_zoom_in.style.display = "none"
-				this.btn_zoom_out = document.createElement("button")
-				this.btn_zoom_out.innerHTML = "-"
-				this.btn_zoom_out.style.width = "20px"
-				this.btn_zoom_out.style.height = "20px"
-				this.btn_zoom_out.style.border = "0px"
-				this.btn_zoom_out.style.borderRadius = "3px"
-				this.btn_zoom_out.style.display = "none"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				pan:  ctrl+mouse move<br/>
@@ -15338,20 +15350,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.tooltip.style.display = "none"
 				this.btn_enable.onclick = (ev) => {
 					if (this.enable) {
-						this.btn_zoom_in.style.display = "none"
-						this.btn_zoom_out.style.display = "none"
 						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
-						this.btn_zoom_in.style.display = "inline"
-						this.btn_zoom_out.style.display = "inline"
 						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
 				}
-				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
+				this.bar.append(this.btn_enable, this.tooltip)
 			}
 		}
 		class mat {
@@ -15455,15 +15463,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("2e73d51a-30ab-11ed-8e7e-d385bbadff49").append(this.canvas, this.toolbar.bar)
-				this.toolbar.btn_zoom_in.onclick = (ev) => {
-					this.camera.height += 1
-					this.render()
-				}
-				this.toolbar.btn_zoom_out.onclick = (ev) => {
-					this.camera.height -= 1
-					this.render()
-				}
+				this.timebar = new TimeBar()
+				document.getElementById("8b957f7a-3509-11ed-9d2b-dbd0b81b175a").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15495,6 +15496,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					if (this.toolbar.enable) {
 						this.toolbar.btn_enable.click()
 					}
+				}
+				this.timebar.slider.oninput = (ev) => {
+					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
+					this.timebar.time.innerHTML = this.timebar.ts[this.timebar.slider.value]
+					this.render()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -15548,8 +15554,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let id in data) {
-					let obj = data[id]
+				for (let obj_id in this.timebar.current_frame) {
+					let obj = this.timebar.current_frame[obj_id]
 					this.set_attribute("position", obj.vertice, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
