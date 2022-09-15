@@ -7,31 +7,39 @@
 </div>
 <script>
 	{
-		const data = PY#D_ARGS
+		const cache = PY#D_ARGS
+		class TimeBar {
+			constructor() {
+				this.bar = document.createElement("div")
+				this.ts = Object.keys(cache)
+				this.frames = Object.values(cache)
+				this.current_frame = this.frames[this.frames.length - 1]
+				this.slider = document.createElement("input")
+				this.slider.type = "range"
+				this.slider.style.width = "380px"
+				this.slider.style.verticalAlign = "middle"
+				this.slider.style.height = "2px"
+				this.slider.min = 0
+				this.slider.max = this.ts.length - 1
+				this.slider.value = this.slider.min
+				this.slider.style.display = "inline"
+				this.time = document.createElement("div")
+				this.time.style.display = "inline"
+				this.time.innerHTML = this.ts[this.slider.value]
+				this.bar.append(this.slider, this.time)
+				this.bar.style.display = this.ts.length > 1 ? "block" : "none"
+			}
+		}
 		class ToolBar {
 			constructor() {
-				this.enable = false
 				this.bar = document.createElement("div")
+				this.enable = false
 				this.btn_enable = document.createElement("button")
 				this.btn_enable.innerHTML = "ctrl"
 				this.btn_enable.style.width = "30px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
 				this.btn_enable.style.borderRadius = "3px"
-				this.btn_zoom_in = document.createElement("button")
-				this.btn_zoom_in.innerHTML = "+"
-				this.btn_zoom_in.style.width = "20px"
-				this.btn_zoom_in.style.height = "20px"
-				this.btn_zoom_in.style.border = "0px"
-				this.btn_zoom_in.style.borderRadius = "3px"
-				this.btn_zoom_in.style.display = "none"
-				this.btn_zoom_out = document.createElement("button")
-				this.btn_zoom_out.innerHTML = "-"
-				this.btn_zoom_out.style.width = "20px"
-				this.btn_zoom_out.style.height = "20px"
-				this.btn_zoom_out.style.border = "0px"
-				this.btn_zoom_out.style.borderRadius = "3px"
-				this.btn_zoom_out.style.display = "none"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				pan:  ctrl+mouse move<br/>
@@ -40,20 +48,16 @@
 				this.tooltip.style.display = "none"
 				this.btn_enable.onclick = (ev) => {
 					if (this.enable) {
-						this.btn_zoom_in.style.display = "none"
-						this.btn_zoom_out.style.display = "none"
 						this.tooltip.style.display = "none"
 						this.enable = false
 						this.btn_enable.style.backgroundColor = ""
 					} else {
-						this.btn_zoom_in.style.display = "inline"
-						this.btn_zoom_out.style.display = "inline"
 						this.tooltip.style.display = "block"
 						this.btn_enable.style.backgroundColor = "gray"
 						this.enable = true
 					}
 				}
-				this.bar.append(this.btn_enable, this.btn_zoom_in, this.btn_zoom_out, this.tooltip)
+				this.bar.append(this.btn_enable, this.tooltip)
 			}
 		}
 		class mat {
@@ -157,15 +161,8 @@
 				this.camera.ry = 0
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
-				document.getElementById("PY#D_ID").append(this.canvas, this.toolbar.bar)
-				this.toolbar.btn_zoom_in.onclick = (ev) => {
-					this.camera.height += 1
-					this.render()
-				}
-				this.toolbar.btn_zoom_out.onclick = (ev) => {
-					this.camera.height -= 1
-					this.render()
-				}
+				this.timebar = new TimeBar()
+				document.getElementById("PY#D_ID").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -197,6 +194,11 @@
 					if (this.toolbar.enable) {
 						this.toolbar.btn_enable.click()
 					}
+				}
+				this.timebar.slider.oninput = (ev) => {
+					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
+					this.timebar.time.innerHTML = this.timebar.ts[this.timebar.slider.value]
+					this.render()
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -250,8 +252,8 @@
 				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let id in data) {
-					let obj = data[id]
+				for (let obj_id in this.timebar.current_frame) {
+					let obj = this.timebar.current_frame[obj_id]
 					this.set_attribute("position", obj.vertice, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
