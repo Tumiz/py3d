@@ -42,22 +42,27 @@ def force_assgin(v1, v2):
 
 class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
+
     def __init__(self) -> None:
         self.cache = {}
         self.id = str(uuid.uuid1())
         display(display_id=self.id)
-        
-    def render_args(self, id, **args):
-        self.cache[id]=args
+
+    def render_args(self, obj_id, t, **args):
+        if t in self.cache:
+            self.cache[t][obj_id] = args
+        else:
+            self.cache[t] = {obj_id: args}
         html = self.tmp.replace("PY#D_ID", self.id).replace(
             "PY#D_ARGS", json.dumps(self.cache))
         if "debug" in args and args["debug"]:
-            open(self.id+".html","w").write(html)
+            open(self.id+".html", "w").write(html)
         update_display(HTML(html), display_id=self.id)
 
-    def render(self, obj:Point, **args):
-        self.render_args(id=id(obj), mode=obj.TYPE, vertice=obj.vertice.ravel(
+    def render(self, obj: Point, t=0, **args):
+        self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertice=obj.vertice.ravel(
         ).tolist(), color=obj.color.ravel().tolist(), **args)
+
 
 class Data(numpy.ndarray):
     BASE_SHAPE = ()
@@ -683,14 +688,14 @@ class LineSegment(Point):
 
     @classmethod
     def Grid(cls, size=5) -> LineSegment:
-        point = Vector3(x=[-size,size], y = -size)
+        point = Vector3(x=[-size, size], y=-size)
         point @= Transform.from_translation(y=range(2*size+1))
-        point = point.reshape(point.size//3,3)
-        point @= Transform.from_rpy([[0,0,0],[0,0,pi/2]])
-        grid=point.as_linesegment()
+        point = point.reshape(point.size//3, 3)
+        point @= Transform.from_rpy([[0, 0, 0], [0, 0, pi/2]])
+        grid = point.as_linesegment()
         grid.color = Color(a=1)
-        grid[0].color[size*2:size*2+2] = Color(r=[0,1])
-        grid[1].color[size*2:size*2+2] = Color(g=[0,1])
+        grid[0].color[size*2:size*2+2] = Color(r=[0, 1])
+        grid[1].color[size*2:size*2+2] = Color(g=[0, 1])
         return grid
 
 
