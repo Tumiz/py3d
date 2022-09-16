@@ -46,22 +46,25 @@ class Viewer:
     def __init__(self) -> None:
         self.cache = {}
         self.id = str(uuid.uuid1())
-        display(display_id=self.id)
+        display(HTML(""), display_id=self.id)
 
     def render_args(self, obj_id, t, **args):
         if t in self.cache:
             self.cache[t][obj_id] = args
         else:
             self.cache[t] = {obj_id: args}
+
+    def show(self, debug=False):
         html = self.tmp.replace("PY#D_ID", self.id).replace(
             "PY#D_ARGS", json.dumps(self.cache))
-        if "debug" in args and args["debug"]:
+        if debug:
             open(self.id+".html", "w").write(html)
         update_display(HTML(html), display_id=self.id)
 
-    def render(self, obj: Point, t=0, **args):
-        self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertice=obj.vertice.ravel(
-        ).tolist(), color=obj.color.ravel().tolist(), **args)
+    def render(self, *objs: Point, t=0, **args):
+        for obj in objs:
+            self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertice=obj.vertice.ravel(
+            ).tolist(), color=obj.color.ravel().tolist(), **args)
 
 
 class Data(numpy.ndarray):
@@ -82,12 +85,12 @@ class Data(numpy.ndarray):
             return self.shape
 
     @classmethod
-    def Rand(cls, *n) -> Vector3:
+    def Rand(cls, *n) -> Data:
         n += cls.BASE_SHAPE
         return numpy.random.rand(*n).view(cls)
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path) -> Data:
         return numpy.load(path).view(cls)
 
     def save(self, path):
@@ -139,7 +142,7 @@ class Vector3(Vector):
     BASE_SHAPE = 3,
 
     def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0, n=()):
-        if data:
+        if numpy.any(data):
             return super().__new__(cls, data, n)
         else:
             x_: numpy.ndarray = numpy.array(x)
@@ -549,7 +552,7 @@ class Color(Vector):
     BASE_SHAPE = 4,
 
     def __new__(cls, data: numpy.ndarray | list = [], r=0, g=0, b=0, a=1, n=()):
-        if data:
+        if numpy.any(data):
             return super().__new__(cls, data, n)
         else:
             r_: numpy.ndarray = numpy.array(r)
@@ -629,8 +632,9 @@ class Point(Data):
         self[..., 3:7] = v
 
     def render(self, **args):
-        Viewer().render(self, **args)
-
+        v = Viewer()
+        v.render(self, **args)
+        v.show()
 
 class Triangle(Point):
     BASE_SHAPE = 3, 7
@@ -663,40 +667,6 @@ class LineSegment(Point):
     @end.setter
     def end(self, v):
         self.vertice[..., 1::2, :].squeeze()[:] = v
-
-    @classmethod
-    def Car(cls) -> LineSegment:
-        ret = Vector3([
-            [-1, 1, 0],
-            [-1, 1, 0.8],
-            [0, 1, 1.6],
-            [2, 1, 1.6],
-            [4, 1, 0.8],
-            [4, 1, 0],
-            [-1, -1, 0],
-            [-1, -1, 0],
-            [-1, -1, 0.8],
-            [0, -1, 1.6],
-            [2, -1, 1.6],
-            [4, -1, 0.8],
-            [4, -1, 0],
-            [-1, -1, 0]
-        ])
-        index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
-                 10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
-        return ret[index].as_linesegment()
-
-    @classmethod
-    def Grid(cls, size=5) -> LineSegment:
-        point = Vector3(x=[-size, size], y=-size)
-        point @= Transform.from_translation(y=range(2*size+1))
-        point = point.reshape(point.size//3, 3)
-        point @= Transform.from_rpy([[0, 0, 0], [0, 0, pi/2]])
-        grid = point.as_linesegment()
-        grid.color = Color(a=1)
-        grid[0].color[size*2:size*2+2] = Color(r=[0, 1])
-        grid[1].color[size*2:size*2+2] = Color(g=[0, 1])
-        return grid
 
 
 class Line(Point):
@@ -807,3 +777,44 @@ class Arrow(LineSegment):
         ret.head = Tetrahedron(*n)
         ret.head.color = ret.color[..., 0, numpy.newaxis, :]
         return ret
+
+
+class Utils:
+    car_points: Vector3 = Vector3.load(pathlib.Path(__file__).parent/"car.npy")
+
+    @classmethod
+    def Car(cls, wire_frame=False) -> Point:
+        if wire_frame:
+            ret = Vector3([
+                [-1, 1, 0],
+                [-1, 1, 0.8],
+                [0, 1, 1.6],
+                [2, 1, 1.6],
+                [4, 1, 0.8],
+                [4, 1, 0],
+                [-1, -1, 0],
+                [-1, -1, 0],
+                [-1, -1, 0.8],
+                [0, -1, 1.6],
+                [2, -1, 1.6],
+                [4, -1, 0.8],
+                [4, -1, 0],
+                [-1, -1, 0]
+            ])
+            index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
+                    10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
+            return ret[index].as_linesegment()
+        else:
+            return cls.car_points.as_point()
+
+    @classmethod
+    def Grid(cls, size=5) -> LineSegment:
+        point: Vector3 = Vector3(x=[-size, size], y=-size)
+        point @= Transform.from_translation(y=range(2*size+1))
+        point = point.reshape(point.size//3, 3)
+        point @= Transform.from_rpy([[0, 0, 0], [0, 0, pi/2]])
+        grid = point.as_linesegment()
+        grid.color = Color(a=1)
+        grid[0].color[size*2:size*2+2] = Color(r=[0, 1])
+        grid[1].color[size*2:size*2+2] = Color(g=[0, 1])
+        return grid
