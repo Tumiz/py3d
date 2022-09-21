@@ -12,34 +12,6 @@ import uuid
 pi = numpy.arccos(-1)
 
 
-def sorted_sizes(*sizes):
-    return tuple(list(dict(sorted(collections.Counter(sizes).items(), key=lambda v: v[1])).keys()))
-
-
-def merge_shapes(*shapes):
-    ret = ()
-    ndim = max([len(s) for s in shapes])
-    for i in range(ndim):
-        sizes = []
-        for s in shapes:
-            if len(s) == 1 and s[-1] == 1:
-                continue
-            if len(s) > i:
-                sizes.append(s[-1-i])
-        ret = sorted_sizes(*sizes) + ret
-    return ret
-
-
-def force_assgin(v1, v2):
-    try:
-        numpy.copyto(v1, v2)
-    except:
-        if v1.size == v2.size:
-            v1[:] = v2.reshape(v1.shape)
-        else:
-            v1[:] = v2[:, numpy.newaxis]
-
-
 class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
@@ -56,7 +28,7 @@ class Viewer:
 
     def show(self, debug=False):
         html = self.tmp.replace("PY#D_ID", self.id).replace(
-            "PY#D_ARGS", json.dumps(self.cache))
+            "PY#D_ARGS", str(self.cache))
         if debug:
             open(self.id+".html", "w").write(html)
         update_display(HTML(html), display_id=self.id)
@@ -145,15 +117,22 @@ class Vector3(Vector):
         if numpy.any(data):
             return super().__new__(cls, data, n)
         else:
-            x_: numpy.ndarray = numpy.array(x)
-            y_: numpy.ndarray = numpy.array(y)
-            z_: numpy.ndarray = numpy.array(z)
-            n += merge_shapes(x_.shape, y_.shape, z_.shape)
+            n += max(numpy.shape(x), numpy.shape(y), numpy.shape(z))
             ret = super().__new__(cls, [0., 0., 0.], n)
-            ret[..., 0] = x
-            ret[..., 1] = y
-            ret[..., 2] = z
+            ret.x = x
+            ret.y = y
+            ret.z = z
             return ret
+
+    @classmethod
+    def Grid(cls, x=0, y=0, z=0, n=()) -> Vector3:
+        n += numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
+        ret = super().__new__(cls, [0., 0., 0.], n)
+        i = numpy.arange(len(n))
+        ret.x = numpy.expand_dims(x, axis=i[i != 0].tolist())
+        ret.y = numpy.expand_dims(y, axis=i[i != 1].tolist())
+        ret.z = numpy.expand_dims(z, axis=i[i != 2].tolist())
+        return ret
 
     def __matmul__(self, value: Transform) -> Vector3:
         return numpy.matmul(self.H, value)[..., 0:3].view(self.__class__)
@@ -164,7 +143,7 @@ class Vector3(Vector):
 
     @x.setter
     def x(self, v):
-        force_assgin(self[..., 0], v)
+        self[..., 0] = v
 
     @property
     def y(self):
@@ -172,7 +151,7 @@ class Vector3(Vector):
 
     @y.setter
     def y(self, v):
-        force_assgin(self[..., 1], v)
+        self[..., 1] = v
 
     @property
     def z(self):
@@ -180,7 +159,7 @@ class Vector3(Vector):
 
     @z.setter
     def z(self, v):
-        force_assgin(self[..., 2], v)
+        self[..., 2] = v
 
     def dot(self, v) -> Vector3:
         if type(v) is Vector3:
@@ -555,22 +534,14 @@ class Color(Vector):
         if numpy.any(data):
             return super().__new__(cls, data, n)
         else:
-            r_: numpy.ndarray = numpy.array(r)
-            g_: numpy.ndarray = numpy.array(g)
-            b_: numpy.ndarray = numpy.array(b)
-            a_: numpy.ndarray = numpy.array(a)
-            n += merge_shapes(r_.shape, g_.shape, b_.shape, a_.shape)
+            n += max(numpy.shape(r), numpy.shape(g),
+                     numpy.shape(b), numpy.shape(a))
             ret = super().__new__(cls, [0, 0, 0, 1], n)
             ret[..., 0] = r
             ret[..., 1] = g
             ret[..., 2] = b
             ret[..., 3] = a
-        return ret.view(cls)
-
-    def __len__(self):
-        if self.ndim == 1:
-            return 1
-        return super().__len__()
+        return ret
 
     @property
     def r(self):
@@ -578,7 +549,7 @@ class Color(Vector):
 
     @r.setter
     def r(self, v):
-        force_assgin(self[..., 0], v)
+        self[..., 0] = v
 
     @property
     def g(self):
@@ -586,7 +557,7 @@ class Color(Vector):
 
     @g.setter
     def g(self, v):
-        force_assgin(self[..., 1], v)
+        self[..., 1] = v
 
     @property
     def b(self):
@@ -594,7 +565,7 @@ class Color(Vector):
 
     @b.setter
     def b(self, v):
-        force_assgin(self[..., 2], v)
+        self[..., 2] = v
 
     @property
     def a(self):
@@ -635,6 +606,7 @@ class Point(Data):
         v = Viewer()
         v.render(self, **args)
         v.show()
+
 
 class Triangle(Point):
     BASE_SHAPE = 3, 7
@@ -802,7 +774,7 @@ class Utils:
                 [-1, -1, 0]
             ])
             index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
-                    10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
+                     10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
             return ret[index].as_linesegment()
         else:
             return cls.car_points.as_point()
