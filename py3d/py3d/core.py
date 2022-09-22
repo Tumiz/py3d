@@ -1,12 +1,9 @@
 # Copyright (c) Tumiz.
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
-import collections
-import uuid
 import numpy
 from IPython.display import display, update_display, HTML
 import pathlib
-import json
 import uuid
 
 pi = numpy.arccos(-1)
@@ -35,7 +32,7 @@ class Viewer:
 
     def render(self, *objs: Point, t=0, **args):
         for obj in objs:
-            self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertice=obj.vertice.ravel(
+            self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertex=obj.vertex.ravel(
             ).tolist(), color=obj.color.ravel().tolist(), **args)
 
 
@@ -242,7 +239,7 @@ class Vector3(Vector):
 
     def as_point(self, color=None) -> Point:
         entity = Point(*self.n)
-        entity.vertice = self
+        entity.vertex = self
         if color is not None:
             entity.color = color
         return entity
@@ -255,17 +252,17 @@ class Vector3(Vector):
 
     def as_line(self) -> Line:
         entity = Line(*self.n)
-        entity.vertice = self
+        entity.vertex = self
         return entity
 
     def as_linesegment(self) -> LineSegment:
         entity = LineSegment(*self.n)
-        entity.vertice = self
+        entity.vertex = self
         return entity
 
     def as_triangle(self):
         entity = Triangle(*self.n[:-1])
-        entity.vertice = self
+        entity.vertex = self
         return entity
 
     def as_mesh(self):
@@ -587,11 +584,11 @@ class Point(Data):
         return ret
 
     @property
-    def vertice(self) -> Vector3:
+    def vertex(self) -> Vector3:
         return self[..., 0:3].view(Vector3)
 
-    @vertice.setter
-    def vertice(self, v):
+    @vertex.setter
+    def vertex(self, v):
         self[..., 0:3] = v
 
     @property
@@ -626,19 +623,19 @@ class LineSegment(Point):
 
     @property
     def start(self):
-        return self.vertice[..., ::2, :].squeeze().view(Vector3)
+        return self.vertex[..., ::2, :].squeeze().view(Vector3)
 
     @start.setter
     def start(self, v):
-        self.vertice[..., ::2, :].squeeze()[:] = v
+        self.vertex[..., ::2, :].squeeze()[:] = v
 
     @property
     def end(self):
-        return self.vertice[..., 1::2, :].squeeze().view(Vector3)
+        return self.vertex[..., 1::2, :].squeeze().view(Vector3)
 
     @end.setter
     def end(self, v):
-        self.vertice[..., 1::2, :].squeeze()[:] = v
+        self.vertex[..., 1::2, :].squeeze()[:] = v
 
 
 class Line(Point):
@@ -659,7 +656,7 @@ class Mesh(Point):
     @classmethod
     def from_indexed(cls, v):
         ret = cls(*v.n)
-        ret.vertice = v
+        ret.vertex = v
         return ret
 
 
@@ -674,28 +671,8 @@ class Camera:
     @property
     def matrix(self):
         return self.transform.I @ self.projection
-
-
-class Tetrahedron(Mesh):
-    def __init__(self, *n):
-        super().__init__(*n, 4)
-        self.index = [0, 1, 2, 0, 2, 3, 0, 1, 3, 1, 2, 3]
-
-
-class Cube(Mesh):
-    vertice_base = Vector3([
-        [0.5, 0.5, 0.5],
-        [-0.5, 0.5, 0.5],
-        [0.5, -0.5, 0.5],
-        [-0.5, -0.5, 0.5],
-        [0.5, 0.5, -0.5],
-        [-0.5, 0.5, -0.5],
-        [0.5, -0.5, -0.5],
-        [-0.5, -0.5, -0.5]])
-
-    def __init__(self, *n):
         super().__init__(*n, 8)
-        self.geometry.vertice = self.vertice_base
+        self.geometry.vertex = self.vertice_base
         self.index = [3,
                       2,
                       0,
@@ -732,23 +709,6 @@ class Cube(Mesh):
                       6,
                       5,
                       7]
-
-
-class Arrow(LineSegment):
-    head_base = Vector3(
-        [
-            [1, 0, 0],
-            [0.9, 0, 0.05],
-            [0.9, -0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
-            [0.9, 0.05 * numpy.cos(pi / 6), -0.05 * numpy.sin(pi / 6)],
-        ]
-    )
-
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n, 2).view(cls)
-        ret.head = Tetrahedron(*n)
-        ret.head.color = ret.color[..., 0, numpy.newaxis, :]
-        return ret
 
 
 class Utils:
