@@ -254,7 +254,7 @@
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
 					let obj = this.timebar.current_frame[obj_id]
-					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
 				}
