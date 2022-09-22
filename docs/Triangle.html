@@ -14605,12 +14605,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Triangle</span><span class="p">,</span><span class="n">Vector3</span><span class="p">,</span><span class="n">Color</span>
-<span class="n">t</span><span class="o">=</span><span class="n">Triangle</span><span class="p">()</span>
-<span class="n">t</span><span class="o">.</span><span class="n">vertice</span><span class="o">=</span><span class="n">Vector3</span><span class="p">([</span>
-    <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
-    <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
-    <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Triangle</span><span class="p">,</span> <span class="n">Vector3</span><span class="p">,</span> <span class="n">Color</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Triangle</span><span class="p">()</span>
+<span class="n">t</span><span class="o">.</span><span class="n">vertex</span> <span class="o">=</span> <span class="n">Vector3</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 <span class="p">])</span>
 <span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=62acf50e-39ba-11ed-9847-5da59ca92eb8>
+<div id=50c4c80e-3a7c-11ed-9ea3-c16a192cb511>
 </div>
 <script>
 	{
-		const cache = {0: {140112453987776: {'mode': 'TRIANGLES', 'vertice': [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0, 0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0, 0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0]}}}
+		const cache = {0: {140633516903872: {'mode': 'TRIANGLES', 'vertex': [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14807,7 +14807,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("62acf50e-39ba-11ed-9847-5da59ca92eb8").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("50c4c80e-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14899,7 +14899,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
 					let obj = this.timebar.current_frame[obj_id]
-					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
 				}
@@ -14949,7 +14949,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Transform</span>
-<span class="n">t</span><span class="o">.</span><span class="n">vertice</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">vertice</span> <span class="o">@</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_rpy</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">t</span><span class="o">.</span><span class="n">vertex</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">vertex</span> <span class="o">@</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_rpy</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
 <span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 
@@ -14976,11 +14976,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=62acf50f-39ba-11ed-9847-5da59ca92eb8>
+<div id=50c4c80f-3a7c-11ed-9ea3-c16a192cb511>
 </div>
 <script>
 	{
-		const cache = {0: {140112453987776: {'mode': 'TRIANGLES', 'vertice': [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0, 0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0, 0.31106734842662553, 0.003880839147638815, 0.6538640941644924, 1.0]}}}
+		const cache = {0: {140633516903872: {'mode': 'TRIANGLES', 'vertex': [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15135,7 +15135,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("62acf50f-39ba-11ed-9847-5da59ca92eb8").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("50c4c80f-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15227,7 +15227,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
 					let obj = this.timebar.current_frame[obj_id]
-					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
 				}
@@ -15277,8 +15277,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Transform</span>
-<span class="n">t</span><span class="o">=</span><span class="n">Triangle</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">t</span><span class="o">.</span><span class="n">vertice</span> <span class="o">=</span> <span class="n">Vector3</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span> <span class="o">@</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_translation</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Triangle</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">t</span><span class="o">.</span><span class="n">vertex</span> <span class="o">=</span> <span class="n">Vector3</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+                   <span class="p">)</span> <span class="o">@</span> <span class="n">Transform</span><span class="o">.</span><span class="n">from_translation</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="n">t</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 </pre></div>
 
@@ -15305,11 +15306,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=62acf510-39ba-11ed-9847-5da59ca92eb8>
+<div id=50c4c810-3a7c-11ed-9ea3-c16a192cb511>
 </div>
 <script>
 	{
-		const cache = {0: {140112453986752: {'mode': 'TRIANGLES', 'vertice': [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], 'color': [0.09099940442807919, 0.269890331886383, 0.44321521661638463, 1.0, 0.09099940442807919, 0.269890331886383, 0.44321521661638463, 1.0, 0.09099940442807919, 0.269890331886383, 0.44321521661638463, 1.0, 0.2965044626742731, 0.98101095337337, 0.18374194342145944, 1.0, 0.2965044626742731, 0.98101095337337, 0.18374194342145944, 1.0, 0.2965044626742731, 0.98101095337337, 0.18374194342145944, 1.0]}}}
+		const cache = {0: {140633516902976: {'mode': 'TRIANGLES', 'vertex': [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], 'color': [0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15464,7 +15465,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("62acf510-39ba-11ed-9847-5da59ca92eb8").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("50c4c810-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15556,7 +15557,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
 					let obj = this.timebar.current_frame[obj_id]
-					this.set_attribute("position", obj.vertice, 3)
+					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
 				}
