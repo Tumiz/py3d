@@ -35,14 +35,14 @@
 				this.bar = document.createElement("div")
 				this.enable = false
 				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "ctrl"
-				this.btn_enable.style.width = "30px"
+				this.btn_enable.innerHTML = "?"
+				this.btn_enable.style.width = "20px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "3px"
+				this.btn_enable.style.borderRadius = "10px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
-				pan:  ctrl+mouse move<br/>
+				rotate: press left mouse button and move<br/>
 				zoom: mouse wheel
 				`
 				this.tooltip.style.display = "none"
@@ -134,6 +134,13 @@
 				return ret
 			}
 		}
+		class Utils {
+			static distance(x0, y0, x1, y1) {
+				x1 = x1 ? x1 : 0
+				y1 = y1 ? y1 : 0
+				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			}
+		}
 		class Camera {
 			PESPECTIVE = 0
 			ORTHOGRAPHIC = 1
@@ -141,8 +148,8 @@
 				this.type = this.PESPECTIVE
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = 10
+				this.rx = 0
 				this.ry = 0
-				this.latitude = 0
 				this.center = []
 			}
 		}
@@ -158,8 +165,6 @@
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
-				this.camera.ry = 0
-				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
 				document.getElementById("PY#D_ID").append(this.canvas, this.timebar.bar, this.toolbar.bar)
@@ -170,30 +175,18 @@
 					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (this.toolbar.enable) {
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
+					if (ev.buttons == 1) {
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
+						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.render()
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (this.toolbar.enable) {
-						ev.preventDefault()
-						this.camera.height -= ev.deltaY / 100
-						this.render()
-					}
-				}
-				this.canvas.onkeydown = (ev) => {
-					if (!this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
-				}
-				this.canvas.onkeyup = (ev) => {
-					if (this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
+					ev.preventDefault()
+					this.camera.height -= ev.deltaY / 100
+					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
 					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
@@ -226,15 +219,9 @@
 				this.gl.compileShader(shader)
 				this.gl.attachShader(this.program, shader)
 			}
-			set_fragment_shader(code) {
-				this.set_shader(this.gl.FRAGMENT_SHADER, code)
-			}
-			set_vertex_shader(code) {
-				this.set_shader(this.gl.VERTEX_SHADER, code)
-			}
 			set_program(vertex_shader_code, fragment_shader_code) {
-				this.set_vertex_shader(vertex_shader_code)
-				this.set_fragment_shader(fragment_shader_code)
+				this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
+				this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
 				this.gl.linkProgram(this.program)
 				if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
 					alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
@@ -248,8 +235,8 @@
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
 				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("longitude_view", mat.ry(-this.camera.ry))
-				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
+				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
+				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
@@ -266,14 +253,14 @@
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 longitude_view;
-			uniform mat4 latitude_view;
+			uniform mat4 rx_view;
+			uniform mat4 ry_view;
 			uniform mat4 height_view;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
+				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;

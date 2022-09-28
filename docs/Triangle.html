@@ -14648,11 +14648,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=50c4c80e-3a7c-11ed-9ea3-c16a192cb511>
+<div id=bab997ca-3f37-11ed-a38e-c5a72663c62d>
 </div>
 <script>
 	{
-		const cache = {0: {140633516903872: {'mode': 'TRIANGLES', 'vertex': [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0]}}}
+		const cache = {"0": {"140425300525504": {"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0, 0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0, 0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14680,14 +14680,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.bar = document.createElement("div")
 				this.enable = false
 				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "ctrl"
-				this.btn_enable.style.width = "30px"
+				this.btn_enable.innerHTML = "?"
+				this.btn_enable.style.width = "20px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "3px"
+				this.btn_enable.style.borderRadius = "10px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
-				pan:  ctrl+mouse move<br/>
+				rotate: press left mouse button and move<br/>
 				zoom: mouse wheel
 				`
 				this.tooltip.style.display = "none"
@@ -14779,6 +14779,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				return ret
 			}
 		}
+		class Utils {
+			static distance(x0, y0, x1, y1) {
+				x1 = x1 ? x1 : 0
+				y1 = y1 ? y1 : 0
+				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			}
+		}
 		class Camera {
 			PESPECTIVE = 0
 			ORTHOGRAPHIC = 1
@@ -14786,8 +14793,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.type = this.PESPECTIVE
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = 10
+				this.rx = 0
 				this.ry = 0
-				this.latitude = 0
 				this.center = []
 			}
 		}
@@ -14803,11 +14810,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
-				this.camera.ry = 0
-				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("50c4c80e-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("bab997ca-3f37-11ed-a38e-c5a72663c62d").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14815,30 +14820,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (this.toolbar.enable) {
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
+					if (ev.buttons == 1) {
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
+						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.render()
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (this.toolbar.enable) {
-						ev.preventDefault()
-						this.camera.height -= ev.deltaY / 100
-						this.render()
-					}
-				}
-				this.canvas.onkeydown = (ev) => {
-					if (!this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
-				}
-				this.canvas.onkeyup = (ev) => {
-					if (this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
+					ev.preventDefault()
+					this.camera.height -= ev.deltaY / 100
+					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
 					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
@@ -14871,15 +14864,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.compileShader(shader)
 				this.gl.attachShader(this.program, shader)
 			}
-			set_fragment_shader(code) {
-				this.set_shader(this.gl.FRAGMENT_SHADER, code)
-			}
-			set_vertex_shader(code) {
-				this.set_shader(this.gl.VERTEX_SHADER, code)
-			}
 			set_program(vertex_shader_code, fragment_shader_code) {
-				this.set_vertex_shader(vertex_shader_code)
-				this.set_fragment_shader(fragment_shader_code)
+				this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
+				this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
 				this.gl.linkProgram(this.program)
 				if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
 					alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
@@ -14893,8 +14880,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
 				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("longitude_view", mat.ry(-this.camera.ry))
-				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
+				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
+				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
@@ -14911,14 +14898,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 longitude_view;
-			uniform mat4 latitude_view;
+			uniform mat4 rx_view;
+			uniform mat4 ry_view;
 			uniform mat4 height_view;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
+				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
@@ -14976,11 +14963,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=50c4c80f-3a7c-11ed-9ea3-c16a192cb511>
+<div id=bab997cb-3f37-11ed-a38e-c5a72663c62d>
 </div>
 <script>
 	{
-		const cache = {0: {140633516903872: {'mode': 'TRIANGLES', 'vertex': [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], 'color': [0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0, 0.3088452838886626, 0.2678995653108731, 0.9770180212127872, 1.0]}}}
+		const cache = {"0": {"140425300525504": {"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0, 0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0, 0.7779659411395202, 0.5682262193470965, 0.2621949782672277, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15008,14 +14995,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.bar = document.createElement("div")
 				this.enable = false
 				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "ctrl"
-				this.btn_enable.style.width = "30px"
+				this.btn_enable.innerHTML = "?"
+				this.btn_enable.style.width = "20px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "3px"
+				this.btn_enable.style.borderRadius = "10px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
-				pan:  ctrl+mouse move<br/>
+				rotate: press left mouse button and move<br/>
 				zoom: mouse wheel
 				`
 				this.tooltip.style.display = "none"
@@ -15107,6 +15094,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				return ret
 			}
 		}
+		class Utils {
+			static distance(x0, y0, x1, y1) {
+				x1 = x1 ? x1 : 0
+				y1 = y1 ? y1 : 0
+				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			}
+		}
 		class Camera {
 			PESPECTIVE = 0
 			ORTHOGRAPHIC = 1
@@ -15114,8 +15108,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.type = this.PESPECTIVE
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = 10
+				this.rx = 0
 				this.ry = 0
-				this.latitude = 0
 				this.center = []
 			}
 		}
@@ -15131,11 +15125,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
-				this.camera.ry = 0
-				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("50c4c80f-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("bab997cb-3f37-11ed-a38e-c5a72663c62d").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15143,30 +15135,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (this.toolbar.enable) {
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
+					if (ev.buttons == 1) {
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
+						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.render()
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (this.toolbar.enable) {
-						ev.preventDefault()
-						this.camera.height -= ev.deltaY / 100
-						this.render()
-					}
-				}
-				this.canvas.onkeydown = (ev) => {
-					if (!this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
-				}
-				this.canvas.onkeyup = (ev) => {
-					if (this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
+					ev.preventDefault()
+					this.camera.height -= ev.deltaY / 100
+					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
 					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
@@ -15199,15 +15179,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.compileShader(shader)
 				this.gl.attachShader(this.program, shader)
 			}
-			set_fragment_shader(code) {
-				this.set_shader(this.gl.FRAGMENT_SHADER, code)
-			}
-			set_vertex_shader(code) {
-				this.set_shader(this.gl.VERTEX_SHADER, code)
-			}
 			set_program(vertex_shader_code, fragment_shader_code) {
-				this.set_vertex_shader(vertex_shader_code)
-				this.set_fragment_shader(fragment_shader_code)
+				this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
+				this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
 				this.gl.linkProgram(this.program)
 				if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
 					alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
@@ -15221,8 +15195,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
 				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("longitude_view", mat.ry(-this.camera.ry))
-				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
+				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
+				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
@@ -15239,14 +15213,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 longitude_view;
-			uniform mat4 latitude_view;
+			uniform mat4 rx_view;
+			uniform mat4 ry_view;
 			uniform mat4 height_view;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
+				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
@@ -15306,11 +15280,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
 
-<div id=50c4c810-3a7c-11ed-9ea3-c16a192cb511>
+<div id=bab997cc-3f37-11ed-a38e-c5a72663c62d>
 </div>
 <script>
 	{
-		const cache = {0: {140633516902976: {'mode': 'TRIANGLES', 'vertex': [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], 'color': [0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.8410588543351839, 0.12340217295622125, 0.9961845066997439, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0, 0.21381234581062603, 0.01652912284972774, 0.19279597207650268, 1.0]}}}
+		const cache = {"0": {"140425300527936": {"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.006652404291411673, 0.010471483449111973, 0.7662848721705809, 1.0, 0.006652404291411673, 0.010471483449111973, 0.7662848721705809, 1.0, 0.006652404291411673, 0.010471483449111973, 0.7662848721705809, 1.0, 0.8190778534014089, 0.8434843966962149, 0.7179438824212367, 1.0, 0.8190778534014089, 0.8434843966962149, 0.7179438824212367, 1.0, 0.8190778534014089, 0.8434843966962149, 0.7179438824212367, 1.0]}}}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15338,14 +15312,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.bar = document.createElement("div")
 				this.enable = false
 				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "ctrl"
-				this.btn_enable.style.width = "30px"
+				this.btn_enable.innerHTML = "?"
+				this.btn_enable.style.width = "20px"
 				this.btn_enable.style.height = "20px"
 				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "3px"
+				this.btn_enable.style.borderRadius = "10px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
-				pan:  ctrl+mouse move<br/>
+				rotate: press left mouse button and move<br/>
 				zoom: mouse wheel
 				`
 				this.tooltip.style.display = "none"
@@ -15437,6 +15411,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				return ret
 			}
 		}
+		class Utils {
+			static distance(x0, y0, x1, y1) {
+				x1 = x1 ? x1 : 0
+				y1 = y1 ? y1 : 0
+				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			}
+		}
 		class Camera {
 			PESPECTIVE = 0
 			ORTHOGRAPHIC = 1
@@ -15444,8 +15425,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.type = this.PESPECTIVE
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = 10
+				this.rx = 0
 				this.ry = 0
-				this.latitude = 0
 				this.center = []
 			}
 		}
@@ -15461,11 +15442,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.camera.height = -10
-				this.camera.ry = 0
-				this.camera.rx = 0
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("50c4c810-3a7c-11ed-9ea3-c16a192cb511").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("bab997cc-3f37-11ed-a38e-c5a72663c62d").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15473,30 +15452,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.canvas.focus()
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (this.toolbar.enable) {
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
+					if (ev.buttons == 1) {
 						this.camera.rx += (ev.clientY - this.canvas_y) / 100
+						this.camera.ry += (ev.clientX - this.canvas_x) / 100
 						this.render()
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					if (this.toolbar.enable) {
-						ev.preventDefault()
-						this.camera.height -= ev.deltaY / 100
-						this.render()
-					}
-				}
-				this.canvas.onkeydown = (ev) => {
-					if (!this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
-				}
-				this.canvas.onkeyup = (ev) => {
-					if (this.toolbar.enable) {
-						this.toolbar.btn_enable.click()
-					}
+					ev.preventDefault()
+					this.camera.height -= ev.deltaY / 100
+					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
 					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
@@ -15529,15 +15496,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.compileShader(shader)
 				this.gl.attachShader(this.program, shader)
 			}
-			set_fragment_shader(code) {
-				this.set_shader(this.gl.FRAGMENT_SHADER, code)
-			}
-			set_vertex_shader(code) {
-				this.set_shader(this.gl.VERTEX_SHADER, code)
-			}
 			set_program(vertex_shader_code, fragment_shader_code) {
-				this.set_vertex_shader(vertex_shader_code)
-				this.set_fragment_shader(fragment_shader_code)
+				this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
+				this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
 				this.gl.linkProgram(this.program)
 				if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
 					alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
@@ -15551,8 +15512,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
 				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("longitude_view", mat.ry(-this.camera.ry))
-				this.set_uniform("latitude_view", mat.rx(-this.camera.rx))
+				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
+				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj_id in this.timebar.current_frame) {
@@ -15569,14 +15530,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 longitude_view;
-			uniform mat4 latitude_view;
+			uniform mat4 rx_view;
+			uniform mat4 ry_view;
 			uniform mat4 height_view;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * latitude_view * longitude_view * right_to_left * position;
+				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
