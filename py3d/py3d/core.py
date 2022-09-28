@@ -5,6 +5,7 @@ import numpy
 from IPython.display import display, update_display, HTML
 import pathlib
 import uuid
+import json
 
 pi = numpy.arccos(-1)
 
@@ -23,10 +24,10 @@ class Viewer:
         else:
             self.cache[t] = {obj_id: args}
 
-    def show(self, debug=False):
+    def show(self, **args):
         html = self.tmp.replace("PY#D_ID", self.id).replace(
-            "PY#D_ARGS", str(self.cache))
-        if debug:
+            "PY#D_ARGS", json.dumps(self.cache))
+        if "debug" in args and args["debug"]:
             open(self.id+".html", "w").write(html)
         update_display(HTML(html), display_id=self.id)
 
@@ -244,12 +245,6 @@ class Vector3(Vector):
             entity.color = color
         return entity
 
-    def as_vector(self, start=0):
-        entity = Arrow(*self.n)
-        entity.start = start
-        entity.end = self
-        return entity
-
     def as_line(self) -> Line:
         entity = Line(*self.n)
         entity.vertex = self
@@ -330,27 +325,18 @@ class Transform(Data):
         return self @ self.Rz(a, n)
 
     @classmethod
-    def from_vector_change(cls, p0: Vector3, p1: Vector3, p0_: Vector3, p1_: Vector3) -> Transform:
-        d: Vector3 = p1 - p0
-        d_: Vector3 = p1_ - p0_
-        s = d_.L / d.L
-        ret = Transform(*s.shape)
-        angle = d.angle_to_vector(d_).squeeze()
-        axis = d.cross(d_)
-        ret.scaling = Vector3(s, s, s).squeeze()
-        ret.translation = p0_ - p0
+    def from_vector_change(cls, a: Vector3, b: Vector3) -> Transform:
+        ret = Transform(max(a.shape,b.shape))
+        angle = a.angle_to_vector(b).squeeze()
+        axis = a.cross(b)
         ret.rotation = cls.from_angle_axis(angle, axis)
         return ret
-
-    @classmethod
-    def from_angle_arbitrary_axis(cls, angle, axis_direction: Vector3, axis_point: Vector3) -> Transform:
-        return Transform.from_translation(-axis_point)@Transform.from_angle_axis(angle, axis_direction)@Transform.from_translation(axis_point)
 
     @classmethod
     def from_angle_axis(cls, angle, axis: list | Vector3) -> Transform:
         angle = numpy.array(angle)
         axis = Vector3(axis)
-        n = merge_shapes(angle.shape, axis.n)
+        n = max(angle.shape, axis.n)
         q = numpy.empty(n+(4,))
         half_angle = angle / 2
         q[..., 0] = numpy.cos(half_angle)
@@ -372,7 +358,7 @@ class Transform(Data):
         x = q[..., 1]
         y = q[..., 2]
         z = q[..., 3]
-        ret = cls(*(q.shape[:-1]))
+        ret = cls(n=q.shape[:-1])
         ret[..., 0, 0] = 1 - 2 * y ** 2 - 2 * z ** 2
         ret[..., 0, 1] = 2 * w * z + 2 * x * y
         ret[..., 0, 2] = -2 * w * y + 2 * x * z
@@ -602,7 +588,7 @@ class Point(Data):
     def render(self, **args):
         v = Viewer()
         v.render(self, **args)
-        v.show()
+        v.show(**args)
 
 
 class Triangle(Point):
