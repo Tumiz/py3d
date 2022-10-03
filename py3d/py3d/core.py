@@ -265,6 +265,60 @@ class Vector3(Vector):
         return entity
 
 
+class Vector4(Vector):
+    BASE_SHAPE = 4,
+
+    def __new__(cls, xyzw_list: list | numpy.ndarray = [0., 0., 0., 1.], n=()):
+        return super().__new__(cls, xyzw_list, n)
+
+    @property
+    def x(self):
+        return self[..., 0].view(numpy.ndarray)
+
+    @x.setter
+    def x(self, v):
+        self[..., 0] = v
+
+    @property
+    def y(self):
+        return self[..., 1].view(numpy.ndarray)
+
+    @y.setter
+    def y(self, v):
+        self[..., 1] = v
+
+    @property
+    def z(self):
+        return self[..., 2].view(numpy.ndarray)
+
+    @z.setter
+    def z(self, v):
+        self[..., 2] = v
+
+    @property
+    def w(self):
+        return self[..., 3].view(numpy.ndarray)
+
+    @w.setter
+    def w(self, v):
+        self[..., 3] = v
+
+    @property
+    def xyz(self) -> Vector3:
+        return self[..., 0:3].view(Vector3)
+
+    @xyz.setter
+    def xyz(self, v):
+        self[..., 0:3] = v
+
+    @property
+    def wxyz(self) -> Vector:
+        ret = Vector(n=self.n+(4,))
+        ret[..., 0] = self.w
+        ret[..., 1:4] = self.xyz
+        return ret
+
+
 class Transform(Data):
     BASE_SHAPE = 4, 4
 
@@ -326,7 +380,7 @@ class Transform(Data):
 
     @classmethod
     def from_vector_change(cls, a: Vector3, b: Vector3) -> Transform:
-        ret = Transform(max(a.shape,b.shape))
+        ret = Transform(max(a.shape, b.shape))
         angle = a.angle_to_vector(b).squeeze()
         axis = a.cross(b)
         ret.rotation = cls.from_angle_axis(angle, axis)
@@ -370,16 +424,20 @@ class Transform(Data):
         ret[..., 2, 2] = 1 - 2 * x ** 2 - 2 * y ** 2
         return ret
 
-    def to_quaternion(self) -> ndarray:
-        q = numpy.empty(self.n+(4,))
-        q[..., 0] = w = (1+self[..., 0, 0]+self[..., 1, 1] +
-                         self[..., 2, 2])**0.5/2
-        q[..., 1] = numpy.divide(
-            self[..., 1, 2]-self[..., 2, 1], 4*w, where=w != 0)
-        q[..., 2] = numpy.divide(
-            self[..., 2, 0]-self[..., 0, 2], 4*w, where=w != 0)
-        q[..., 3] = numpy.divide(
-            self[..., 0, 1]-self[..., 1, 0], 4*w, where=w != 0)
+    def to_quaternion(self) -> Vector4:
+        q = Vector4(n=self.n)
+        q.w = numpy.sqrt(1+self[..., 0, 0]+self[..., 1, 1] + self[..., 2, 2])/2
+        m0 = self[q.w == 0]
+        m1, w1 = self[q.w != 0], q.w[q.w != 0]
+        q.x[q.w != 0] = numpy.divide(m1[..., 1, 2]-m1[..., 2, 1], 4*w1)
+        q.y[q.w != 0] = numpy.divide(m1[..., 2, 0]-m1[..., 0, 2], 4*w1)
+        q.z[q.w != 0] = numpy.divide(m1[..., 0, 1]-m1[..., 1, 0], 4*w1)
+        q.x[q.w == 0] = numpy.sign(m0[..., 1, 2]-m0[..., 2, 1]) * numpy.sqrt(
+            1+m0[..., 0, 0]-m0[..., 1, 1] - m0[..., 2, 2])/2
+        q.y[q.w == 0] = numpy.sign(m0[..., 2, 0]-m0[..., 0, 2]) * numpy.sqrt(
+            1-m0[..., 0, 0]+m0[..., 1, 1] - m0[..., 2, 2])/2
+        q.z[q.w == 0] = numpy.sign(m0[..., 0, 1]-m0[..., 1, 0]) * numpy.sqrt(
+            1-m0[..., 0, 0]-m0[..., 1, 1] + m0[..., 2, 2])/2
         return q
 
     @classmethod
