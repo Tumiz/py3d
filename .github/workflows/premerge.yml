@@ -28,7 +28,7 @@ jobs:
       - name: install deps
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install jupyterlab matplotlib sympy pillow
+          python3 -m pip install jupyterlab matplotlib sympy pillow scipy
 
       - name: install py3d
         run: python3 -m pip install -e py3d
