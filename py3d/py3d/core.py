@@ -10,6 +10,10 @@ import json
 pi = numpy.arccos(-1)
 
 
+def sign(v):
+    return numpy.sign(v, where=v != 0, out=numpy.ones_like(v))
+
+
 class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
@@ -313,10 +317,13 @@ class Vector4(Vector):
 
     @property
     def wxyz(self) -> Vector:
-        ret = Vector(n=self.n+(4,))
+        ret = Vector([0, 0, 0, 0], n=self.n)
         ret[..., 0] = self.w
         ret[..., 1:4] = self.xyz
         return ret
+
+    def as_transform(self) -> Transform:
+        return Transform.from_quaternion(self)
 
 
 class Transform(Data):
@@ -397,8 +404,8 @@ class Transform(Data):
         q[..., 1:] = numpy.sin(half_angle)[..., numpy.newaxis] * axis.U
         return cls.from_quaternion(q)
 
-    def to_angle_axis(self):
-        q = self.to_quaternion()
+    def as_angle_axis(self):
+        q = self.as_quaternion()
         ha = numpy.arccos(q[..., 0])
         sin_ha = numpy.sin(ha)[..., numpy.newaxis]
         axis = numpy.divide(q[..., 1:], sin_ha,
@@ -406,25 +413,21 @@ class Transform(Data):
         return ha*2, axis
 
     @classmethod
-    def from_quaternion(cls, quaternion: list | numpy.ndarray) -> Transform:
-        q = numpy.array(quaternion)
-        w = q[..., 0]
-        x = q[..., 1]
-        y = q[..., 2]
-        z = q[..., 3]
+    def from_quaternion(cls, xyzw_list: list | numpy.ndarray) -> Transform:
+        q = Vector4(xyzw_list)
         ret = cls(n=q.shape[:-1])
-        ret[..., 0, 0] = 1 - 2 * y ** 2 - 2 * z ** 2
-        ret[..., 0, 1] = 2 * w * z + 2 * x * y
-        ret[..., 0, 2] = -2 * w * y + 2 * x * z
-        ret[..., 1, 0] = -2 * w * z + 2 * x * y
-        ret[..., 1, 1] = 1 - 2 * x ** 2 - 2 * z ** 2
-        ret[..., 1, 2] = 2 * w * x + 2 * y * z
-        ret[..., 2, 0] = 2 * w * y + 2 * x * z
-        ret[..., 2, 1] = -2 * w * x + 2 * y * z
-        ret[..., 2, 2] = 1 - 2 * x ** 2 - 2 * y ** 2
+        ret[..., 0, 0] = 1 - 2 * q.y ** 2 - 2 * q.z ** 2
+        ret[..., 0, 1] = 2 * q.w * q.z + 2 * q.x * q.y
+        ret[..., 0, 2] = -2 * q.w * q.y + 2 * q.x * q.z
+        ret[..., 1, 0] = -2 * q.w * q.z + 2 * q.x * q.y
+        ret[..., 1, 1] = 1 - 2 * q.x ** 2 - 2 * q.z ** 2
+        ret[..., 1, 2] = 2 * q.w * q.x + 2 * q.y * q.z
+        ret[..., 2, 0] = 2 * q.w * q.y + 2 * q.x * q.z
+        ret[..., 2, 1] = -2 * q.w * q.x + 2 * q.y * q.z
+        ret[..., 2, 2] = 1 - 2 * q.x ** 2 - 2 * q.y ** 2
         return ret
 
-    def to_quaternion(self) -> Vector4:
+    def as_quaternion(self) -> Vector4:
         q = Vector4(n=self.n)
         q.w = numpy.sqrt(1+self[..., 0, 0]+self[..., 1, 1] + self[..., 2, 2])/2
         m0 = self[q.w == 0]
@@ -432,11 +435,11 @@ class Transform(Data):
         q.x[q.w != 0] = numpy.divide(m1[..., 1, 2]-m1[..., 2, 1], 4*w1)
         q.y[q.w != 0] = numpy.divide(m1[..., 2, 0]-m1[..., 0, 2], 4*w1)
         q.z[q.w != 0] = numpy.divide(m1[..., 0, 1]-m1[..., 1, 0], 4*w1)
-        q.x[q.w == 0] = numpy.sign(m0[..., 1, 2]-m0[..., 2, 1]) * numpy.sqrt(
+        q.x[q.w == 0] = sign(m0[..., 1, 2]-m0[..., 2, 1]) * numpy.sqrt(
             1+m0[..., 0, 0]-m0[..., 1, 1] - m0[..., 2, 2])/2
-        q.y[q.w == 0] = numpy.sign(m0[..., 2, 0]-m0[..., 0, 2]) * numpy.sqrt(
+        q.y[q.w == 0] = sign(m0[..., 2, 0]-m0[..., 0, 2]) * numpy.sqrt(
             1-m0[..., 0, 0]+m0[..., 1, 1] - m0[..., 2, 2])/2
-        q.z[q.w == 0] = numpy.sign(m0[..., 0, 1]-m0[..., 1, 0]) * numpy.sqrt(
+        q.z[q.w == 0] = sign(m0[..., 0, 1]-m0[..., 1, 0]) * numpy.sqrt(
             1-m0[..., 0, 0]-m0[..., 1, 1] + m0[..., 2, 2])/2
         return q
 
@@ -450,7 +453,7 @@ class Transform(Data):
         else:
             return m[lo[2]](v[..., 2]) @ m[lo[1]](v[..., 1]) @ m[lo[0]](v[..., 0])
 
-    def to_euler(self, sequence: str):
+    def as_euler(self, sequence: str):
         extrinsic = sequence.islower()
         lo = sequence.lower()
         ret = numpy.zeros((*self.n, 3))
@@ -478,8 +481,8 @@ class Transform(Data):
     def from_rpy(cls, angles_list: list | numpy.ndarray) -> Transform:
         return cls.from_euler('XYZ', angles_list)
 
-    def to_rpy(self):
-        return self.to_euler('XYZ')
+    def as_rpy(self):
+        return self.as_euler('XYZ')
 
     @property
     def translation_vector(self) -> Vector3:
@@ -531,7 +534,7 @@ class Transform(Data):
 
     @property
     def forward(self) -> Vector3:
-        return Vector3(x=1).mt(self)
+        return Vector3(x=1) @ self
 
     @classmethod
     def from_perspective(cls, fovy, aspect, near, far) -> Transform:
@@ -561,7 +564,7 @@ class Transform(Data):
         t1: Vector3 = self.translation_vector[i]
         s0: Vector3 = self.scaling_vector[i-1]
         s1: Vector3 = self.scaling_vector[i]
-        angle, axis = (r0.I@r1).to_angle_axis()
+        angle, axis = (r0.I@r1).as_angle_axis()
         rotation = Transform.from_angle_axis(d*angle, axis)
         translation = (d[..., numpy.newaxis] * (t1 - t0)).as_translation()
         scaling = (d[..., numpy.newaxis] * s1 / s0).as_scaling()
@@ -715,44 +718,6 @@ class Camera:
     @property
     def matrix(self):
         return self.transform.I @ self.projection
-        super().__init__(*n, 8)
-        self.geometry.vertex = self.vertice_base
-        self.index = [3,
-                      2,
-                      0,
-                      3,
-                      0,
-                      1,
-                      5,
-                      0,
-                      1,
-                      5,
-                      4,
-                      0,
-                      5,
-                      3,
-                      1,
-                      5,
-                      3,
-                      7,
-                      6,
-                      2,
-                      0,
-                      6,
-                      4,
-                      0,
-                      6,
-                      3,
-                      2,
-                      6,
-                      3,
-                      7,
-                      6,
-                      5,
-                      4,
-                      6,
-                      5,
-                      7]
 
 
 class Utils:
