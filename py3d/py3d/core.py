@@ -137,7 +137,10 @@ class Vector3(Vector):
         return ret
 
     def __matmul__(self, value: Transform) -> Vector3:
-        return numpy.matmul(self.H, value)[..., 0:3].view(self.__class__)
+        if type(value) is Transform:
+            return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
+        else:
+            return self.__matmul__(value)
 
     @property
     def x(self):
@@ -532,10 +535,6 @@ class Transform(Data):
     def I(self) -> Transform:
         return numpy.linalg.inv(self)
 
-    @property
-    def forward(self) -> Vector3:
-        return Vector3(x=1) @ self
-
     @classmethod
     def from_perspective(cls, fovy, aspect, near, far) -> Transform:
         f = 1 / numpy.tan(fovy/2)
@@ -670,19 +669,11 @@ class LineSegment(Point):
 
     @property
     def start(self):
-        return self.vertex[..., ::2, :].squeeze().view(Vector3)
-
-    @start.setter
-    def start(self, v):
-        self.vertex[..., ::2, :].squeeze()[:] = v
+        return self[..., ::2, :].view(Point)
 
     @property
     def end(self):
-        return self.vertex[..., 1::2, :].squeeze().view(Vector3)
-
-    @end.setter
-    def end(self, v):
-        self.vertex[..., 1::2, :].squeeze()[:] = v
+        return self[..., 1::2, :].view(Point)
 
 
 class Line(Point):
@@ -750,12 +741,10 @@ class Utils:
 
     @classmethod
     def Grid(cls, size=5) -> LineSegment:
-        point: Vector3 = Vector3(x=[-size, size], y=-size)
-        point @= Transform.from_translation(y=range(2*size+1))
-        point = point.reshape(point.size//3, 3)
-        point @= Transform.from_rpy([[0, 0, 0], [0, 0, pi/2]])
-        grid = point.as_linesegment()
-        grid.color = Color(a=1)
-        grid[0].color[size*2:size*2+2] = Color(r=[0, 1])
-        grid[1].color[size*2:size*2+2] = Color(g=[0, 1])
-        return grid
+        v = Vector3(x=[-size, size]) @ Transform.from_translation(
+            y=range(-size, size+1)) @ Transform.from_rpy([[[0, 0, 0]], [[0, 0, pi/2]]])
+        l = v.as_linesegment()
+        l.color = Color()
+        l.color[0, size] = Color(r=[0, 1])
+        l.color[1, size] = Color(g=[0, 1])
+        return l
