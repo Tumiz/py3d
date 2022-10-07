@@ -3,6 +3,7 @@
 from __future__ import annotations
 import numpy
 from IPython.display import display, update_display, HTML
+from typing import Dict
 import pathlib
 import uuid
 import json
@@ -18,15 +19,15 @@ class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
     def __init__(self) -> None:
-        self.cache = {}
+        self.cache : Dict[float, list] = {}
         self.id = str(uuid.uuid1())
         display(HTML(""), display_id=self.id)
 
-    def render_args(self, obj_id, t, **args):
+    def render_args(self, t, **args):
         if t in self.cache:
-            self.cache[t][obj_id] = args
+            self.cache[t].append(args)
         else:
-            self.cache[t] = {obj_id: args}
+            self.cache[t] = [args]
 
     def show(self, **args):
         html = self.tmp.replace("PY#D_ID", self.id).replace(
@@ -37,7 +38,7 @@ class Viewer:
 
     def render(self, *objs: Point, t=0, **args):
         for obj in objs:
-            self.render_args(obj_id=id(obj), mode=obj.TYPE, t=t, vertex=obj.vertex.ravel(
+            self.render_args(mode=obj.TYPE, t=t, vertex=obj.vertex.ravel(
             ).tolist(), color=obj.color.ravel().tolist(), **args)
 
 
