@@ -14647,12 +14647,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-
-<div id=73fe4912-448b-11ed-8719-bf5ce8ded280>
+<div id=92fa5a28-45fc-11ed-8317-417c5d81a43f>
 </div>
 <script>
 	{
-		const cache = {"0": {"140029567951424": {"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0, 0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0, 0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0]}}}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0, 0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0, 0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14678,31 +14677,46 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 		class ToolBar {
 			constructor() {
 				this.bar = document.createElement("div")
-				this.enable = false
-				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "?"
-				this.btn_enable.style.width = "20px"
-				this.btn_enable.style.height = "20px"
-				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "10px"
+				this.btn_help = document.createElement("button")
+				this.btn_help.innerHTML = "?"
+				this.btn_help.style.width = "20px"
+				this.btn_help.style.height = "20px"
+				this.btn_help.style.border = "none"
+				this.btn_help.style.borderRadius = "10px"
+				this.btn_help.style.padding = "0px"
+				this.btn_help.style.marginRight = "1px"
+				this.btn_orth = document.createElement("button")
+				this.btn_orth.innerHTML = "P"
+				this.btn_orth.style.width = "20px"
+				this.btn_orth.style.height = "20px"
+				this.btn_orth.style.border = "none"
+				this.btn_orth.style.borderRadius = "2px"
+				this.btn_orth.style.padding = "0px"
+				this.btn_orth.style.marginRight = "1px"
+				this.btn_reset = document.createElement("button")
+				this.btn_reset.innerHTML = "⟰"
+				this.btn_reset.style.width = "20px"
+				this.btn_reset.style.height = "20px"
+				this.btn_reset.style.border = "none"
+				this.btn_reset.style.borderRadius = "2px"
+				this.btn_reset.style.padding = "0px"
+				this.btn_reset.style.marginRight = "1px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				rotate: press left mouse button and move<br/>
-				zoom: mouse wheel
+				zoom: mouse wheel<br/>
 				`
 				this.tooltip.style.display = "none"
-				this.btn_enable.onclick = (ev) => {
-					if (this.enable) {
+				this.btn_help.onclick = (ev) => {
+					if (this.btn_help.style.backgroundColor) {
 						this.tooltip.style.display = "none"
-						this.enable = false
-						this.btn_enable.style.backgroundColor = ""
+						this.btn_help.style.backgroundColor = ""
 					} else {
 						this.tooltip.style.display = "block"
-						this.btn_enable.style.backgroundColor = "gray"
-						this.enable = true
+						this.btn_help.style.backgroundColor = "gray"
 					}
 				}
-				this.bar.append(this.btn_enable, this.tooltip)
+				this.bar.append(this.btn_help, this.btn_orth, this.btn_reset, this.tooltip)
 			}
 		}
 		class mat {
@@ -14720,12 +14734,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, -1, 0,
 					0, 0, 0, 1]
 			}
-			static orthographic(l, r, t, b, n, f) {
+			static orthographic(fovy, aspect, near, far, distance) {
 				return [
-					2 / (r - l), 0, 0, 0,
-					0, 2 / (t - b), 0, 0,
-					0, 0, 2 / (n - f), 0,
-					(l + r) / (l - r), (t + b) / (b - t), (n + f) / (f - n), 1]
+					1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
+					0, 1 / distance / Math.tan(fovy / 2), 0, 0,
+					0, 0, 2 / (near - far), 0,
+					0, 0, (near + far) / (far - near), 1]
 			}
 			static perspective(fovy, aspect, near, far) {
 				const f = 1 / Math.tan(fovy / 2)
@@ -14787,15 +14801,35 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 		}
 		class Camera {
-			PESPECTIVE = 0
+			PERSPECTIVE = 0
 			ORTHOGRAPHIC = 1
 			constructor(fovy, aspect, near, far) {
-				this.type = this.PESPECTIVE
+				this.type = this.PERSPECTIVE
+				this.fovy = fovy
+				this.aspect = aspect
+				this.near = near
+				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
-				this.height = 10
+				this.height = -10
 				this.rx = 0
 				this.ry = 0
 				this.center = []
+			}
+			set_orthographic() {
+				this.projection = mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.height))
+				this.type = this.ORTHOGRAPHIC
+			}
+			set_perspective() {
+				this.projection = mat.perspective(this.fovy, this.aspect, this.near, this.far)
+				this.type = this.PERSPECTIVE
+			}
+			reset() {
+				this.height = -10
+				this.rx = 0
+				this.ry = 0
+				if (this.type == this.ORTHOGRAPHIC) {
+					this.set_orthographic()
+				}
 			}
 		}
 		class Viewer {
@@ -14809,10 +14843,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
-				this.camera.height = -10
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("73fe4912-448b-11ed-8719-bf5ce8ded280").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("92fa5a28-45fc-11ed-8317-417c5d81a43f").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14831,6 +14864,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.onwheel = (ev) => {
 					ev.preventDefault()
 					this.camera.height -= ev.deltaY / 100
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_orthographic()
+					}
+					this.render()
+				}
+				this.toolbar.btn_orth.onclick = (ev) => {
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_perspective()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "P"
+					} else {
+						this.camera.set_orthographic()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "O"
+					}
+				}
+				this.toolbar.btn_reset.onclick = (ev) => {
+					this.camera.reset()
 					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
@@ -14884,8 +14935,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let obj_id in this.timebar.current_frame) {
-					let obj = this.timebar.current_frame[obj_id]
+				for (let obj of this.timebar.current_frame) {
 					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -14962,12 +15012,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-
-<div id=73fe4913-448b-11ed-8719-bf5ce8ded280>
+<div id=92fa5a29-45fc-11ed-8317-417c5d81a43f>
 </div>
 <script>
 	{
-		const cache = {"0": {"140029567951424": {"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0, 0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0, 0.05866587672012413, 0.260825062130155, 0.2909438799363613, 1.0]}}}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0, 0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0, 0.6709566374942152, 0.371931989081951, 0.3356031483749111, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14993,31 +15042,46 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 		class ToolBar {
 			constructor() {
 				this.bar = document.createElement("div")
-				this.enable = false
-				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "?"
-				this.btn_enable.style.width = "20px"
-				this.btn_enable.style.height = "20px"
-				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "10px"
+				this.btn_help = document.createElement("button")
+				this.btn_help.innerHTML = "?"
+				this.btn_help.style.width = "20px"
+				this.btn_help.style.height = "20px"
+				this.btn_help.style.border = "none"
+				this.btn_help.style.borderRadius = "10px"
+				this.btn_help.style.padding = "0px"
+				this.btn_help.style.marginRight = "1px"
+				this.btn_orth = document.createElement("button")
+				this.btn_orth.innerHTML = "P"
+				this.btn_orth.style.width = "20px"
+				this.btn_orth.style.height = "20px"
+				this.btn_orth.style.border = "none"
+				this.btn_orth.style.borderRadius = "2px"
+				this.btn_orth.style.padding = "0px"
+				this.btn_orth.style.marginRight = "1px"
+				this.btn_reset = document.createElement("button")
+				this.btn_reset.innerHTML = "⟰"
+				this.btn_reset.style.width = "20px"
+				this.btn_reset.style.height = "20px"
+				this.btn_reset.style.border = "none"
+				this.btn_reset.style.borderRadius = "2px"
+				this.btn_reset.style.padding = "0px"
+				this.btn_reset.style.marginRight = "1px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				rotate: press left mouse button and move<br/>
-				zoom: mouse wheel
+				zoom: mouse wheel<br/>
 				`
 				this.tooltip.style.display = "none"
-				this.btn_enable.onclick = (ev) => {
-					if (this.enable) {
+				this.btn_help.onclick = (ev) => {
+					if (this.btn_help.style.backgroundColor) {
 						this.tooltip.style.display = "none"
-						this.enable = false
-						this.btn_enable.style.backgroundColor = ""
+						this.btn_help.style.backgroundColor = ""
 					} else {
 						this.tooltip.style.display = "block"
-						this.btn_enable.style.backgroundColor = "gray"
-						this.enable = true
+						this.btn_help.style.backgroundColor = "gray"
 					}
 				}
-				this.bar.append(this.btn_enable, this.tooltip)
+				this.bar.append(this.btn_help, this.btn_orth, this.btn_reset, this.tooltip)
 			}
 		}
 		class mat {
@@ -15035,12 +15099,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, -1, 0,
 					0, 0, 0, 1]
 			}
-			static orthographic(l, r, t, b, n, f) {
+			static orthographic(fovy, aspect, near, far, distance) {
 				return [
-					2 / (r - l), 0, 0, 0,
-					0, 2 / (t - b), 0, 0,
-					0, 0, 2 / (n - f), 0,
-					(l + r) / (l - r), (t + b) / (b - t), (n + f) / (f - n), 1]
+					1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
+					0, 1 / distance / Math.tan(fovy / 2), 0, 0,
+					0, 0, 2 / (near - far), 0,
+					0, 0, (near + far) / (far - near), 1]
 			}
 			static perspective(fovy, aspect, near, far) {
 				const f = 1 / Math.tan(fovy / 2)
@@ -15102,15 +15166,35 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 		}
 		class Camera {
-			PESPECTIVE = 0
+			PERSPECTIVE = 0
 			ORTHOGRAPHIC = 1
 			constructor(fovy, aspect, near, far) {
-				this.type = this.PESPECTIVE
+				this.type = this.PERSPECTIVE
+				this.fovy = fovy
+				this.aspect = aspect
+				this.near = near
+				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
-				this.height = 10
+				this.height = -10
 				this.rx = 0
 				this.ry = 0
 				this.center = []
+			}
+			set_orthographic() {
+				this.projection = mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.height))
+				this.type = this.ORTHOGRAPHIC
+			}
+			set_perspective() {
+				this.projection = mat.perspective(this.fovy, this.aspect, this.near, this.far)
+				this.type = this.PERSPECTIVE
+			}
+			reset() {
+				this.height = -10
+				this.rx = 0
+				this.ry = 0
+				if (this.type == this.ORTHOGRAPHIC) {
+					this.set_orthographic()
+				}
 			}
 		}
 		class Viewer {
@@ -15124,10 +15208,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
-				this.camera.height = -10
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("73fe4913-448b-11ed-8719-bf5ce8ded280").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("92fa5a29-45fc-11ed-8317-417c5d81a43f").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15146,6 +15229,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.onwheel = (ev) => {
 					ev.preventDefault()
 					this.camera.height -= ev.deltaY / 100
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_orthographic()
+					}
+					this.render()
+				}
+				this.toolbar.btn_orth.onclick = (ev) => {
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_perspective()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "P"
+					} else {
+						this.camera.set_orthographic()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "O"
+					}
+				}
+				this.toolbar.btn_reset.onclick = (ev) => {
+					this.camera.reset()
 					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
@@ -15199,8 +15300,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let obj_id in this.timebar.current_frame) {
-					let obj = this.timebar.current_frame[obj_id]
+				for (let obj of this.timebar.current_frame) {
 					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -15279,12 +15379,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-
-<div id=73fe4914-448b-11ed-8719-bf5ce8ded280>
+<div id=92fa5a2a-45fc-11ed-8317-417c5d81a43f>
 </div>
 <script>
 	{
-		const cache = {"0": {"140029602753728": {"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.5608336841390292, 0.5952515696778219, 0.5815291499312145, 1.0, 0.5608336841390292, 0.5952515696778219, 0.5815291499312145, 1.0, 0.5608336841390292, 0.5952515696778219, 0.5815291499312145, 1.0, 0.018647053984152784, 0.0037245627067419296, 0.9265979501986031, 1.0, 0.018647053984152784, 0.0037245627067419296, 0.9265979501986031, 1.0, 0.018647053984152784, 0.0037245627067419296, 0.9265979501986031, 1.0]}}}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.08738299469356647, 0.7845419501339682, 0.16519324262960944, 1.0, 0.08738299469356647, 0.7845419501339682, 0.16519324262960944, 1.0, 0.08738299469356647, 0.7845419501339682, 0.16519324262960944, 1.0, 0.29133847511714284, 0.8110113528578812, 0.5453207688892655, 1.0, 0.29133847511714284, 0.8110113528578812, 0.5453207688892655, 1.0, 0.29133847511714284, 0.8110113528578812, 0.5453207688892655, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15310,31 +15409,46 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 		class ToolBar {
 			constructor() {
 				this.bar = document.createElement("div")
-				this.enable = false
-				this.btn_enable = document.createElement("button")
-				this.btn_enable.innerHTML = "?"
-				this.btn_enable.style.width = "20px"
-				this.btn_enable.style.height = "20px"
-				this.btn_enable.style.border = "0px"
-				this.btn_enable.style.borderRadius = "10px"
+				this.btn_help = document.createElement("button")
+				this.btn_help.innerHTML = "?"
+				this.btn_help.style.width = "20px"
+				this.btn_help.style.height = "20px"
+				this.btn_help.style.border = "none"
+				this.btn_help.style.borderRadius = "10px"
+				this.btn_help.style.padding = "0px"
+				this.btn_help.style.marginRight = "1px"
+				this.btn_orth = document.createElement("button")
+				this.btn_orth.innerHTML = "P"
+				this.btn_orth.style.width = "20px"
+				this.btn_orth.style.height = "20px"
+				this.btn_orth.style.border = "none"
+				this.btn_orth.style.borderRadius = "2px"
+				this.btn_orth.style.padding = "0px"
+				this.btn_orth.style.marginRight = "1px"
+				this.btn_reset = document.createElement("button")
+				this.btn_reset.innerHTML = "⟰"
+				this.btn_reset.style.width = "20px"
+				this.btn_reset.style.height = "20px"
+				this.btn_reset.style.border = "none"
+				this.btn_reset.style.borderRadius = "2px"
+				this.btn_reset.style.padding = "0px"
+				this.btn_reset.style.marginRight = "1px"
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
 				rotate: press left mouse button and move<br/>
-				zoom: mouse wheel
+				zoom: mouse wheel<br/>
 				`
 				this.tooltip.style.display = "none"
-				this.btn_enable.onclick = (ev) => {
-					if (this.enable) {
+				this.btn_help.onclick = (ev) => {
+					if (this.btn_help.style.backgroundColor) {
 						this.tooltip.style.display = "none"
-						this.enable = false
-						this.btn_enable.style.backgroundColor = ""
+						this.btn_help.style.backgroundColor = ""
 					} else {
 						this.tooltip.style.display = "block"
-						this.btn_enable.style.backgroundColor = "gray"
-						this.enable = true
+						this.btn_help.style.backgroundColor = "gray"
 					}
 				}
-				this.bar.append(this.btn_enable, this.tooltip)
+				this.bar.append(this.btn_help, this.btn_orth, this.btn_reset, this.tooltip)
 			}
 		}
 		class mat {
@@ -15352,12 +15466,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, -1, 0,
 					0, 0, 0, 1]
 			}
-			static orthographic(l, r, t, b, n, f) {
+			static orthographic(fovy, aspect, near, far, distance) {
 				return [
-					2 / (r - l), 0, 0, 0,
-					0, 2 / (t - b), 0, 0,
-					0, 0, 2 / (n - f), 0,
-					(l + r) / (l - r), (t + b) / (b - t), (n + f) / (f - n), 1]
+					1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
+					0, 1 / distance / Math.tan(fovy / 2), 0, 0,
+					0, 0, 2 / (near - far), 0,
+					0, 0, (near + far) / (far - near), 1]
 			}
 			static perspective(fovy, aspect, near, far) {
 				const f = 1 / Math.tan(fovy / 2)
@@ -15419,15 +15533,35 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 		}
 		class Camera {
-			PESPECTIVE = 0
+			PERSPECTIVE = 0
 			ORTHOGRAPHIC = 1
 			constructor(fovy, aspect, near, far) {
-				this.type = this.PESPECTIVE
+				this.type = this.PERSPECTIVE
+				this.fovy = fovy
+				this.aspect = aspect
+				this.near = near
+				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
-				this.height = 10
+				this.height = -10
 				this.rx = 0
 				this.ry = 0
 				this.center = []
+			}
+			set_orthographic() {
+				this.projection = mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.height))
+				this.type = this.ORTHOGRAPHIC
+			}
+			set_perspective() {
+				this.projection = mat.perspective(this.fovy, this.aspect, this.near, this.far)
+				this.type = this.PERSPECTIVE
+			}
+			reset() {
+				this.height = -10
+				this.rx = 0
+				this.ry = 0
+				if (this.type == this.ORTHOGRAPHIC) {
+					this.set_orthographic()
+				}
 			}
 		}
 		class Viewer {
@@ -15441,10 +15575,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
-				this.camera.height = -10
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("73fe4914-448b-11ed-8719-bf5ce8ded280").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("92fa5a2a-45fc-11ed-8317-417c5d81a43f").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15463,6 +15596,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.canvas.onwheel = (ev) => {
 					ev.preventDefault()
 					this.camera.height -= ev.deltaY / 100
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_orthographic()
+					}
+					this.render()
+				}
+				this.toolbar.btn_orth.onclick = (ev) => {
+					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
+						this.camera.set_perspective()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "P"
+					} else {
+						this.camera.set_orthographic()
+						this.render()
+						this.toolbar.btn_orth.innerHTML = "O"
+					}
+				}
+				this.toolbar.btn_reset.onclick = (ev) => {
+					this.camera.reset()
 					this.render()
 				}
 				this.timebar.slider.oninput = (ev) => {
@@ -15516,8 +15667,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
-				for (let obj_id in this.timebar.current_frame) {
-					let obj = this.timebar.current_frame[obj_id]
+				for (let obj of this.timebar.current_frame) {
 					this.set_attribute("position", obj.vertex, 3)
 					this.set_attribute("color", obj.color, 4)
 					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
