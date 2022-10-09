@@ -19,7 +19,7 @@ class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
     def __init__(self) -> None:
-        self.cache : Dict[float, list] = {}
+        self.cache: Dict[float, list] = {}
         self.id = str(uuid.uuid1())
         display(HTML(""), display_id=self.id)
 
@@ -232,14 +232,14 @@ class Vector3(Vector):
         f1 = self[i]
         return (1-d)*f0+d*f1
 
-    def as_scaling(self):
+    def as_scaling(self) -> Transform:
         ret = Transform(n=self.n)
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
         ret[..., 2, 2] = self[..., 2]
         return ret
 
-    def as_translation(self):
+    def as_translation(self) -> Transform:
         ret = Transform(n=self.n)
         ret[..., 3, 0] = self[..., 0]
         ret[..., 3, 1] = self[..., 1]
@@ -263,13 +263,19 @@ class Vector3(Vector):
         entity.vertex = self
         return entity
 
-    def as_triangle(self):
+    def as_triangle(self) -> Triangle:
         entity = Triangle(*self.n[:-1])
         entity.vertex = self
         return entity
 
-    def as_mesh(self):
+    def as_mesh(self) -> Mesh:
         entity = Mesh.from_indexed(self)
+        return entity
+
+    def as_vector(self) -> LineSegment:
+        entity = LineSegment(*self.n, 2)
+        entity.start.vertex = 0
+        entity.end.vertex = numpy.expand_dims(self, axis=self.ndim - 1)
         return entity
 
 
@@ -749,3 +755,11 @@ class Utils:
         l.color[0, size] = Color(r=[0, 1])
         l.color[1, size] = Color(g=[0, 1])
         return l
+
+    @classmethod
+    def Axis(cls, size=5) -> LineSegment:
+        a = Vector3([[size, 0, 0], [0, size, 0], [0, 0, size]]).as_vector()
+        a[0].color = Color(r=1)
+        a[1].color = Color(g=1)
+        a[2].color = Color(b=1)
+        return a
