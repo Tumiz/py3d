@@ -112,6 +112,22 @@ class Vector2(Vector):
     def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return super().__new__(cls, data, n)
 
+    @property
+    def x(self):
+        return self[..., 0].view(numpy.ndarray)
+
+    @x.setter
+    def x(self, v):
+        self[..., 0] = v
+
+    @property
+    def y(self):
+        return self[..., 1].view(numpy.ndarray)
+
+    @y.setter
+    def y(self, v):
+        self[..., 1] = v
+
 
 class Vector3(Vector):
     BASE_SHAPE = 3,
