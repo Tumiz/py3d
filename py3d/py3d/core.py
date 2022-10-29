@@ -18,9 +18,9 @@ def sign(v):
 class Viewer:
     tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
-    def __init__(self) -> None:
+    def __init__(self, name="") -> None:
         self.cache: Dict[float, list] = {}
-        self.id = str(uuid.uuid1())
+        self.id = name if name else str(uuid.uuid1())
         display(HTML(""), display_id=self.id)
 
     def render_args(self, t, **args):
