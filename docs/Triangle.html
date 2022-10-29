@@ -14647,11 +14647,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=6e678ad4-4a41-11ed-a629-3309d4828590>
+<div id=28d191d8-57a0-11ed-b675-1b014019c848>
 </div>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0, 0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0, 0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0, 0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0, 0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14757,34 +14757,17 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 1, 0,
 					x, y, z, 1]
 			}
-			static rz(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
+			static angle_axis(angle, x, y, z) {
+				const cos = Math.cos(angle)
+				const sin = Math.sin(angle)
 				return [
-					cos, sin, 0, 0,
-					-sin, cos, 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1]
+					x ** 2 + (1 - x ** 2) * cos, -x * y * cos + x * y + z * sin, -x * z * cos + x * z - y * sin, 0,
+					-x * y * cos + x * y - z * sin, y ** 2 + (1 - y ** 2) * cos, x * sin - y * z * cos + y * z, 0,
+					-x * z * cos + x * z + y * sin, -x * sin - y * z * cos + y * z, z ** 2 + (1 - z ** 2) * cos, 0,
+					0, 0, 0, 1
+				]
 			}
-			static ry(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					cos, 0, -sin, 0,
-					0, 1, 0, 0,
-					sin, 0, cos, 0,
-					0, 0, 0, 1]
-			}
-			static rx(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					1, 0, 0, 0,
-					0, cos, sin, 0,
-					0, -sin, cos, 0,
-					0, 0, 0, 1]
-			}
-			static matmul(m, v) {
+			static mv(m, v) {
 				console.assert(m.length == 16 && v.length == 4, m, v)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
@@ -14792,12 +14775,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				return ret
 			}
-		}
-		class Utils {
-			static distance(x0, y0, x1, y1) {
-				x1 = x1 ? x1 : 0
-				y1 = y1 ? y1 : 0
-				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			static mm(a, b) {
+				console.assert(a.length == 16 && b.length == 16, a, b)
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
+					}
+				}
+				return ret
+			}
+			static T(m) {
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(m[4 * c + r])
+					}
+				}
+				return ret
 			}
 		}
 		class Camera {
@@ -14811,8 +14806,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				this.center = []
 			}
 			set_orthographic() {
@@ -14825,8 +14819,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 			reset() {
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				if (this.type == this.ORTHOGRAPHIC) {
 					this.set_orthographic()
 				}
@@ -14845,7 +14838,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("6e678ad4-4a41-11ed-a629-3309d4828590").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("28d191d8-57a0-11ed-b675-1b014019c848").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14854,9 +14847,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				this.canvas.onmousemove = (ev) => {
 					if (ev.buttons == 1) {
-						this.camera.rx += (ev.clientY - this.canvas_y) / 100
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
-						this.render()
+						let dx = ev.clientX - this.canvas_x
+						let dy = ev.clientY - this.canvas_y
+						let d = Math.hypot(dx, dy)
+						let angle = d / 100
+						if (angle) {
+							this.camera.rotation = mat.mm(mat.angle_axis(angle, dy / d, dx / d, 0), this.camera.rotation)
+							this.render()
+						}
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14930,9 +14928,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
-				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
+				this.set_uniform("translation", mat.translation(0, 0, -this.camera.height))
+				this.set_uniform("rotation", mat.T(this.camera.rotation))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj of this.timebar.current_frame) {
@@ -14948,14 +14945,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 rx_view;
-			uniform mat4 ry_view;
-			uniform mat4 height_view;
+			uniform mat4 rotation;
+			uniform mat4 translation;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
+				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
@@ -15012,11 +15008,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=6e678ad5-4a41-11ed-a629-3309d4828590>
+<div id=28d191d9-57a0-11ed-b675-1b014019c848>
 </div>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0, 0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0, 0.02956169283368315, 0.47839679569267335, 0.13501310520973075, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0, 0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0, 0.01640450641617197, 0.3892533047231418, 0.9115452909200509, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15122,34 +15118,17 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 1, 0,
 					x, y, z, 1]
 			}
-			static rz(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
+			static angle_axis(angle, x, y, z) {
+				const cos = Math.cos(angle)
+				const sin = Math.sin(angle)
 				return [
-					cos, sin, 0, 0,
-					-sin, cos, 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1]
+					x ** 2 + (1 - x ** 2) * cos, -x * y * cos + x * y + z * sin, -x * z * cos + x * z - y * sin, 0,
+					-x * y * cos + x * y - z * sin, y ** 2 + (1 - y ** 2) * cos, x * sin - y * z * cos + y * z, 0,
+					-x * z * cos + x * z + y * sin, -x * sin - y * z * cos + y * z, z ** 2 + (1 - z ** 2) * cos, 0,
+					0, 0, 0, 1
+				]
 			}
-			static ry(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					cos, 0, -sin, 0,
-					0, 1, 0, 0,
-					sin, 0, cos, 0,
-					0, 0, 0, 1]
-			}
-			static rx(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					1, 0, 0, 0,
-					0, cos, sin, 0,
-					0, -sin, cos, 0,
-					0, 0, 0, 1]
-			}
-			static matmul(m, v) {
+			static mv(m, v) {
 				console.assert(m.length == 16 && v.length == 4, m, v)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
@@ -15157,12 +15136,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				return ret
 			}
-		}
-		class Utils {
-			static distance(x0, y0, x1, y1) {
-				x1 = x1 ? x1 : 0
-				y1 = y1 ? y1 : 0
-				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			static mm(a, b) {
+				console.assert(a.length == 16 && b.length == 16, a, b)
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
+					}
+				}
+				return ret
+			}
+			static T(m) {
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(m[4 * c + r])
+					}
+				}
+				return ret
 			}
 		}
 		class Camera {
@@ -15176,8 +15167,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				this.center = []
 			}
 			set_orthographic() {
@@ -15190,8 +15180,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 			reset() {
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				if (this.type == this.ORTHOGRAPHIC) {
 					this.set_orthographic()
 				}
@@ -15210,7 +15199,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("6e678ad5-4a41-11ed-a629-3309d4828590").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("28d191d9-57a0-11ed-b675-1b014019c848").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15219,9 +15208,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				this.canvas.onmousemove = (ev) => {
 					if (ev.buttons == 1) {
-						this.camera.rx += (ev.clientY - this.canvas_y) / 100
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
-						this.render()
+						let dx = ev.clientX - this.canvas_x
+						let dy = ev.clientY - this.canvas_y
+						let d = Math.hypot(dx, dy)
+						let angle = d / 100
+						if (angle) {
+							this.camera.rotation = mat.mm(mat.angle_axis(angle, dy / d, dx / d, 0), this.camera.rotation)
+							this.render()
+						}
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15295,9 +15289,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
-				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
+				this.set_uniform("translation", mat.translation(0, 0, -this.camera.height))
+				this.set_uniform("rotation", mat.T(this.camera.rotation))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj of this.timebar.current_frame) {
@@ -15313,14 +15306,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 rx_view;
-			uniform mat4 ry_view;
-			uniform mat4 height_view;
+			uniform mat4 rotation;
+			uniform mat4 translation;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
+				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
@@ -15379,11 +15371,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=6e678ad6-4a41-11ed-a629-3309d4828590>
+<div id=28d191da-57a0-11ed-b675-1b014019c848>
 </div>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.7065887147995449, 0.6561890433497125, 0.30987102550513723, 1.0, 0.7065887147995449, 0.6561890433497125, 0.30987102550513723, 1.0, 0.7065887147995449, 0.6561890433497125, 0.30987102550513723, 1.0, 0.9090733597550097, 0.7926216906714705, 0.6445467660427133, 1.0, 0.9090733597550097, 0.7926216906714705, 0.6445467660427133, 1.0, 0.9090733597550097, 0.7926216906714705, 0.6445467660427133, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.634140688384953, 0.278704863480417, 0.3912596183310606, 1.0, 0.634140688384953, 0.278704863480417, 0.3912596183310606, 1.0, 0.634140688384953, 0.278704863480417, 0.3912596183310606, 1.0, 0.0955040815801611, 0.4265105987063452, 0.5901266831082052, 1.0, 0.0955040815801611, 0.4265105987063452, 0.5901266831082052, 1.0, 0.0955040815801611, 0.4265105987063452, 0.5901266831082052, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15489,34 +15481,17 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 1, 0,
 					x, y, z, 1]
 			}
-			static rz(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
+			static angle_axis(angle, x, y, z) {
+				const cos = Math.cos(angle)
+				const sin = Math.sin(angle)
 				return [
-					cos, sin, 0, 0,
-					-sin, cos, 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1]
+					x ** 2 + (1 - x ** 2) * cos, -x * y * cos + x * y + z * sin, -x * z * cos + x * z - y * sin, 0,
+					-x * y * cos + x * y - z * sin, y ** 2 + (1 - y ** 2) * cos, x * sin - y * z * cos + y * z, 0,
+					-x * z * cos + x * z + y * sin, -x * sin - y * z * cos + y * z, z ** 2 + (1 - z ** 2) * cos, 0,
+					0, 0, 0, 1
+				]
 			}
-			static ry(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					cos, 0, -sin, 0,
-					0, 1, 0, 0,
-					sin, 0, cos, 0,
-					0, 0, 0, 1]
-			}
-			static rx(a) {
-				const cos = Math.cos(a)
-				const sin = Math.sin(a)
-				return [
-					1, 0, 0, 0,
-					0, cos, sin, 0,
-					0, -sin, cos, 0,
-					0, 0, 0, 1]
-			}
-			static matmul(m, v) {
+			static mv(m, v) {
 				console.assert(m.length == 16 && v.length == 4, m, v)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
@@ -15524,12 +15499,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				return ret
 			}
-		}
-		class Utils {
-			static distance(x0, y0, x1, y1) {
-				x1 = x1 ? x1 : 0
-				y1 = y1 ? y1 : 0
-				return Math.sqrt(Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2))
+			static mm(a, b) {
+				console.assert(a.length == 16 && b.length == 16, a, b)
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
+					}
+				}
+				return ret
+			}
+			static T(m) {
+				let ret = []
+				for (let r of [0, 1, 2, 3]) {
+					for (let c of [0, 1, 2, 3]) {
+						ret.push(m[4 * c + r])
+					}
+				}
+				return ret
 			}
 		}
 		class Camera {
@@ -15543,8 +15530,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.far = far
 				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				this.center = []
 			}
 			set_orthographic() {
@@ -15557,8 +15543,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			}
 			reset() {
 				this.height = -10
-				this.rx = 0
-				this.ry = 0
+				this.rotation = mat.identity()
 				if (this.type == this.ORTHOGRAPHIC) {
 					this.set_orthographic()
 				}
@@ -15577,7 +15562,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("6e678ad6-4a41-11ed-a629-3309d4828590").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				document.getElementById("28d191da-57a0-11ed-b675-1b014019c848").append(this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15586,9 +15571,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 				this.canvas.onmousemove = (ev) => {
 					if (ev.buttons == 1) {
-						this.camera.rx += (ev.clientY - this.canvas_y) / 100
-						this.camera.ry += (ev.clientX - this.canvas_x) / 100
-						this.render()
+						let dx = ev.clientX - this.canvas_x
+						let dy = ev.clientY - this.canvas_y
+						let d = Math.hypot(dx, dy)
+						let angle = d / 100
+						if (angle) {
+							this.camera.rotation = mat.mm(mat.angle_axis(angle, dy / d, dx / d, 0), this.camera.rotation)
+							this.render()
+						}
 					}
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15662,9 +15652,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("height_view", mat.translation(0, 0, -this.camera.height))
-				this.set_uniform("rx_view", mat.rx(-this.camera.rx))
-				this.set_uniform("ry_view", mat.ry(-this.camera.ry))
+				this.set_uniform("translation", mat.translation(0, 0, -this.camera.height))
+				this.set_uniform("rotation", mat.T(this.camera.rotation))
 				this.set_uniform("projection", this.camera.projection)
 				this.set_uniform("right_to_left", mat.right_to_left())
 				for (let obj of this.timebar.current_frame) {
@@ -15680,14 +15669,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 color;
 			varying vec4 v_color;
 			uniform mat4 projection;
-			uniform mat4 rx_view;
-			uniform mat4 ry_view;
-			uniform mat4 height_view;
+			uniform mat4 rotation;
+			uniform mat4 translation;
 			uniform mat4 right_to_left;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * height_view * rx_view * ry_view * right_to_left * position;
+				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
 			}
 		`, `
 			precision mediump float;
