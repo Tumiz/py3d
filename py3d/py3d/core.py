@@ -32,14 +32,18 @@ class Viewer:
     def show(self, **args):
         html = self.tmp.replace("PY#D_ID", self.id).replace(
             "PY#D_ARGS", json.dumps(self.cache))
-        if "debug" in args and args["debug"]:
-            open(self.id+".html", "w").write(html)
+        if "name" in args:
+            open(args["name"]+".html", "w").write(html)
         update_display(HTML(html), display_id=self.id)
 
-    def render(self, *objs: Point, t=0, **args):
+    def render(self, *objs: Point, t=0):
         for obj in objs:
-            self.render_args(mode=obj.TYPE, t=t, vertex=obj.vertex.ravel(
-            ).tolist(), color=obj.color.ravel().tolist(), **args)
+            self.render_args(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
+            ).tolist(), color=obj.color.ravel().tolist())
+
+    def label(self, text, position: list = [0, 0, 0], color="grey", t=0):
+        self.render_args(t=t, mode="TEXT", text=text,
+                         position=position, color=color)
 
 
 class Data(numpy.ndarray):
