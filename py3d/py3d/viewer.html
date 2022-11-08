@@ -120,8 +120,9 @@
 					0, 0, 0, 1
 				]
 			}
-			static mv(m, v) {
-				console.assert(m.length == 16 && v.length == 4, m, v)
+			static vm(v, m) {
+				console.assert(m.length == 16 && v.length == 3, m, v)
+				v.push(1)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
 					ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12] * v[3])
@@ -135,6 +136,13 @@
 					for (let c of [0, 1, 2, 3]) {
 						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
 					}
+				}
+				return ret
+			}
+			static mms() {
+				let ret = mat.identity()
+				for (let m of arguments) {
+					ret = mat.mm(ret, m)
 				}
 				return ret
 			}
@@ -180,6 +188,14 @@
 					this.set_orthographic()
 				}
 			}
+			modelview() {
+				return mat.mms(
+					mat.right_to_left(),
+					mat.I(this.rotation),
+					mat.I(this.translation),
+					this.projection,
+					mat.right_to_left())
+			}
 		}
 		class Viewer {
 			constructor() {
@@ -194,7 +210,10 @@
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("PY#D_ID").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				this.labeldiv = document.createElement("div")
+				this.labeldiv.style.position = "absolute"
+				this.parent = document.getElementById("PY#D_ID")
+				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -291,20 +310,30 @@
 				}
 			}
 			render() {
+				this.labeldiv.innerHTML = ""
 				this.gl.clearColor(0, 0, 0, 0)
-				// this.gl.clearDepth(1.0);                 // Clear everything
 				this.gl.enable(this.gl.DEPTH_TEST);
-				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("translation", mat.I(this.camera.translation))
-				this.set_uniform("rotation", mat.I(this.camera.rotation))
-				this.set_uniform("projection", this.camera.projection)
-				this.set_uniform("right_to_left", mat.right_to_left())
+				let modelview = this.camera.modelview()
+				this.set_uniform("modelview", modelview)
 				for (let obj of this.timebar.current_frame) {
-					this.set_attribute("position", obj.vertex, 3)
-					this.set_attribute("color", obj.color, 4)
-					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					if (obj.mode == "TEXT") {
+						let div = document.createElement("div")
+						div.innerHTML = obj.text
+						div.style.position = "absolute"
+						let position = mat.vm(obj.position, modelview)
+						let x = 0.5 * (1 + position[0] / position[3]) * this.canvas.width
+						let y = 0.5 * (1 - position[1] / position[3]) * this.canvas.height
+						div.style.left = x + "px"
+						div.style.top = y + "px"
+						div.style.color = obj.color
+						this.labeldiv.append(div)
+					} else {
+						this.set_attribute("position", obj.vertex, 3)
+						this.set_attribute("color", obj.color, 4)
+						this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					}
 				}
 			}
 		}
@@ -313,14 +342,11 @@
 			attribute vec4 position;
 			attribute vec4 color;
 			varying vec4 v_color;
-			uniform mat4 projection;
-			uniform mat4 rotation;
-			uniform mat4 translation;
-			uniform mat4 right_to_left;
+			uniform mat4 modelview;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
+				gl_Position = modelview * position;
 			}
 		`, `
 			precision mediump float;
