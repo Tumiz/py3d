@@ -14647,7 +14647,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=ab18eae0-5a81-11ed-832a-89678e93d034>
+<div id=0054c7f4-5f28-11ed-8098-49331a2037d9>
 </div>
 <style>
 	.py3d_btn {
@@ -14661,7 +14661,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0, 0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0, 0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14765,8 +14765,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 0, 1
 				]
 			}
-			static mv(m, v) {
-				console.assert(m.length == 16 && v.length == 4, m, v)
+			static vm(v, m) {
+				console.assert(m.length == 16 && v.length == 3, m, v)
+				v.push(1)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
 					ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12] * v[3])
@@ -14780,6 +14781,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					for (let c of [0, 1, 2, 3]) {
 						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
 					}
+				}
+				return ret
+			}
+			static mms() {
+				let ret = mat.identity()
+				for (let m of arguments) {
+					ret = mat.mm(ret, m)
 				}
 				return ret
 			}
@@ -14825,6 +14833,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.set_orthographic()
 				}
 			}
+			modelview() {
+				return mat.mms(
+					mat.right_to_left(),
+					mat.I(this.rotation),
+					mat.I(this.translation),
+					this.projection,
+					mat.right_to_left())
+			}
 		}
 		class Viewer {
 			constructor() {
@@ -14839,7 +14855,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("ab18eae0-5a81-11ed-832a-89678e93d034").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				this.labeldiv = document.createElement("div")
+				this.labeldiv.style.position = "absolute"
+				this.parent = document.getElementById("0054c7f4-5f28-11ed-8098-49331a2037d9")
+				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -14936,20 +14955,30 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 			}
 			render() {
+				this.labeldiv.innerHTML = ""
 				this.gl.clearColor(0, 0, 0, 0)
-				// this.gl.clearDepth(1.0);                 // Clear everything
 				this.gl.enable(this.gl.DEPTH_TEST);
-				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("translation", mat.I(this.camera.translation))
-				this.set_uniform("rotation", mat.I(this.camera.rotation))
-				this.set_uniform("projection", this.camera.projection)
-				this.set_uniform("right_to_left", mat.right_to_left())
+				let modelview = this.camera.modelview()
+				this.set_uniform("modelview", modelview)
 				for (let obj of this.timebar.current_frame) {
-					this.set_attribute("position", obj.vertex, 3)
-					this.set_attribute("color", obj.color, 4)
-					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					if (obj.mode == "TEXT") {
+						let div = document.createElement("div")
+						div.innerHTML = obj.text
+						div.style.position = "absolute"
+						let position = mat.vm(obj.position, modelview)
+						let x = 0.5 * (1 + position[0] / position[3]) * this.canvas.width
+						let y = 0.5 * (1 - position[1] / position[3]) * this.canvas.height
+						div.style.left = x + "px"
+						div.style.top = y + "px"
+						div.style.color = obj.color
+						this.labeldiv.append(div)
+					} else {
+						this.set_attribute("position", obj.vertex, 3)
+						this.set_attribute("color", obj.color, 4)
+						this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					}
 				}
 			}
 		}
@@ -14958,14 +14987,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 position;
 			attribute vec4 color;
 			varying vec4 v_color;
-			uniform mat4 projection;
-			uniform mat4 rotation;
-			uniform mat4 translation;
-			uniform mat4 right_to_left;
+			uniform mat4 modelview;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
+				gl_Position = modelview * position;
 			}
 		`, `
 			precision mediump float;
@@ -15022,7 +15048,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=ab18eae1-5a81-11ed-832a-89678e93d034>
+<div id=0054c7f5-5f28-11ed-8098-49331a2037d9>
 </div>
 <style>
 	.py3d_btn {
@@ -15036,7 +15062,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.161209223472559, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0, 0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0, 0.0725657126271716, 0.05600305174816944, 0.3902534711878459, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15140,8 +15166,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 0, 1
 				]
 			}
-			static mv(m, v) {
-				console.assert(m.length == 16 && v.length == 4, m, v)
+			static vm(v, m) {
+				console.assert(m.length == 16 && v.length == 3, m, v)
+				v.push(1)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
 					ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12] * v[3])
@@ -15155,6 +15182,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					for (let c of [0, 1, 2, 3]) {
 						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
 					}
+				}
+				return ret
+			}
+			static mms() {
+				let ret = mat.identity()
+				for (let m of arguments) {
+					ret = mat.mm(ret, m)
 				}
 				return ret
 			}
@@ -15200,6 +15234,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.set_orthographic()
 				}
 			}
+			modelview() {
+				return mat.mms(
+					mat.right_to_left(),
+					mat.I(this.rotation),
+					mat.I(this.translation),
+					this.projection,
+					mat.right_to_left())
+			}
 		}
 		class Viewer {
 			constructor() {
@@ -15214,7 +15256,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("ab18eae1-5a81-11ed-832a-89678e93d034").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				this.labeldiv = document.createElement("div")
+				this.labeldiv.style.position = "absolute"
+				this.parent = document.getElementById("0054c7f5-5f28-11ed-8098-49331a2037d9")
+				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15311,20 +15356,30 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 			}
 			render() {
+				this.labeldiv.innerHTML = ""
 				this.gl.clearColor(0, 0, 0, 0)
-				// this.gl.clearDepth(1.0);                 // Clear everything
 				this.gl.enable(this.gl.DEPTH_TEST);
-				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("translation", mat.I(this.camera.translation))
-				this.set_uniform("rotation", mat.I(this.camera.rotation))
-				this.set_uniform("projection", this.camera.projection)
-				this.set_uniform("right_to_left", mat.right_to_left())
+				let modelview = this.camera.modelview()
+				this.set_uniform("modelview", modelview)
 				for (let obj of this.timebar.current_frame) {
-					this.set_attribute("position", obj.vertex, 3)
-					this.set_attribute("color", obj.color, 4)
-					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					if (obj.mode == "TEXT") {
+						let div = document.createElement("div")
+						div.innerHTML = obj.text
+						div.style.position = "absolute"
+						let position = mat.vm(obj.position, modelview)
+						let x = 0.5 * (1 + position[0] / position[3]) * this.canvas.width
+						let y = 0.5 * (1 - position[1] / position[3]) * this.canvas.height
+						div.style.left = x + "px"
+						div.style.top = y + "px"
+						div.style.color = obj.color
+						this.labeldiv.append(div)
+					} else {
+						this.set_attribute("position", obj.vertex, 3)
+						this.set_attribute("color", obj.color, 4)
+						this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					}
 				}
 			}
 		}
@@ -15333,14 +15388,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 position;
 			attribute vec4 color;
 			varying vec4 v_color;
-			uniform mat4 projection;
-			uniform mat4 rotation;
-			uniform mat4 translation;
-			uniform mat4 right_to_left;
+			uniform mat4 modelview;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
+				gl_Position = modelview * position;
 			}
 		`, `
 			precision mediump float;
@@ -15399,7 +15451,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=ab18eae2-5a81-11ed-832a-89678e93d034>
+<div id=0054c7f6-5f28-11ed-8098-49331a2037d9>
 </div>
 <style>
 	.py3d_btn {
@@ -15413,7 +15465,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.10014541023462786, 0.6789443708582278, 0.7221928618849149, 1.0, 0.10014541023462786, 0.6789443708582278, 0.7221928618849149, 1.0, 0.10014541023462786, 0.6789443708582278, 0.7221928618849149, 1.0, 0.8970367010860555, 0.20378406347902134, 0.09156556396195437, 1.0, 0.8970367010860555, 0.20378406347902134, 0.09156556396195437, 1.0, 0.8970367010860555, 0.20378406347902134, 0.09156556396195437, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15517,8 +15569,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					0, 0, 0, 1
 				]
 			}
-			static mv(m, v) {
-				console.assert(m.length == 16 && v.length == 4, m, v)
+			static vm(v, m) {
+				console.assert(m.length == 16 && v.length == 3, m, v)
+				v.push(1)
 				let ret = []
 				for (let j of [0, 1, 2, 3]) {
 					ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12] * v[3])
@@ -15532,6 +15585,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					for (let c of [0, 1, 2, 3]) {
 						ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
 					}
+				}
+				return ret
+			}
+			static mms() {
+				let ret = mat.identity()
+				for (let m of arguments) {
+					ret = mat.mm(ret, m)
 				}
 				return ret
 			}
@@ -15577,6 +15637,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 					this.set_orthographic()
 				}
 			}
+			modelview() {
+				return mat.mms(
+					mat.right_to_left(),
+					mat.I(this.rotation),
+					mat.I(this.translation),
+					this.projection,
+					mat.right_to_left())
+			}
 		}
 		class Viewer {
 			constructor() {
@@ -15591,7 +15659,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
 				this.timebar = new TimeBar()
-				document.getElementById("ab18eae2-5a81-11ed-832a-89678e93d034").append(this.canvas, this.timebar.bar, this.toolbar.bar)
+				this.labeldiv = document.createElement("div")
+				this.labeldiv.style.position = "absolute"
+				this.parent = document.getElementById("0054c7f6-5f28-11ed-8098-49331a2037d9")
+				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
@@ -15688,20 +15759,30 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				}
 			}
 			render() {
+				this.labeldiv.innerHTML = ""
 				this.gl.clearColor(0, 0, 0, 0)
-				// this.gl.clearDepth(1.0);                 // Clear everything
 				this.gl.enable(this.gl.DEPTH_TEST);
-				// this.gl.depthFunc(this.gl.LEQUAL);            // Near things obscure far things
 				this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 				this.gl.useProgram(this.program)
-				this.set_uniform("translation", mat.I(this.camera.translation))
-				this.set_uniform("rotation", mat.I(this.camera.rotation))
-				this.set_uniform("projection", this.camera.projection)
-				this.set_uniform("right_to_left", mat.right_to_left())
+				let modelview = this.camera.modelview()
+				this.set_uniform("modelview", modelview)
 				for (let obj of this.timebar.current_frame) {
-					this.set_attribute("position", obj.vertex, 3)
-					this.set_attribute("color", obj.color, 4)
-					this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					if (obj.mode == "TEXT") {
+						let div = document.createElement("div")
+						div.innerHTML = obj.text
+						div.style.position = "absolute"
+						let position = mat.vm(obj.position, modelview)
+						let x = 0.5 * (1 + position[0] / position[3]) * this.canvas.width
+						let y = 0.5 * (1 - position[1] / position[3]) * this.canvas.height
+						div.style.left = x + "px"
+						div.style.top = y + "px"
+						div.style.color = obj.color
+						this.labeldiv.append(div)
+					} else {
+						this.set_attribute("position", obj.vertex, 3)
+						this.set_attribute("color", obj.color, 4)
+						this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+					}
 				}
 			}
 		}
@@ -15710,14 +15791,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 			attribute vec4 position;
 			attribute vec4 color;
 			varying vec4 v_color;
-			uniform mat4 projection;
-			uniform mat4 rotation;
-			uniform mat4 translation;
-			uniform mat4 right_to_left;
+			uniform mat4 modelview;
 			void main(void) {
 				v_color = color;
 				gl_PointSize = 1.0;
-				gl_Position = right_to_left * projection * translation * rotation * right_to_left * position;
+				gl_Position = modelview * position;
 			}
 		`, `
 			precision mediump float;
