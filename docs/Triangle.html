@@ -14539,6 +14539,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
   display: none;
 }
 
+@page {
+    margin: 0.5in; /* Margin for each printed piece of paper */
+}
+
 @media print {
   .jp-Cell-inputWrapper,
   .jp-Cell-outputWrapper {
@@ -14636,18 +14640,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </pre>
 </div>
 </div>
-<div class="jp-OutputArea-child">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
 
 
 
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html">
 <!DOCTYPE html>
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=0054c7f4-5f28-11ed-8098-49331a2037d9>
+<div id=43796264-642e-11ed-8262-4fc2ca240a0c>
 </div>
 <style>
 	.py3d_btn {
@@ -14661,7 +14665,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [4.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0, 0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0, 0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -14857,7 +14861,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.timebar = new TimeBar()
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
-				this.parent = document.getElementById("0054c7f4-5f28-11ed-8098-49331a2037d9")
+				this.parent = document.getElementById("43796264-642e-11ed-8262-4fc2ca240a0c")
 				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
@@ -15037,18 +15041,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
 
 
 
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html">
 <!DOCTYPE html>
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=0054c7f5-5f28-11ed-8098-49331a2037d9>
+<div id=43796265-642e-11ed-8262-4fc2ca240a0c>
 </div>
 <style>
 	.py3d_btn {
@@ -15062,7 +15066,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0, 0.2335002706179986, 0.2922308147088736, 0.012612445401629868, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.1612092234725586, 0.0, -3.365883939231586, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0], "color": [0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0, 0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0, 0.1672359496267246, 0.29208339262248584, 0.5498357982989156, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15258,7 +15262,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.timebar = new TimeBar()
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
-				this.parent = document.getElementById("0054c7f5-5f28-11ed-8098-49331a2037d9")
+				this.parent = document.getElementById("43796265-642e-11ed-8262-4fc2ca240a0c")
 				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
@@ -15440,18 +15444,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 
 
 
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html">
 <!DOCTYPE html>
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=0054c7f6-5f28-11ed-8098-49331a2037d9>
+<div id=43796266-642e-11ed-8262-4fc2ca240a0c>
 </div>
 <style>
 	.py3d_btn {
@@ -15465,7 +15469,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </style>
 <script>
 	{
-		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.9939195298758443, 0.2609127320845962, 0.6561393517410548, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0, 0.969434982561343, 0.001935799794168136, 0.04480528188552446, 1.0]}]}
+		const cache = {"0": [{"mode": "TRIANGLES", "vertex": [2.0, 2.0, 0.0, 0.0, 3.0, 1.0, 1.0, 0.0, 1.0, 3.0, 2.0, 0.0, 1.0, 3.0, 1.0, 2.0, 0.0, 1.0], "color": [0.3026327270203133, 0.9121425371370231, 0.4135865660327982, 1.0, 0.3026327270203133, 0.9121425371370231, 0.4135865660327982, 1.0, 0.3026327270203133, 0.9121425371370231, 0.4135865660327982, 1.0, 0.8934262622796617, 0.07323825522363248, 0.12964936827975293, 1.0, 0.8934262622796617, 0.07323825522363248, 0.12964936827975293, 1.0, 0.8934262622796617, 0.07323825522363248, 0.12964936827975293, 1.0]}]}
 		class TimeBar {
 			constructor() {
 				this.bar = document.createElement("div")
@@ -15661,7 +15665,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 				this.timebar = new TimeBar()
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
-				this.parent = document.getElementById("0054c7f6-5f28-11ed-8098-49331a2037d9")
+				this.parent = document.getElementById("43796266-642e-11ed-8262-4fc2ca240a0c")
 				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
