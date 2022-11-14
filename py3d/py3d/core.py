@@ -2,7 +2,7 @@
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
 import numpy
-from IPython.display import display, update_display, HTML
+from IPython.display import HTML
 from typing import Dict
 import pathlib
 import uuid
@@ -21,7 +21,6 @@ class Viewer:
     def __init__(self, name="") -> None:
         self.cache: Dict[float, list] = {}
         self.id = name if name else str(uuid.uuid1())
-        display(HTML(""), display_id=self.id)
 
     def render_args(self, t, **args):
         if t in self.cache:
@@ -34,7 +33,7 @@ class Viewer:
             "PY#D_ARGS", json.dumps(self.cache))
         if "name" in args:
             open(args["name"]+".html", "w").write(html)
-        update_display(HTML(html), display_id=self.id)
+        return HTML(html)
 
     def render(self, *objs: Point, t=0):
         for obj in objs:
@@ -675,7 +674,7 @@ class Point(Data):
     def render(self, **args):
         v = Viewer()
         v.render(self, **args)
-        v.show(**args)
+        return v.show(**args)
 
 
 class Triangle(Point):
