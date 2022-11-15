@@ -147,7 +147,7 @@ class Vector3(Vector):
             return ret
 
     @classmethod
-    def Grid(cls, x=0, y=0, z=0, n=()) -> Vector3:
+    def grid(cls, x=0, y=0, z=0, n=()) -> Vector3:
         n += numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
         ret = super().__new__(cls, [0., 0., 0.], n)
         i = numpy.arange(len(n))
@@ -279,6 +279,11 @@ class Vector3(Vector):
 
     def as_linesegment(self) -> LineSegment:
         entity = LineSegment(*self.n)
+        entity.vertex = self
+        return entity
+
+    def as_polygon(self) -> Polygon:
+        entity = Polygon(*self.n)
         entity.vertex = self
         return entity
 
@@ -704,6 +709,14 @@ class LineSegment(Point):
 
 class Line(Point):
     TYPE = "LINE_STRIP"
+
+    def __new__(cls, *n):
+        ret = super().__new__(cls, *n)
+        return ret
+
+
+class Polygon(Point):
+    TYPE = "LINE_LOOP"
 
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)

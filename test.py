@@ -36,3 +36,4 @@ for f in docs:
                     break
             body, _ = nbconvert.MarkdownExporter().from_notebook_node(nb)
             open("py3d/README.md", "w").write(body)
+            open("README.md", "w").write(body)
