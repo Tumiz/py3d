@@ -1,24 +1,28 @@
-**Scenario** is a python library that helps to build simple environments for simulation of agents.
+# Scenario Tool Kit
+**Scenario** [Github](https://github.com/Tumiz/scenario) is a series of python libraries that helping building simulation environment easily and quickly.
 
-# Note
+## py3d
 
-I'm now refacing this project, so if you want to use scenario, please checkout tag v0.0.0 for a stable release.
-Besides, you can also have a look at the minimum version -- py3d. It's a independed package with classes I seperated from this project. It focusses on dealing with points, lines and planes in batches. And it is also very easy to install, without clone this project, just `pip install py3d`. For more information, please visit [https://tumiz.github.io/scenario/](https://tumiz.github.io/scenario/)For more information,
+**py3d** is one of the **scenario** libraries. It is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in batches.
 
-# Features
+It is under development and unstable currently. But it is designed to be simple, stable and customizable:
 
-* Jupyter support
-* Kinematics emulate
-* 3D rendering
-* Full control of simulation loop
-* No interprocess communication in simulation loop, pure python environment
-* Able to simulation without rendering
-* APIs to handle transforms: translation, rotation, scaling and projection
+* simple means api will be less than usual and progressive
+* stable means it will have less dependeces and modules, and it will be fully tested
+* customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
 
-# Install
-
-**Ubuntu (Recommended):**
-
-```shell
+### Installation
+```
 pip install py3d
 ```
+
+### API reference
+
+[Data](https://tumiz.github.io/scenario/Data.html)
+[Vector](https://tumiz.github.io/scenario/Vector.html)
+[Vector3](https://tumiz.github.io/scenario/Vector3.html)
+[Vector4](https://tumiz.github.io/scenario/Vector4.html)
+[Transform](https://tumiz.github.io/scenario/Transform.html)
+[Color](https://tumiz.github.io/scenario/Color.html)
+[Point](https://tumiz.github.io/scenario/Point.html)
+[Triangle](https://tumiz.github.io/scenario/Triangle.html)
