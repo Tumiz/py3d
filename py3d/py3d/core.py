@@ -54,6 +54,12 @@ class Data(numpy.ndarray):
     def __imatmul__(self, value) -> Data:
         return self @ value
 
+    def tile(self, *n):
+        return numpy.tile(self, n + self.ndim * (1,))
+
+    def flatten(self):
+        return self.reshape(-1, *self.BASE_SHAPE)
+
     @property
     def n(self):
         base_dims = len(self.BASE_SHAPE)
@@ -147,14 +153,26 @@ class Vector3(Vector):
             return ret
 
     @classmethod
-    def grid(cls, x=0, y=0, z=0, n=()) -> Vector3:
-        n += numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
+    def grid(cls, x=0, y=0, z=0) -> Vector3:
+        n = numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
         ret = super().__new__(cls, [0., 0., 0.], n)
         i = numpy.arange(len(n))
         ret.x = numpy.expand_dims(x, axis=i[i != 0].tolist())
         ret.y = numpy.expand_dims(y, axis=i[i != 1].tolist())
         ret.z = numpy.expand_dims(z, axis=i[i != 2].tolist())
         return ret
+
+    @classmethod
+    def circle(cls, radius=1, segments=20) -> Vector3:
+        a = numpy.linspace(0, 2*numpy.pi, segments, False)
+        return cls(x=radius * numpy.sin(a), y=radius * numpy.cos(a))
+
+    @classmethod
+    def cube(cls, size_x=1, size_y=1, size_z=1, ) -> Vector3:
+        k = cls.grid([-.5, .5], [-.5, .5], [-.5, .5]).flatten() * \
+            (size_x, size_y, size_z)
+        return k[..., [0, 1, 2, 3, 4, 5, 6, 7, 0, 2,
+                       2, 6, 6, 4, 4, 0, 1, 3, 3, 7, 7, 5, 5, 1], :]
 
     def __matmul__(self, value: Transform) -> Vector3:
         if type(value) is Transform:
@@ -272,9 +290,20 @@ class Vector3(Vector):
             entity.color = color
         return entity
 
-    def as_line(self) -> Line:
-        entity = Line(*self.n)
-        entity.vertex = self
+    def as_line(self) -> LineSegment:
+        n = list(self.n)
+        n[-1] = (n[-1] - 1) * 2
+        entity = LineSegment(*n)
+        entity.start.vertex = self[..., :-1, :]
+        entity.end.vertex = self[..., 1:, :]
+        return entity
+
+    def as_lineloop(self) -> LineSegment:
+        n = list(self.n)
+        n[-1] = n[-1] * 2
+        entity = LineSegment(*n)
+        entity.start.vertex = self
+        entity.end.vertex = numpy.roll(self, -1, axis=self.ndim - 2)
         return entity
 
     def as_linesegment(self) -> LineSegment:
@@ -282,18 +311,16 @@ class Vector3(Vector):
         entity.vertex = self
         return entity
 
-    def as_polygon(self) -> Polygon:
-        entity = Polygon(*self.n)
-        entity.vertex = self
-        return entity
+    def as_shape(self) -> Triangle:
+        v = numpy.repeat(self, 3, axis=self.ndim-2)
+        v = numpy.roll(v, 1, axis=v.ndim-2)
+        c = self.M[..., numpy.newaxis, :]
+        v[..., 1::3, :] = c
+        return v.view(Vector3).as_triangle()
 
     def as_triangle(self) -> Triangle:
-        entity = Triangle(*self.n[:-1])
+        entity = Triangle(*self.n)
         entity.vertex = self
-        return entity
-
-    def as_mesh(self) -> Mesh:
-        entity = Mesh.from_indexed(self)
         return entity
 
     def as_vector(self) -> LineSegment:
@@ -617,6 +644,14 @@ class Color(Vector):
             ret[..., 3] = a
         return ret
 
+    @classmethod
+    def standard(cls, *n):
+        size = numpy.prod(n)
+        c = int(numpy.power(size, 1/3)) + 1
+        s = numpy.linspace(.3, 1, c)
+        rgb = Vector3.grid(x=s, y=s, z=s).flatten()[:size]
+        return cls(rgb.H).reshape(n + (4,))
+
     @property
     def r(self):
         return self[..., 0].view(numpy.ndarray)
@@ -656,7 +691,7 @@ class Point(Data):
 
     def __new__(cls, *n):
         ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
-        ret.color = Color.Rand(*(n[:-1] if len(cls.BASE_SHAPE) == 1 else n), 1)
+        ret.color = Color.standard(*(n[:-1] + (1,)))
         ret.color.a = 1
         return ret
 
@@ -683,7 +718,6 @@ class Point(Data):
 
 
 class Triangle(Point):
-    BASE_SHAPE = 3, 7
     TYPE = "TRIANGLES"
 
     def __new__(cls, *n):
@@ -705,36 +739,6 @@ class LineSegment(Point):
     @property
     def end(self):
         return self[..., 1::2, :].view(Point)
-
-
-class Line(Point):
-    TYPE = "LINE_STRIP"
-
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        return ret
-
-
-class Polygon(Point):
-    TYPE = "LINE_LOOP"
-
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        return ret
-
-
-class Mesh(Point):
-    TYPE = "TRIANGLES"
-
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        return ret
-
-    @classmethod
-    def from_indexed(cls, v):
-        ret = cls(*v.n)
-        ret.vertex = v
-        return ret
 
 
 class Camera:

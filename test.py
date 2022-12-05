@@ -31,9 +31,10 @@ for f in docs:
         open(path_destination/(f.stem+".html"), "w").write(body)
         if f.name == "index.ipynb":
             for i, cell in enumerate(nb.cells):
+                if hasattr(cell, "outputs"):
+                    setattr(cell, "outputs", [])
                 if "<script>" in cell.source:
                     del nb.cells[i]
-                    break
             body, _ = nbconvert.MarkdownExporter().from_notebook_node(nb)
             open("py3d/README.md", "w").write(body)
             open("README.md", "w").write(body)

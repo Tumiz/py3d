@@ -16,6 +16,20 @@ It is under development and unstable currently. But it is designed to be simple,
 pip install py3d
 ```
 
+### Example
+
+
+```python
+import py3d
+import numpy
+v = py3d.Viewer()
+cars = py3d.Vector3.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6))
+for i in range(5):
+    v.render(cars.as_linesegment(), t=i)
+    cars @= py3d.Transform.from_rpy(py3d.Vector3(z=numpy.linspace(0.1,0.5,5)))
+v.show()
+```
+
 ### API reference
 
 [Data](https://tumiz.github.io/scenario/Data.html)
@@ -25,4 +39,3 @@ pip install py3d
 [Transform](https://tumiz.github.io/scenario/Transform.html)
 [Color](https://tumiz.github.io/scenario/Color.html)
 [Point](https://tumiz.github.io/scenario/Point.html)
-[Triangle](https://tumiz.github.io/scenario/Triangle.html)

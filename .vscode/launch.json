@@ -18,8 +18,8 @@
             "request": "launch",
             "program": "test.py",
             "args": [
-                "-n",
-                "py3d/doc/Triangle.ipynb"
+                // "-n",
+                // "py3d/doc/index.ipynb"
             ],
             "console": "integratedTerminal",
             "justMyCode": true

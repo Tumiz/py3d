@@ -46,10 +46,10 @@
 				this.btn_help.innerHTML = "?"
 				this.btn_help.className = "py3d_btn"
 				this.btn_orth = document.createElement("button")
-				this.btn_orth.innerHTML = "P"
+				this.btn_orth.innerHTML = "O"
 				this.btn_orth.className = "py3d_btn"
 				this.btn_mov = document.createElement("button")
-				this.btn_mov.innerHTML = "⇿"
+				this.btn_mov.innerHTML = "⟳"
 				this.btn_mov.className = "py3d_btn"
 				this.btn_reset = document.createElement("button")
 				this.btn_reset.innerHTML = "⟰"
@@ -160,33 +160,25 @@
 			}
 		}
 		class Camera {
-			PERSPECTIVE = 0
-			ORTHOGRAPHIC = 1
-			constructor(fovy, aspect, near, far) {
-				this.type = this.PERSPECTIVE
+			PERSPECTIVE = "P"
+			ORTHOGRAPHIC = "O"
+			constructor(type, fovy, aspect, near, far) {
 				this.fovy = fovy
 				this.aspect = aspect
 				this.near = near
 				this.far = far
-				this.projection = mat.perspective(fovy, aspect, near, far)
 				this.translation = mat.translation(0, 0, -10)
 				this.rotation = mat.identity()
-				this.center = []
+				this.update_projection(type)
 			}
-			set_orthographic() {
-				this.projection = mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14]))
-				this.type = this.ORTHOGRAPHIC
-			}
-			set_perspective() {
-				this.projection = mat.perspective(this.fovy, this.aspect, this.near, this.far)
-				this.type = this.PERSPECTIVE
+			update_projection(type) {
+				this.type = type
+				this.projection = type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
 			}
 			reset() {
 				this.translation = mat.translation(0, 0, -10)
 				this.rotation = mat.identity()
-				if (this.type == this.ORTHOGRAPHIC) {
-					this.set_orthographic()
-				}
+				this.update_projection(this.type)
 			}
 			modelview() {
 				return mat.mms(
@@ -207,8 +199,8 @@
 				this.canvas.width = 400
 				this.canvas.height = 300
 				this.canvas.style.outlineWidth = 0
-				this.camera = new Camera(Math.PI / 3, 4 / 3, 1, 100)
 				this.toolbar = new ToolBar()
+				this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, 4 / 3, 0.1, 1000)
 				this.timebar = new TimeBar()
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
@@ -241,21 +233,13 @@
 				this.canvas.onwheel = (ev) => {
 					ev.preventDefault()
 					this.camera.translation[14] -= ev.deltaY / 100
-					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
-						this.camera.set_orthographic()
-					}
+					this.camera.update_projection(this.camera.type)
 					this.render()
 				}
 				this.toolbar.btn_orth.onclick = (ev) => {
-					if (this.camera.type == this.camera.ORTHOGRAPHIC) {
-						this.camera.set_perspective()
-						this.render()
-						this.toolbar.btn_orth.innerHTML = "P"
-					} else {
-						this.camera.set_orthographic()
-						this.render()
-						this.toolbar.btn_orth.innerHTML = "O"
-					}
+					this.toolbar.btn_orth.innerHTML = this.toolbar.btn_orth.innerHTML == this.camera.ORTHOGRAPHIC ? this.camera.PERSPECTIVE : this.camera.ORTHOGRAPHIC
+					this.camera.update_projection(this.toolbar.btn_orth.innerHTML)
+					this.render()
 				}
 				this.toolbar.btn_mov.onclick = (ev) => {
 					if (this.toolbar.btn_mov.innerHTML == "⇿") {
@@ -345,7 +329,7 @@
 			uniform mat4 modelview;
 			void main(void) {
 				v_color = color;
-				gl_PointSize = 1.0;
+				gl_PointSize = 2.0;
 				gl_Position = modelview * position;
 			}
 		`, `
