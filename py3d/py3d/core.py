@@ -384,7 +384,7 @@ class Vector4(Vector):
         return ret
 
     def as_transform(self) -> Transform:
-        return Transform.from_quaternion(self)
+        return Transform.from_quaternion(self.U)
 
 
 class Transform(Data):
@@ -459,18 +459,18 @@ class Transform(Data):
         angle = numpy.array(angle)
         axis = Vector3(axis)
         n = max(angle.shape, axis.n)
-        q = numpy.empty(n+(4,))
+        q = Vector4(n=n)
         half_angle = angle / 2
-        q[..., 0] = numpy.cos(half_angle)
-        q[..., 1:] = numpy.sin(half_angle)[..., numpy.newaxis] * axis.U
+        q.w = numpy.cos(half_angle)
+        q.xyz = numpy.sin(half_angle)[..., numpy.newaxis] * axis.U
         return cls.from_quaternion(q)
 
     def as_angle_axis(self):
         q = self.as_quaternion()
-        ha = numpy.arccos(q[..., 0])
+        ha = numpy.arccos(q.w)
         sin_ha = numpy.sin(ha)[..., numpy.newaxis]
-        axis = numpy.divide(q[..., 1:], sin_ha,
-                            where=sin_ha != 0).view(Vector3)
+        axis = numpy.divide(q.xyz, sin_ha,
+                            where=sin_ha != 0)
         return ha*2, axis
 
     @classmethod
@@ -517,7 +517,7 @@ class Transform(Data):
     def as_euler(self, sequence: str):
         extrinsic = sequence.islower()
         lo = sequence.lower()
-        ret = numpy.zeros((*self.n, 3))
+        ret = Vector3(n=self.n)
         i = [0, 1, 2] if extrinsic else [2, 1, 0]
         m = [0 if o == 'x' else 1 if o == 'y' else 2 for o in lo]
         if not extrinsic:
