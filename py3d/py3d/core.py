@@ -215,7 +215,7 @@ class Vector3(Vector):
         return numpy.cross(self, v).view(self.__class__)
 
     def angle_to_vector(self, to: numpy.ndarray) -> Vector3:
-        cos = self.dot(to) / self.L / to.L
+        cos = self.dot(to) / self.L / Vector3(to).L
         return numpy.arccos(cos)
 
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
@@ -333,8 +333,17 @@ class Vector3(Vector):
 class Vector4(Vector):
     BASE_SHAPE = 4,
 
-    def __new__(cls, xyzw_list: list | numpy.ndarray = [0., 0., 0., 1.], n=()):
-        return super().__new__(cls, xyzw_list, n)
+    def __new__(cls, xyzw_list: list | numpy.ndarray = [], x=0, y=0, z=0, w=1, n=()):
+        if numpy.any(xyzw_list):
+            return super().__new__(cls, xyzw_list, n)
+        else:
+            n += max(numpy.shape(x), numpy.shape(y), numpy.shape(z), numpy.shape(w))
+            ret = super().__new__(cls, [0., 0., 0., 1.], n)
+            ret.x = x
+            ret.y = y
+            ret.z = z
+            ret.w = w
+            return ret
 
     @property
     def x(self):
@@ -383,8 +392,19 @@ class Vector4(Vector):
         ret[..., 1:4] = self.xyz
         return ret
 
-    def as_transform(self) -> Transform:
-        return Transform.from_quaternion(self.U)
+    def from_axis_angle_to_quaternion(self) -> Vector4:
+        q = Vector4(n=self.n)
+        q.xyz = numpy.sin(self.w / 2)[..., numpy.newaxis] * self.xyz.U
+        q.w = numpy.cos(self.w / 2)
+        return q
+
+    def from_quaternion_to_axis_angle(self) -> Vector4:
+        q = Vector4(n=self.n)
+        q.w = numpy.arccos(self.w) * 2
+        sin_ha = numpy.sin(q.w / 2)[..., numpy.newaxis]
+        q.xyz = numpy.divide(self.xyz, sin_ha,
+                            where=sin_ha != 0)
+        return q
 
 
 class Transform(Data):
@@ -447,31 +467,34 @@ class Transform(Data):
         return self @ self.Rz(a, n)
 
     @classmethod
-    def from_vector_change(cls, a: Vector3, b: Vector3) -> Transform:
-        ret = Transform(max(a.shape, b.shape))
-        angle = a.angle_to_vector(b).squeeze()
-        axis = a.cross(b)
-        ret.rotation = cls.from_angle_axis(angle, axis)
-        return ret
-
-    @classmethod
-    def from_angle_axis(cls, angle, axis: list | Vector3) -> Transform:
-        angle = numpy.array(angle)
+    def from_axis_angle(cls, xyz_angle_list: list | Vector4 = [], axis=[0, 0, 1], angle=0, n=()) -> Transform:
         axis = Vector3(axis)
-        n = max(angle.shape, axis.n)
-        q = Vector4(n=n)
-        half_angle = angle / 2
-        q.w = numpy.cos(half_angle)
-        q.xyz = numpy.sin(half_angle)[..., numpy.newaxis] * axis.U
+        q = Vector4(xyz_angle_list, axis.x, axis.y, axis.z, angle, n).from_axis_angle_to_quaternion()
         return cls.from_quaternion(q)
 
-    def as_angle_axis(self):
-        q = self.as_quaternion()
-        ha = numpy.arccos(q.w)
-        sin_ha = numpy.sin(ha)[..., numpy.newaxis]
-        axis = numpy.divide(q.xyz, sin_ha,
-                            where=sin_ha != 0)
-        return ha*2, axis
+    def as_axis_angle(self):
+        return self.as_quaternion().from_quaternion_to_axis_angle()
+
+    @classmethod
+    def from_rotation_vector(cls, xyz_list: list | Vector3=[], x=0, y=0, z=0, n=()) -> Transform:
+        rv = Vector3(xyz_list, x, y, z, n)
+        axis_angle_list = Vector4(n=rv.n)
+        axis_angle_list.w = rv.L
+        axis_angle_list.xyz = rv.U
+        return cls.from_axis_angle(axis_angle_list)
+
+    def as_rotation_vector(self):
+        q = self.as_axis_angle()
+        return q.xyz.U * q.w
+
+    @classmethod
+    def from_two_vectors(cls, a: list | Vector3, b: list | Vector3) -> Transform:
+        a = Vector3(a)
+        b = Vector3(b)
+        q = Vector4(n = max(a.n,b.n))
+        q.w = a.angle_to_vector(b).squeeze()
+        q.xyz = a.cross(b)
+        return cls.from_axis_angle(q)
 
     @classmethod
     def from_quaternion(cls, xyzw_list: list | numpy.ndarray) -> Transform:
