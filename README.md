@@ -37,7 +37,6 @@ py3d.render(cars.as_linesegment(), t=i+1)
 [Vector4](https://tumiz.github.io/scenario/Vector4.html)
 [Transform](https://tumiz.github.io/scenario/Transform.html)
 [Color](https://tumiz.github.io/scenario/Color.html)
-[Point](https://tumiz.github.io/scenario/Point.html)
 
 [Top](#Scenario-Tool-Kit)
 
