@@ -22,12 +22,11 @@ pip install py3d
 ```python
 import py3d
 import numpy
-v = py3d.Viewer()
 cars = py3d.Vector3.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6))
 for i in range(5):
-    v.render(cars.as_linesegment(), t=i)
+    py3d.render(cars.as_linesegment(), t=i)
     cars @= py3d.Transform.from_rpy(py3d.Vector3(z=numpy.linspace(0.1,0.5,5)))
-v.show()
+py3d.render(cars.as_linesegment(), t=i+1)
 ```
 
 ### API reference
@@ -38,7 +37,6 @@ v.show()
 [Vector4](https://tumiz.github.io/scenario/Vector4.html)
 [Transform](https://tumiz.github.io/scenario/Transform.html)
 [Color](https://tumiz.github.io/scenario/Color.html)
-[Point](https://tumiz.github.io/scenario/Point.html)
 
 [Top](#Scenario-Tool-Kit)
 
