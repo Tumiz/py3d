@@ -15,34 +15,49 @@ def sign(v):
     return numpy.sign(v, where=v != 0, out=numpy.ones_like(v))
 
 
-class Viewer:
-    tmp = open(pathlib.Path(__file__).parent/"viewer.html").read()
+class View:
+    __template__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
-    def __init__(self, name="") -> None:
+    def __init__(self) -> None:
         self.cache: Dict[float, list] = {}
-        self.id = name if name else str(uuid.uuid1())
 
-    def render_args(self, t, **args):
+    def __render_args__(self, t, **args):
         if t in self.cache:
             self.cache[t].append(args)
         else:
             self.cache[t] = [args]
+        return self
 
-    def show(self, **args):
-        html = self.tmp.replace("PY#D_ID", self.id).replace(
+    def _repr_html_(self):
+        html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
             "PY#D_ARGS", json.dumps(self.cache))
-        if "name" in args:
-            open(args["name"]+".html", "w").write(html)
-        return HTML(html)
+        self.cache.clear()
+        return html
 
-    def render(self, *objs: Point, t=0):
-        for obj in objs:
-            self.render_args(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
-            ).tolist(), color=obj.color.ravel().tolist())
+    def save(self, name):
+        open(name + ".html", "w").write(self._repr_html_())
+        return self
+
+    def render(self, obj: Point, t=0):
+        return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
+        ).tolist(), color=obj.color.ravel().tolist())
 
     def label(self, text, position: list = [0, 0, 0], color="grey", t=0):
-        self.render_args(t=t, mode="TEXT", text=text,
-                         position=position, color=color)
+        return self.__render_args__(t=t, mode="TEXT", text=text,
+                                    position=position, color=color)
+
+
+default_view = View()
+
+
+def render(*objs, t=0):
+    for obj in objs:
+        default_view.render(obj, t)
+    return default_view
+
+
+def label(text, position: list = [0, 0, 0], color="grey", t=0):
+    return default_view.label(text, position, color, t)
 
 
 class Data(numpy.ndarray):
@@ -337,7 +352,8 @@ class Vector4(Vector):
         if numpy.any(xyzw_list):
             return super().__new__(cls, xyzw_list, n)
         else:
-            n += max(numpy.shape(x), numpy.shape(y), numpy.shape(z), numpy.shape(w))
+            n += max(numpy.shape(x), numpy.shape(y),
+                     numpy.shape(z), numpy.shape(w))
             ret = super().__new__(cls, [0., 0., 0., 1.], n)
             ret.x = x
             ret.y = y
@@ -403,7 +419,7 @@ class Vector4(Vector):
         q.w = numpy.arccos(self.w) * 2
         sin_ha = numpy.sin(q.w / 2)[..., numpy.newaxis]
         q.xyz = numpy.divide(self.xyz, sin_ha,
-                            where=sin_ha != 0)
+                             where=sin_ha != 0)
         return q
 
 
@@ -469,14 +485,15 @@ class Transform(Data):
     @classmethod
     def from_axis_angle(cls, xyz_angle_list: list | Vector4 = [], axis=[0, 0, 1], angle=0, n=()) -> Transform:
         axis = Vector3(axis)
-        q = Vector4(xyz_angle_list, axis.x, axis.y, axis.z, angle, n).from_axis_angle_to_quaternion()
+        q = Vector4(xyz_angle_list, axis.x, axis.y, axis.z,
+                    angle, n).from_axis_angle_to_quaternion()
         return cls.from_quaternion(q)
 
     def as_axis_angle(self):
         return self.as_quaternion().from_quaternion_to_axis_angle()
 
     @classmethod
-    def from_rotation_vector(cls, xyz_list: list | Vector3=[], x=0, y=0, z=0, n=()) -> Transform:
+    def from_rotation_vector(cls, xyz_list: list | Vector3 = [], x=0, y=0, z=0, n=()) -> Transform:
         rv = Vector3(xyz_list, x, y, z, n)
         axis_angle_list = Vector4(n=rv.n)
         axis_angle_list.w = rv.L
@@ -491,7 +508,7 @@ class Transform(Data):
     def from_two_vectors(cls, a: list | Vector3, b: list | Vector3) -> Transform:
         a = Vector3(a)
         b = Vector3(b)
-        q = Vector4(n = max(a.n,b.n))
+        q = Vector4(n=max(a.n, b.n))
         q.w = a.angle_to_vector(b).squeeze()
         q.xyz = a.cross(b)
         return cls.from_axis_angle(q)
@@ -734,10 +751,8 @@ class Point(Data):
     def color(self, v):
         self[..., 3:7] = v
 
-    def render(self, **args):
-        v = Viewer()
-        v.render(self, **args)
-        return v.show(**args)
+    def _repr_html_(self):
+        return render(self)._repr_html_()
 
 
 class Triangle(Point):
