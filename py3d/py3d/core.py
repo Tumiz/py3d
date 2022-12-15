@@ -182,13 +182,6 @@ class Vector3(Vector):
         a = numpy.linspace(0, 2*numpy.pi, segments, False)
         return cls(x=radius * numpy.sin(a), y=radius * numpy.cos(a))
 
-    @classmethod
-    def cube(cls, size_x=1, size_y=1, size_z=1, ) -> Vector3:
-        k = cls.grid([-.5, .5], [-.5, .5], [-.5, .5]).flatten() * \
-            (size_x, size_y, size_z)
-        return k[..., [0, 1, 2, 3, 4, 5, 6, 7, 0, 2,
-                       2, 6, 6, 4, 4, 0, 1, 3, 3, 7, 7, 5, 5, 1], :]
-
     def __matmul__(self, value: Transform) -> Vector3:
         if type(value) is Transform:
             return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
@@ -751,6 +744,12 @@ class Point(Data):
     def color(self, v):
         self[..., 3:7] = v
 
+    def __matmul__(self, transform:Transform) -> Point:
+        vertex = self.vertex @ transform
+        ret = self.__class__(*vertex.n)
+        ret.vertex = vertex
+        return ret
+
     def _repr_html_(self):
         return render(self)._repr_html_()
 
@@ -792,48 +791,40 @@ class Camera:
         return self.transform.I @ self.projection
 
 
-class Utils:
-    car_points: Vector3 = Vector3.load(pathlib.Path(__file__).parent/"car.npy")
+def cube(size_x=1, size_y=1, size_z=1) -> LineSegment:
+    k = Vector3.grid([-.5, .5], [-.5, .5], [-.5, .5]).flatten() * \
+        (size_x, size_y, size_z)
+    k:Vector3 = k[[0, 1, 2, 3, 4, 5, 6, 7, 0, 2,
+                   2, 6, 6, 4, 4, 0, 1, 3, 3, 7, 7, 5, 5, 1], :]
+    return k.as_linesegment()
 
-    @classmethod
-    def Car(cls, wire_frame=False) -> Point:
-        if wire_frame:
-            ret = Vector3([
-                [-1, 1, 0],
-                [-1, 1, 0.8],
-                [0, 1, 1.6],
-                [2, 1, 1.6],
-                [4, 1, 0.8],
-                [4, 1, 0],
-                [-1, -1, 0],
-                [-1, -1, 0],
-                [-1, -1, 0.8],
-                [0, -1, 1.6],
-                [2, -1, 1.6],
-                [4, -1, 0.8],
-                [4, -1, 0],
-                [-1, -1, 0]
-            ])
-            index = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 0, 6, 7, 7, 8, 8, 9, 9,
-                     10, 10, 11, 11, 12, 12, 6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5, 12]
-            return ret[index].as_linesegment()
-        else:
-            return cls.car_points.as_point()
 
-    @classmethod
-    def Grid(cls, size=5) -> LineSegment:
-        v = Vector3(x=[-size, size]) @ Transform.from_translation(
-            y=range(-size, size+1)) @ Transform.from_rpy([[[0, 0, 0]], [[0, 0, pi/2]]])
-        l = v.as_linesegment()
-        l.color = Color()
-        l.color[0, size] = Color(r=[0, 1])
-        l.color[1, size] = Color(g=[0, 1])
-        return l
+def car(wheelbase=3, wheel_radius=0.3, track_width=1.6, height=1.5, front_overhang=1, rear_overhang=1) -> LineSegment:
+    size_x = wheelbase+front_overhang+rear_overhang
+    size_y = track_width
+    size_z = height-wheel_radius
+    body = cube(size_x, size_y, size_z).vertex
+    body @= Transform.from_translation(x=size_x /
+                                       2-rear_overhang, z=size_z/2+wheel_radius)
+    wheel = Vector3.circle(wheel_radius).as_lineloop().vertex
+    wheel @= Transform.from_rpy([pi/2, 0, 0]) @ Vector3.grid(x=[wheelbase, 0], y=[-size_y/2, size_y/2], z=wheel_radius
+                                                             ).as_translation()
+    return numpy.vstack((body.flatten(), wheel.flatten())).view(Vector3).as_linesegment()
 
-    @classmethod
-    def Axis(cls, size=5) -> LineSegment:
-        a = Vector3([[size, 0, 0], [0, size, 0], [0, 0, size]]).as_vector()
-        a[0].color = Color(r=1)
-        a[1].color = Color(g=1)
-        a[2].color = Color(b=1)
-        return a
+
+def grid(size=5) -> LineSegment:
+    v = Vector3(x=[-size, size]) @ Transform.from_translation(
+        y=range(-size, size+1)) @ Transform.from_rpy([[[0, 0, 0]], [[0, 0, pi/2]]])
+    l = v.as_linesegment()
+    l.color = Color()
+    l.color[0, size] = Color(r=[0, 1])
+    l.color[1, size] = Color(g=[0, 1])
+    return l
+
+
+def axis(size=5) -> LineSegment:
+    a = Vector3([[size, 0, 0], [0, size, 0], [0, 0, size]]).as_vector()
+    a[0].color = Color(r=1)
+    a[1].color = Color(g=1)
+    a[2].color = Color(b=1)
+    return a

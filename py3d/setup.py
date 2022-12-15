@@ -38,7 +38,7 @@ setup(
     install_requires=["numpy", "ipython"],
     packages=find_packages(),
     data_files=[
-        ("/py3d", ["py3d/viewer.html", "py3d/car.npy"])
+        ("/py3d", ["py3d/viewer.html"])
     ],
     license="GPL-3.0 License"
 )
