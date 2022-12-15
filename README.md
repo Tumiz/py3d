@@ -22,11 +22,11 @@ pip install py3d
 ```python
 import py3d
 import numpy
-cars = py3d.Vector3.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6))
+cars = py3d.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6))
 for i in range(5):
-    py3d.render(cars.as_linesegment(), t=i)
+    py3d.render(cars, t=i)
     cars @= py3d.Transform.from_rpy(py3d.Vector3(z=numpy.linspace(0.1,0.5,5)))
-py3d.render(cars.as_linesegment(), t=i+1)
+py3d.render(cars, t=i+1)
 ```
 
 ### API reference
