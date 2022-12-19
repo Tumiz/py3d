@@ -17,59 +17,94 @@
 <script>
 	{
 		const cache = PY#D_ARGS
-		class TimeBar {
-			constructor() {
+		class ToolBar {
+			constructor(width) {
 				this.bar = document.createElement("div")
 				this.ts = Object.keys(cache)
 				this.frames = Object.values(cache)
-				this.current_frame = this.frames[this.frames.length - 1]
+				this.current_index = this.ts.length - 1
+				this.current_frame = this.frames[this.ts.length - 1]
 				this.slider = document.createElement("input")
 				this.slider.type = "range"
-				this.slider.style.width = "380px"
+				this.slider.style.width = width + "px"
 				this.slider.style.verticalAlign = "middle"
-				this.slider.style.height = "2px"
+				this.slider.style.height = "3px"
 				this.slider.min = 0
-				this.slider.max = this.ts.length - 1
+				this.slider.max = this.ts[this.ts.length -1]
+				this.slider.step = 0.001
 				this.slider.value = this.slider.max
 				this.slider.style.display = "inline"
+				this.slider.onmouseenter = (ev) => {
+					this.tooltip.innerHTML = `
+					time line<br/>
+					<br/>
+					<br/>`
+				}
 				this.time = document.createElement("div")
-				this.time.style.display = "inline"
-				this.time.innerHTML = this.ts[this.slider.value]
-				this.bar.append(this.slider, this.time)
-				this.bar.style.display = this.ts.length > 1 ? "block" : "none"
-			}
-		}
-		class ToolBar {
-			constructor() {
-				this.bar = document.createElement("div")
-				this.btn_help = document.createElement("button")
-				this.btn_help.innerHTML = "?"
-				this.btn_help.className = "py3d_btn"
+				this.time.style.display = "relative"
+				this.time.innerHTML = this.slider.value
+				this.time.onmouseenter = (ev) => {
+					this.tooltip.innerHTML = `
+					current time in seconds<br/>
+					<br/>
+					<br/>`
+				}
+				this.btn_play = document.createElement("button")
+				this.btn_play.innerHTML = "►"
+				this.btn_play.className = "py3d_btn"
+				this.btn_play.onmouseenter = (ev) => {
+					this.tooltip.innerHTML = `
+					click to play<br/>
+					<br/>
+					<br/>`
+				}
+				this.btn_play.onclick = (ev) => {
+					let walk = () => {
+						this.current_index %= this.ts.length -1
+						this.slider.value = this.ts[this.current_index]
+						this.slider.oninput()
+						if (this.btn_play.innerHTML != "►"){
+							setTimeout(walk, 1000 * (this.ts[this.current_index+1]-this.ts[this.current_index]))	
+							this.current_index += 1
+						} else {
+							this.btn_play.innerHTML = "►"
+						}
+					}
+					if (this.btn_play.innerHTML == "►") {
+						this.btn_play.innerHTML = "="
+						walk()
+					} else {
+						this.btn_play.innerHTML = "►"
+					}
+				}
 				this.btn_orth = document.createElement("button")
 				this.btn_orth.innerHTML = "O"
 				this.btn_orth.className = "py3d_btn"
-				this.btn_mov = document.createElement("button")
-				this.btn_mov.innerHTML = "⟳"
-				this.btn_mov.className = "py3d_btn"
+				this.btn_orth.onmouseenter = (ev) => {
+					this.tooltip.innerHTML = `
+					O: orthographic projection<br/>
+					P: perspective projection<br/>
+					<br/>`
+				}
 				this.btn_reset = document.createElement("button")
 				this.btn_reset.innerHTML = "⟰"
 				this.btn_reset.className = "py3d_btn"
+				this.btn_reset.onmouseenter = (ev) => {
+					this.tooltip.innerHTML = `
+					reset camera pose<br/>
+					<br/>
+					<br/>
+					`
+				}
 				this.tooltip = document.createElement("div")
 				this.tooltip.innerHTML = `
-				rotate: press left mouse button and move<br/>
-				zoom: mouse wheel<br/>
+				<br/>
+				<br/>
+				<br/>
 				`
-				this.tooltip.style.display = "none"
-				this.btn_help.onclick = (ev) => {
-					if (this.btn_help.style.backgroundColor) {
-						this.tooltip.style.display = "none"
-						this.btn_help.style.backgroundColor = ""
-					} else {
-						this.tooltip.style.display = "block"
-						this.btn_help.style.backgroundColor = "gray"
-					}
-				}
-				this.bar.append(this.btn_help, this.btn_orth, this.btn_mov, this.btn_reset, this.tooltip)
+				this.slider.style.display = this.ts.length > 1 ? "block" : "none"
+				this.btn_play.style.display = this.time.style.display = this.ts.length > 1 ? "inline" : "none"
+				this.bar.append(this.btn_orth, this.btn_reset, this.btn_play, this.time, this.slider, this.tooltip)
 			}
 		}
 		class mat {
@@ -194,31 +229,34 @@
 				this.canvas_x = 0
 				this.canvas_y = 0
 				this.canvas = document.createElement("canvas")
-				this.canvas.style.width = "400px"
-				this.canvas.style.height = "300px"
 				this.canvas.width = 400
 				this.canvas.height = 300
+				this.canvas.style.width = this.canvas.width + "px"
+				this.canvas.style.height = this.canvas.height + "px"
 				this.canvas.style.outlineWidth = 0
-				this.toolbar = new ToolBar()
-				this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, 4 / 3, 0.1, 1000)
-				this.timebar = new TimeBar()
+				this.toolbar = new ToolBar(this.canvas.width)
+				this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000)
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
 				this.parent = document.getElementById("PY#D_ID")
-				this.parent.append(this.labeldiv, this.canvas, this.timebar.bar, this.toolbar.bar)
+				this.parent.append(this.labeldiv, this.canvas, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
 					this.canvas_y = ev.clientY
 					this.canvas.tabIndex = 0
 					this.canvas.focus()
+					this.toolbar.tooltip.innerHTML = `
+					rotate: ctrl+mouse move<br/>
+					translate: ctrl+shift+mouse move<br/>
+					zoom: ctrl+mouse wheel`
 				}
 				this.canvas.onmousemove = (ev) => {
-					if (ev.buttons == 1) {
+					if (ev.ctrlKey) {
 						let dx = ev.clientX - this.canvas_x
 						let dy = ev.clientY - this.canvas_y
 						let d = Math.hypot(dx, dy)
 						if (d) {
-							if (this.toolbar.btn_mov.innerHTML == "⇿") {
+							if (ev.shiftKey) {
 								const ratio = Math.abs(this.camera.translation[14]) / 200
 								this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
 							} else {
@@ -231,33 +269,32 @@
 					this.canvas_y = ev.clientY
 				}
 				this.canvas.onwheel = (ev) => {
-					ev.preventDefault()
-					this.camera.translation[14] -= ev.deltaY / 100
-					this.camera.update_projection(this.camera.type)
-					this.render()
+					if (ev.ctrlKey) {
+						ev.preventDefault()
+						this.camera.translation[14] -= ev.deltaY / 100
+						this.camera.update_projection(this.camera.type)
+						this.render()
+					}	
 				}
 				this.toolbar.btn_orth.onclick = (ev) => {
 					this.toolbar.btn_orth.innerHTML = this.toolbar.btn_orth.innerHTML == this.camera.ORTHOGRAPHIC ? this.camera.PERSPECTIVE : this.camera.ORTHOGRAPHIC
 					this.camera.update_projection(this.toolbar.btn_orth.innerHTML)
 					this.render()
 				}
-				this.toolbar.btn_mov.onclick = (ev) => {
-					if (this.toolbar.btn_mov.innerHTML == "⇿") {
-						this.render()
-						this.toolbar.btn_mov.innerHTML = "⟳"
-					} else {
-						this.render()
-						this.toolbar.btn_mov.innerHTML = "⇿"
-					}
-				}
 				this.toolbar.btn_reset.onclick = (ev) => {
 					this.camera.reset()
 					this.render()
 				}
-				this.timebar.slider.oninput = (ev) => {
-					this.timebar.current_frame = this.timebar.frames[this.timebar.slider.value]
-					this.timebar.time.innerHTML = this.timebar.ts[this.timebar.slider.value]
-					this.render()
+				this.toolbar.slider.oninput = (ev) => {
+					for (let i=0; i< this.toolbar.ts.length; i++) {
+						if (this.toolbar.ts[i] > this.toolbar.slider.value) {
+							this.toolbar.current_index = i
+							this.toolbar.current_frame = this.toolbar.frames[this.toolbar.current_index]
+							this.toolbar.time.innerHTML = this.toolbar.slider.value
+							this.render()
+							return
+						}
+					}
 				}
 				this.gl = this.canvas.getContext("webgl")
 				if (!this.gl) {
@@ -301,7 +338,7 @@
 				this.gl.useProgram(this.program)
 				let modelview = this.camera.modelview()
 				this.set_uniform("modelview", modelview)
-				for (let obj of this.timebar.current_frame) {
+				for (let obj of this.toolbar.current_frame) {
 					if (obj.mode == "TEXT") {
 						let div = document.createElement("div")
 						div.innerHTML = obj.text
