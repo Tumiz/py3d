@@ -22,6 +22,7 @@ class View:
         self.cache: Dict[float, list] = {}
 
     def __render_args__(self, t, **args):
+        t = round(t, 3)
         if t in self.cache:
             self.cache[t].append(args)
         else:
