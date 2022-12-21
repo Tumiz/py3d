@@ -14606,6 +14606,27 @@ var _hmt = _hmt || [];
   s.parentNode.insertBefore(hm, s);
 })();
 </script>
+<div style="position:fixed;right:5px;bottom:5px; z-index:1;">
+    <textarea id="comment" placeholder="Some questions? Ask the author"
+        style="with:120px; height:60px; resize:none"></textarea>
+    <input type="submit" style="display:block" onclick="askauthor()"></input>
+</div>
+<script>
+    const askauthor = () => {
+        let comment = document.getElementById("comment")
+        console.log(comment.value, comment.innerText)
+        let data = {
+            "title": comment.value.slice(0, 30),
+            "body": comment.value
+        }
+        let xhr = new XMLHttpRequest()
+        xhr.open("POST", "https://api.github.com/repos/tumiz/scenario/issues")
+        xhr.setRequestHeader("Accept", "application/vnd.github+json")
+        xhr.setRequestHeader("Authorization", "Bearer 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")
+        xhr.setRequestHeader("X-GitHub-Api-Version", "2022-11-28")
+        xhr.send(JSON.stringify(data))
+    }
+</script>
 
 </div>
 </div>
@@ -14694,7 +14715,7 @@ var _hmt = _hmt || [];
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>py3d</title>
-<div id=531a5b22-807d-11ed-9280-d9913dec0baa>
+<div id=1c4eda46-8136-11ed-baea-1b8b5adc8002>
 </div>
 <style>
 	.py3d_btn {
@@ -14930,7 +14951,7 @@ var _hmt = _hmt || [];
 				this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000)
 				this.labeldiv = document.createElement("div")
 				this.labeldiv.style.position = "absolute"
-				this.parent = document.getElementById("531a5b22-807d-11ed-9280-d9913dec0baa")
+				this.parent = document.getElementById("1c4eda46-8136-11ed-baea-1b8b5adc8002")
 				this.parent.append(this.labeldiv, this.canvas, this.toolbar.bar)
 				this.canvas.onmouseenter = (ev) => {
 					this.canvas_x = ev.clientX
