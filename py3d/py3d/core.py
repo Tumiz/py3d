@@ -20,6 +20,8 @@ class View:
 
     def __init__(self) -> None:
         self.cache: Dict[float, list] = {}
+        self.min = []
+        self.max = []
 
     def __render_args__(self, t, **args):
         t = round(t, 3)
@@ -33,6 +35,8 @@ class View:
         html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
             "PY#D_ARGS", json.dumps(self.cache))
         self.cache.clear()
+        self.min = []
+        self.max = []
         return html
 
     def save(self, name):
@@ -40,12 +44,37 @@ class View:
         return self
 
     def render(self, obj: Point, t=0):
+        if self.max == []:
+            self.max = obj.vertex.flatten().max(axis=0)
+            self.min = obj.vertex.flatten().min(axis=0)
+        else:
+            self.max = numpy.max([self.max, obj.vertex.flatten().max(axis=0)], axis=0)
+            self.min = numpy.min([self.min, obj.vertex.flatten().min(axis=0)], axis=0)
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
 
     def label(self, text, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     position=position, color=color)
+
+    def grid(self, t=-1):
+        x0, y0, z0 = numpy.floor(self.min)
+        x1, y1, z1 = numpy.ceil(self.max)
+        xy = (Vector3(x=[x0, x1], z=z0) @ Transform.from_translation(y=numpy.arange(y0, y1+1))).flatten()
+        yx = (Vector3(y=[y0, y1], z=z0) @ Transform.from_translation(x=numpy.arange(x0, x1+1))).flatten()
+        xz = (Vector3(x=[x0, x1], y=y0) @ Transform.from_translation(z=numpy.arange(z0, z1+1))).flatten()
+        zx = (Vector3(z=[z0, z1], y=y0) @ Transform.from_translation(x=numpy.arange(x0, x1+1))).flatten()
+        zy = (Vector3(z=[z0, z1], x=x0) @ Transform.from_translation(y=numpy.arange(y0, y1+1))).flatten()
+        yz = (Vector3(y=[y0, y1], x=x0) @ Transform.from_translation(z=numpy.arange(z0, z1+1))).flatten()
+        l = numpy.concatenate((xy, yx, xz, zx, zy, yz), axis=0).view(Vector3).as_linesegment()
+        self.__render_args__(t=t, mode=l.TYPE, vertex=l.vertex.ravel().tolist(), color=l.color.ravel().tolist())
+        for i in numpy.arange(x0+1, x1+1):
+            self.label(i, [i, y0, z0], t=t)
+        for i in numpy.arange(y0+1, y1+1):
+            self.label(i, [x0, i, z0], t=t)
+        for i in numpy.arange(z0+1, z1+1):
+            self.label(i, [x0, y0, i], t=t)
+        return self
 
 
 default_view = View()
@@ -59,6 +88,10 @@ def render(*objs, t=0):
 
 def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
+
+
+def grid():
+    return default_view.grid()
 
 
 class Data(numpy.ndarray):
@@ -397,7 +430,7 @@ class Vector4(Vector):
 
     @property
     def wxyz(self) -> Vector:
-        ret = Vector([0, 0, 0, 0], n=self.n)
+        ret = Vector([0., 0., 0., 0.], n=self.n)
         ret[..., 0] = self.w
         ret[..., 1:4] = self.xyz
         return ret
@@ -718,6 +751,10 @@ class Color(Vector):
     def a(self, v):
         self[..., 3] = v
 
+    @property
+    def rgb(self):
+        return self[..., :-1].view(Vector3)
+
 
 class Point(Data):
     BASE_SHAPE = 7,
@@ -744,6 +781,10 @@ class Point(Data):
     @color.setter
     def color(self, v):
         self[..., 3:7] = v
+
+    def __add__(self, v:Point) -> Point:
+        assert self.TYPE == v.TYPE, "Different TYPE"
+        return numpy.concatenate((self, v), axis=0).view(self.__class__)
 
     def __matmul__(self, transform:Transform) -> Point:
         vertex = self.vertex @ transform
@@ -811,16 +852,6 @@ def car(wheelbase=3, wheel_radius=0.3, track_width=1.6, height=1.5, front_overha
     wheel @= Transform.from_rpy([pi/2, 0, 0]) @ Vector3.grid(x=[wheelbase, 0], y=[-size_y/2, size_y/2], z=wheel_radius
                                                              ).as_translation()
     return numpy.vstack((body.flatten(), wheel.flatten())).view(Vector3).as_linesegment()
-
-
-def grid(size=5) -> LineSegment:
-    v = Vector3(x=[-size, size]) @ Transform.from_translation(
-        y=range(-size, size+1)) @ Transform.from_rpy([[[0, 0, 0]], [[0, 0, pi/2]]])
-    l = v.as_linesegment()
-    l.color = Color()
-    l.color[0, size] = Color(r=[0, 1])
-    l.color[1, size] = Color(g=[0, 1])
-    return l
 
 
 def axis(size=5) -> LineSegment:

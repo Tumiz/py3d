@@ -22,7 +22,7 @@ pip install py3d
 ```python
 import py3d
 import numpy
-cars = py3d.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6))
+cars = py3d.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6), z=0.15)
 t = 0
 dt = 0.1
 while t<4:
@@ -30,6 +30,7 @@ while t<4:
     cars @= py3d.Transform.from_rpy(py3d.Vector3(z=dt * numpy.linspace(0.1,1,5)))
     t += dt
 py3d.render(cars, t=t)
+py3d.grid()
 ```
 
 ### API reference
