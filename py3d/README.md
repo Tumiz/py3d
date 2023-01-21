@@ -40,6 +40,7 @@ py3d.grid()
 [Vector3](https://tumiz.github.io/scenario/Vector3.html)
 [Vector4](https://tumiz.github.io/scenario/Vector4.html)
 [Transform](https://tumiz.github.io/scenario/Transform.html)
+[Rotation](https://tumiz.github.io/scenario/Rotation.html)
 [Color](https://tumiz.github.io/scenario/Color.html)
 
 [Top](#Scenario-Tool-Kit)

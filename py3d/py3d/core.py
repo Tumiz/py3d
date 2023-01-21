@@ -40,7 +40,7 @@ class View:
         return html
 
     def save(self, name):
-        open(name + ".html", "w").write(self._repr_html_())
+        open(name, "w").write(self._repr_html_())
         return self
 
     def render(self, obj: Point, t=0):
@@ -57,22 +57,27 @@ class View:
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     position=position, color=color)
 
-    def grid(self, t=-1):
-        x0, y0, z0 = numpy.floor(self.min)
-        x1, y1, z1 = numpy.ceil(self.max)
-        xy = (Vector3(x=[x0, x1], z=z0) @ Transform.from_translation(y=numpy.arange(y0, y1+1))).flatten()
-        yx = (Vector3(y=[y0, y1], z=z0) @ Transform.from_translation(x=numpy.arange(x0, x1+1))).flatten()
-        xz = (Vector3(x=[x0, x1], y=y0) @ Transform.from_translation(z=numpy.arange(z0, z1+1))).flatten()
-        zx = (Vector3(z=[z0, z1], y=y0) @ Transform.from_translation(x=numpy.arange(x0, x1+1))).flatten()
-        zy = (Vector3(z=[z0, z1], x=x0) @ Transform.from_translation(y=numpy.arange(y0, y1+1))).flatten()
-        yz = (Vector3(y=[y0, y1], x=x0) @ Transform.from_translation(z=numpy.arange(z0, z1+1))).flatten()
+    def grid(self, step=(1,1,1), t=-1):
+        if type(step) is int or type(step) is float:
+            step = [step] * 3
+        x0, y0, z0 = numpy.floor_divide(self.min, step) * step 
+        x1, y1, z1 = numpy.floor_divide(self.max, step) * step + step
+        rx = numpy.arange(x0, x1+step[0], step[0])
+        ry = numpy.arange(y0, y1+step[1], step[1])
+        rz = numpy.arange(z0, z1+step[2], step[2])
+        xy = (Vector3(x=[x0, rx[-1]], z=z0) @ Transform.from_translation(y=ry)).flatten()
+        yx = (Vector3(y=[y0, ry[-1]], z=z0) @ Transform.from_translation(x=rx)).flatten()
+        xz = (Vector3(x=[x0, rx[-1]], y=y0) @ Transform.from_translation(z=rz)).flatten()
+        zx = (Vector3(z=[z0, rz[-1]], y=y0) @ Transform.from_translation(x=rx)).flatten()
+        zy = (Vector3(z=[z0, rz[-1]], x=x0) @ Transform.from_translation(y=ry)).flatten()
+        yz = (Vector3(y=[y0, ry[-1]], x=x0) @ Transform.from_translation(z=rz)).flatten()
         l = numpy.concatenate((xy, yx, xz, zx, zy, yz), axis=0).view(Vector3).as_linesegment()
         self.__render_args__(t=t, mode=l.TYPE, vertex=l.vertex.ravel().tolist(), color=l.color.ravel().tolist())
-        for i in numpy.arange(x0+1, x1+1):
+        for i in rx[1:]:
             self.label(i, [i, y0, z0], t=t)
-        for i in numpy.arange(y0+1, y1+1):
+        for i in ry[1:]:
             self.label(i, [x0, i, z0], t=t)
-        for i in numpy.arange(z0+1, z1+1):
+        for i in rz[1:]:
             self.label(i, [x0, y0, i], t=t)
         return self
 
@@ -90,8 +95,8 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def grid():
-    return default_view.grid()
+def grid(step=(1,1,1), t=-1):
+    return default_view.grid(step, t)
 
 
 class Data(numpy.ndarray):
