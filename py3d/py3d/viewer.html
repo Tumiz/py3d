@@ -108,7 +108,7 @@
 				this.bar = document.createElement("div")
 				this.cache = PY#D_ARGS
 				this.ts = Object.keys(this.cache).sort()
-				this.t = 0
+				this.ti = this.ts.length - 1
 				this.slider = document.createElement("input")
 				this.slider.type = "range"
 				this.slider.style.width = width + "px"
@@ -117,13 +117,13 @@
 				this.slider.min = 0
 				this.slider.max = this.ts[this.ts.length - 1]
 				this.slider.step = 0.001
-				this.slider.value = this.slider.max
-				this.slider.style.display = this.ts.length > 1 ? "block" : "none"
+				this.slider.value = this.ts[this.ti]
+				this.slider.style.display = this.slider.max > 0 ? "block" : "none"
 				this.slider.onmouseenter = (ev) => {
 					this.tooltip.innerHTML = `time line`
 				}
 				this.time = document.createElement("div")
-				this.time.style.display = "relative"
+				this.time.style.display = this.slider.max > 0 ? "inline" : "none"
 				this.time.innerHTML = this.slider.value + "/" + this.slider.max
 				this.time.onmouseenter = (ev) => {
 					this.tooltip.innerHTML = `current time in seconds`
@@ -131,25 +131,29 @@
 				this.btn_play = document.createElement("button")
 				this.btn_play.innerHTML = "►"
 				this.btn_play.className = "py3d_btn"
-				this.btn_play.style.display = this.time.style.display = this.ts.length > 1 ? "inline" : "none"
+				this.btn_play.style.display = this.slider.max > 0 ? "inline" : "none"
 				this.btn_play.onmouseenter = (ev) => {
 					this.tooltip.innerHTML = `click to play`
 				}
 				this.btn_play.onclick = (ev) => {
-					let walk = (index) => {
-						let t = this.t
-						if (index < this.ts.length && this.btn_play.innerHTML == "=") {
-							this.t = this.ts[index]
-							this.slider.value = this.t
+					let walk = () => {
+						if (this.btn_play.innerHTML == "=") {
+							this.slider.value = this.ts[this.ti]
 							this.slider.oninput()
-							setTimeout(walk, 1000 * (this.t - t), index + 1)
-						} else {
-							this.btn_play.innerHTML = "►"
+							if (this.ti + 1 < this.ts.length) {
+								setTimeout(walk, 1000 * (this.ts[this.ti + 1] - this.ts[this.ti]))
+								this.ti++
+							} else {
+								this.btn_play.innerHTML = "►"
+							}
 						}
 					}
 					if (this.btn_play.innerHTML == "►") {
 						this.btn_play.innerHTML = "="
-						walk(0)
+						if (this.ti >= this.ts.length - 1) {
+							this.ti = 0
+						}
+						walk()
 					} else {
 						this.btn_play.innerHTML = "►"
 					}
@@ -193,7 +197,7 @@
 					this.tooltip.innerHTML = `turn down`
 				}
 				this.tooltip = document.createElement("div")
-				this.tooltip.style.height = "50px"
+				this.tooltip.style.height = "70px"
 				this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_play, this.time, this.slider, this.tooltip)
 			}
 		}
@@ -304,9 +308,10 @@
 					this.render()
 				}
 				this.toolbar.slider.oninput = (ev) => {
-					for (let t of this.toolbar.ts) {
+					for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
+						let t = this.toolbar.ts[i]
 						if (t >= this.toolbar.slider.value) {
-							this.toolbar.t = t
+							this.toolbar.ti = i
 							this.toolbar.time.innerHTML = t + "/" + this.toolbar.slider.max
 							this.render()
 							return
@@ -369,8 +374,9 @@
 				this.gl.useProgram(this.program)
 				let modelview = this.camera.modelview()
 				this.set_uniform("modelview", modelview)
+				let current_t = this.toolbar.ts[this.toolbar.ti]
 				for (let t in this.toolbar.cache) {
-					if (t == -1 | t == this.toolbar.t) {
+					if (t == -1 | t == current_t) {
 						let frame = this.toolbar.cache[t]
 						for (let obj of frame) {
 							if (obj.mode == "TEXT") {
