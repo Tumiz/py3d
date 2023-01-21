@@ -2,7 +2,7 @@
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
 import numpy
-from IPython.display import HTML
+from IPython.display import display, HTML
 from typing import Dict
 import pathlib
 import uuid
@@ -16,7 +16,14 @@ def sign(v):
 
 
 class View:
-    __template__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
+    display(HTML(filename=pathlib.Path(__file__).parent/"viewer.html"))
+    __template__ = """
+<div id=PY#D_ID>
+</div>
+<script>
+	new Viewer("PY#D_ID", PY#D_ARGS).render()
+</script>
+    """
 
     def __init__(self) -> None:
         self.cache: Dict[float, list] = {}
