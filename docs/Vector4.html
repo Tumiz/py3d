@@ -14629,6 +14629,419 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
+
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
+<style>
+	.py3d_btn {
+		width: 20px;
+		height: 20px;
+		border: none;
+		border-radius: 2px;
+		padding: 0px;
+		margin-right: 1px;
+	}
+</style>
+<script>
+    class mat {
+        static identity() {
+            return [
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1]
+        }
+        static right_to_left() {
+            return [
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, -1, 0,
+                0, 0, 0, 1]
+        }
+        static orthographic(fovy, aspect, near, far, distance) {
+            return [
+                1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
+                0, 1 / distance / Math.tan(fovy / 2), 0, 0,
+                0, 0, 2 / (near - far), 0,
+                0, 0, (near + far) / (far - near), 1]
+        }
+        static perspective(fovy, aspect, near, far) {
+            const f = 1 / Math.tan(fovy / 2)
+            const range_inv = 1.0 / (near - far)
+            return [
+                f / aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (near + far) * range_inv, 1,
+                0, 0, -2 * near * far * range_inv, 0]
+        }
+        static translation(x, y, z) {
+            return [
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                x, y, z, 1]
+        }
+        static angle_axis(angle, x, y, z) {
+            const cos = Math.cos(angle)
+            const sin = Math.sin(angle)
+            return [
+                x ** 2 + (1 - x ** 2) * cos, -x * y * cos + x * y + z * sin, -x * z * cos + x * z - y * sin, 0,
+                -x * y * cos + x * y - z * sin, y ** 2 + (1 - y ** 2) * cos, x * sin - y * z * cos + y * z, 0,
+                -x * z * cos + x * z + y * sin, -x * sin - y * z * cos + y * z, z ** 2 + (1 - z ** 2) * cos, 0,
+                0, 0, 0, 1
+            ]
+        }
+        static vm(v, m) {
+            console.assert(m.length == 16 && v.length == 3, m, v)
+            let ret = []
+            for (let j of [0, 1, 2, 3]) {
+                ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12])
+            }
+            return ret
+        }
+        static mm(a, b) {
+            console.assert(a.length == 16 && b.length == 16, a, b)
+            let ret = []
+            for (let r of [0, 1, 2, 3]) {
+                for (let c of [0, 1, 2, 3]) {
+                    ret.push(a[4 * r] * b[c] + a[4 * r + 1] * b[4 + c] + a[4 * r + 2] * b[8 + c] + a[4 * r + 3] * b[12 + c])
+                }
+            }
+            return ret
+        }
+        static mms() {
+            let ret = mat.identity()
+            for (let m of arguments) {
+                ret = mat.mm(ret, m)
+            }
+            return ret
+        }
+        static I(m) {
+            let ret = mat.identity()
+            for (let r of [0, 1, 2]) {
+                for (let c of [0, 1, 2]) {
+                    ret[4 * r + c] = m[4 * c + r]
+                }
+            }
+            ret[12] = -m[12]
+            ret[13] = -m[13]
+            ret[14] = -m[14]
+            return ret
+        }
+    }
+    class ToolBar {
+        constructor(width, cache) {
+            this.bar = document.createElement("div")
+            this.cache = cache
+            this.ts = Object.keys(this.cache).sort()
+            this.ti = this.ts.length - 1
+            this.slider = document.createElement("input")
+            this.slider.type = "range"
+            this.slider.style.width = width + "px"
+            this.slider.style.verticalAlign = "middle"
+            this.slider.style.height = "3px"
+            this.slider.min = 0
+            this.slider.max = this.ts[this.ts.length - 1]
+            this.slider.step = 0.001
+            this.slider.value = this.ts[this.ti]
+            this.slider.style.display = this.slider.max > 0 ? "block" : "none"
+            this.slider.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `time line`
+            }
+            this.time = document.createElement("div")
+            this.time.style.display = this.slider.max > 0 ? "inline" : "none"
+            this.time.innerHTML = this.slider.value + "/" + this.slider.max
+            this.time.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `current time in seconds`
+            }
+            this.btn_play = document.createElement("button")
+            this.btn_play.innerHTML = "►"
+            this.btn_play.className = "py3d_btn"
+            this.btn_play.style.display = this.slider.max > 0 ? "inline" : "none"
+            this.btn_play.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `click to play`
+            }
+            this.btn_play.onclick = (ev) => {
+                let walk = () => {
+                    if (this.btn_play.innerHTML == "=") {
+                        this.slider.value = this.ts[this.ti]
+                        this.slider.oninput()
+                        if (this.ti + 1 < this.ts.length) {
+                            setTimeout(walk, 1000 * (this.ts[this.ti + 1] - this.ts[this.ti]))
+                            this.ti++
+                        } else {
+                            this.btn_play.innerHTML = "►"
+                        }
+                    }
+                }
+                if (this.btn_play.innerHTML == "►") {
+                    this.btn_play.innerHTML = "="
+                    if (this.ti >= this.ts.length - 1) {
+                        this.ti = 0
+                    }
+                    walk()
+                } else {
+                    this.btn_play.innerHTML = "►"
+                }
+            }
+            this.btn_orth = document.createElement("button")
+            this.btn_orth.innerHTML = "O"
+            this.btn_orth.className = "py3d_btn"
+            this.btn_orth.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `
+            O: orthographic projection<br/>
+            P: perspective projection`
+            }
+            this.btn_reset = document.createElement("button")
+            this.btn_reset.innerHTML = "⟰"
+            this.btn_reset.className = "py3d_btn"
+            this.btn_reset.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `reset camera pose`
+            }
+            this.btn_left = document.createElement("button")
+            this.btn_left.innerHTML = "⇒"
+            this.btn_left.className = "py3d_btn"
+            this.btn_left.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `turn left`
+            }
+            this.btn_right = document.createElement("button")
+            this.btn_right.innerHTML = "⇐"
+            this.btn_right.className = "py3d_btn"
+            this.btn_right.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `turn right`
+            }
+            this.btn_up = document.createElement("button")
+            this.btn_up.innerHTML = "⇑"
+            this.btn_up.className = "py3d_btn"
+            this.btn_up.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `turn up`
+            }
+            this.btn_down = document.createElement("button")
+            this.btn_down.innerHTML = "⇓"
+            this.btn_down.className = "py3d_btn"
+            this.btn_down.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `turn down`
+            }
+            this.tooltip = document.createElement("div")
+            this.tooltip.style.height = "70px"
+            this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_play, this.time, this.slider, this.tooltip)
+        }
+    }
+
+    class Camera {
+        PERSPECTIVE = "P"
+        ORTHOGRAPHIC = "O"
+        constructor(type, fovy, aspect, near, far) {
+            this.fovy = fovy
+            this.aspect = aspect
+            this.near = near
+            this.far = far
+            this.translation = mat.translation(0, 0, -10)
+            this.rotation = mat.identity()
+            this.update_projection(type)
+        }
+        update_projection(type) {
+            this.type = type
+            this.projection = type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
+        }
+        reset() {
+            this.translation = mat.translation(0, 0, -10)
+            this.rotation = mat.identity()
+            this.update_projection(this.type)
+        }
+        modelview() {
+            return mat.mms(
+                mat.right_to_left(),
+                mat.I(this.rotation),
+                mat.I(this.translation),
+                this.projection,
+                mat.right_to_left())
+        }
+    }
+    class Viewer {
+        constructor(id, cache) {
+            this.canvas_x = 0
+            this.canvas_y = 0
+            this.canvas = document.createElement("canvas")
+            this.canvas.width = 400
+            this.canvas.height = 300
+            this.canvas.style.width = this.canvas.width + "px"
+            this.canvas.style.height = this.canvas.height + "px"
+            this.canvas.style.outlineWidth = 0
+            this.toolbar = new ToolBar(this.canvas.width, cache)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000)
+            this.labeldiv = document.createElement("div")
+            this.labeldiv.style.position = "absolute"
+            this.parent = document.getElementById(id)
+            this.parent.append(this.labeldiv, this.canvas, this.toolbar.bar)
+            this.canvas.onmouseenter = (ev) => {
+                this.canvas_x = ev.clientX
+                this.canvas_y = ev.clientY
+                this.canvas.tabIndex = 0
+                this.canvas.focus()
+                this.toolbar.tooltip.innerHTML = `
+            rotate: ctrl+mouse move<br/>
+            translate: shift+mouse move<br/>
+            zoom: mouse wheel`
+            }
+            this.canvas.onmousemove = (ev) => {
+                if (ev.shiftKey | ev.ctrlKey) {
+                    let dx = ev.clientX - this.canvas_x
+                    let dy = ev.clientY - this.canvas_y
+                    let d = Math.hypot(dx, dy)
+                    if (d) {
+                        if (ev.shiftKey) {
+                            const ratio = Math.abs(this.camera.translation[14]) / 200
+                            this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
+                        } else if (ev.ctrlKey) {
+                            this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                        }
+                        this.render()
+                    }
+                }
+                this.canvas_x = ev.clientX
+                this.canvas_y = ev.clientY
+            }
+            this.canvas.onwheel = (ev) => {
+                ev.preventDefault()
+                this.camera.translation[14] -= ev.deltaY / 100
+                this.camera.update_projection(this.camera.type)
+                this.render()
+            }
+            this.toolbar.btn_orth.onclick = (ev) => {
+                this.toolbar.btn_orth.innerHTML = this.toolbar.btn_orth.innerHTML == this.camera.ORTHOGRAPHIC ? this.camera.PERSPECTIVE : this.camera.ORTHOGRAPHIC
+                this.camera.update_projection(this.toolbar.btn_orth.innerHTML)
+                this.render()
+            }
+            this.toolbar.btn_reset.onclick = (ev) => {
+                this.camera.reset()
+                this.render()
+            }
+            this.toolbar.btn_left.onclick = (ev) => {
+                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 0, 1, 0), this.camera.rotation)
+                this.render()
+            }
+            this.toolbar.btn_right.onclick = (ev) => {
+                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 0, -1, 0), this.camera.rotation)
+                this.render()
+            }
+            this.toolbar.btn_up.onclick = (ev) => {
+                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, -1, 0, 0), this.camera.rotation)
+                this.render()
+            }
+            this.toolbar.btn_down.onclick = (ev) => {
+                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 1, 0, 0), this.camera.rotation)
+                this.render()
+            }
+            this.toolbar.slider.oninput = (ev) => {
+                for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
+                    let t = this.toolbar.ts[i]
+                    if (t >= this.toolbar.slider.value) {
+                        this.toolbar.ti = i
+                        this.toolbar.time.innerHTML = t + "/" + this.toolbar.slider.max
+                        this.render()
+                        return
+                    }
+                }
+            }
+            this.gl = this.canvas.getContext("webgl")
+            if (!this.gl) {
+                alert("webgl not work")
+            }
+            this.program = this.gl.createProgram()
+            this.vertices_size = 0
+            this.set_program(`
+            attribute vec4 position;
+            attribute vec4 color;
+            varying vec4 v_color;
+            uniform mat4 modelview;
+            void main(void) {
+                v_color = color;
+                gl_PointSize = 2.0;
+                gl_Position = modelview * position;
+            }
+        `, `
+            precision mediump float;
+            varying vec4 v_color;
+            void main(void) {
+                gl_FragColor = v_color;
+            } 
+        `)
+        }
+        set_attribute(name, array, item_size) {
+            const buffer = this.gl.createBuffer()
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(array), this.gl.STATIC_DRAW)
+            const location = this.gl.getAttribLocation(this.program, name)
+            this.gl.enableVertexAttribArray(location)
+            this.gl.vertexAttribPointer(location, item_size, this.gl.FLOAT, false, 0, 0)
+            this.vertices_size = array.length / item_size
+        }
+        set_uniform(name, array) {
+            const location = this.gl.getUniformLocation(this.program, name)
+            this.gl.uniformMatrix4fv(location, false, array)
+        }
+        set_shader(type, code) {
+            const shader = this.gl.createShader(type)
+            this.gl.shaderSource(shader, code)
+            this.gl.compileShader(shader)
+            this.gl.attachShader(this.program, shader)
+        }
+        set_program(vertex_shader_code, fragment_shader_code) {
+            this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
+            this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
+            this.gl.linkProgram(this.program)
+            if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
+                alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
+            }
+        }
+        drawText(text, position, color, modelview) {
+            let div = document.createElement("div")
+            div.innerHTML = text
+            div.style.position = "absolute"
+            let p = mat.vm(position, modelview)
+            let x = 0.5 * (1 + p[0] / p[3]) * this.canvas.width
+            let y = 0.5 * (1 - p[1] / p[3]) * this.canvas.height
+            if (x > 0 && x < this.canvas.width && y > 0 && y < this.canvas.height) {
+                div.style.left = x + "px"
+                div.style.top = y + "px"
+                div.style.color = color
+                this.labeldiv.append(div)
+            }
+        }
+        render() {
+            this.labeldiv.innerHTML = ""
+            this.gl.clearColor(0, 0, 0, 0)
+            this.gl.enable(this.gl.DEPTH_TEST);
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+            this.gl.useProgram(this.program)
+            let modelview = this.camera.modelview()
+            this.set_uniform("modelview", modelview)
+            let current_t = this.toolbar.ts[this.toolbar.ti]
+            for (let t in this.toolbar.cache) {
+                if (t == -1 | t == current_t) {
+                    let frame = this.toolbar.cache[t]
+                    for (let obj of frame) {
+                        if (obj.mode == "TEXT") {
+                            this.drawText(obj.text, obj.position, obj.color, modelview)
+                        } else {
+                            this.set_attribute("position", obj.vertex, 3)
+                            this.set_attribute("color", obj.color, 4)
+                            this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+                        }
+                    }
+                }
+            }
+        }
+    }
+</script>
+</div>
+
+</div>
+<div class="jp-OutputArea-child">
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Welcome to py3d world, please visit https://tumiz.github.io/scenario/ for more information
 </pre>
