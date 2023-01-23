@@ -16,7 +16,8 @@ def sign(v):
 
 
 class View:
-    display(HTML(filename=pathlib.Path(__file__).parent/"viewer.html"))
+    __preload__ = HTML(filename=pathlib.Path(__file__).parent/"viewer.html")
+    display(__preload__)
     __template__ = """
 <div id=PY#D_ID>
 </div>
@@ -40,23 +41,25 @@ class View:
 
     def _repr_html_(self):
         html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
-            "PY#D_ARGS", json.dumps(self.cache))
+            "PY#D_ARGS", json.dumps(self.__dict__))
         self.cache.clear()
         self.min = []
         self.max = []
         return html
 
     def save(self, name):
-        open(name, "w").write(self._repr_html_())
+        open(name, "w").write(self.__preload__.data + self._repr_html_())
         return self
 
     def render(self, obj: Point, t=0):
         if self.max == []:
-            self.max = obj.vertex.flatten().max(axis=0)
-            self.min = obj.vertex.flatten().min(axis=0)
+            self.max = obj.vertex.flatten().max(axis=0).tolist()
+            self.min = obj.vertex.flatten().min(axis=0).tolist()
         else:
-            self.max = numpy.max([self.max, obj.vertex.flatten().max(axis=0)], axis=0)
-            self.min = numpy.min([self.min, obj.vertex.flatten().min(axis=0)], axis=0)
+            self.max = numpy.max(
+                [self.max, obj.vertex.flatten().max(axis=0)], axis=0).tolist()
+            self.min = numpy.min(
+                [self.min, obj.vertex.flatten().min(axis=0)], axis=0).tolist()
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
 
@@ -64,22 +67,32 @@ class View:
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     position=position, color=color)
 
-    def grid(self, step=(1,1,1), t=-1):
+    def grid(self, step=(1, 1, 1), t=-1):
         if type(step) is int or type(step) is float:
             step = [step] * 3
-        x0, y0, z0 = numpy.floor_divide(self.min, step) * step 
+        x0, y0, z0 = numpy.floor_divide(self.min, step) * step
         x1, y1, z1 = numpy.floor_divide(self.max, step) * step + step
+        self.min = [x0, y0, z0]
+        self.max = [x1, y1, z1]
         rx = numpy.arange(x0, x1+step[0], step[0])
         ry = numpy.arange(y0, y1+step[1], step[1])
         rz = numpy.arange(z0, z1+step[2], step[2])
-        xy = (Vector3(x=[x0, rx[-1]], z=z0) @ Transform.from_translation(y=ry)).flatten()
-        yx = (Vector3(y=[y0, ry[-1]], z=z0) @ Transform.from_translation(x=rx)).flatten()
-        xz = (Vector3(x=[x0, rx[-1]], y=y0) @ Transform.from_translation(z=rz)).flatten()
-        zx = (Vector3(z=[z0, rz[-1]], y=y0) @ Transform.from_translation(x=rx)).flatten()
-        zy = (Vector3(z=[z0, rz[-1]], x=x0) @ Transform.from_translation(y=ry)).flatten()
-        yz = (Vector3(y=[y0, ry[-1]], x=x0) @ Transform.from_translation(z=rz)).flatten()
-        l = numpy.concatenate((xy, yx, xz, zx, zy, yz), axis=0).view(Vector3).as_linesegment()
-        self.__render_args__(t=t, mode=l.TYPE, vertex=l.vertex.ravel().tolist(), color=l.color.ravel().tolist())
+        xy = (Vector3(x=[x0, rx[-1]], z=z0) @
+              Transform.from_translation(y=ry)).flatten()
+        yx = (Vector3(y=[y0, ry[-1]], z=z0) @
+              Transform.from_translation(x=rx)).flatten()
+        xz = (Vector3(x=[x0, rx[-1]], y=y0) @
+              Transform.from_translation(z=rz)).flatten()
+        zx = (Vector3(z=[z0, rz[-1]], y=y0) @
+              Transform.from_translation(x=rx)).flatten()
+        zy = (Vector3(z=[z0, rz[-1]], x=x0) @
+              Transform.from_translation(y=ry)).flatten()
+        yz = (Vector3(y=[y0, ry[-1]], x=x0) @
+              Transform.from_translation(z=rz)).flatten()
+        l = numpy.concatenate((xy, yx, xz, zx, zy, yz), axis=0).view(
+            Vector3).as_linesegment()
+        self.__render_args__(t=t, mode=l.TYPE, vertex=l.vertex.ravel(
+        ).tolist(), color=l.color.ravel().tolist())
         for i in rx[1:]:
             self.label(i, [i, y0, z0], t=t)
         for i in ry[1:]:
@@ -102,7 +115,7 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def grid(step=(1,1,1), t=-1):
+def grid(step=(1, 1, 1), t=-1):
     return default_view.grid(step, t)
 
 
@@ -794,11 +807,11 @@ class Point(Data):
     def color(self, v):
         self[..., 3:7] = v
 
-    def __add__(self, v:Point) -> Point:
+    def __add__(self, v: Point) -> Point:
         assert self.TYPE == v.TYPE, "Different TYPE"
         return numpy.concatenate((self, v), axis=0).view(self.__class__)
 
-    def __matmul__(self, transform:Transform) -> Point:
+    def __matmul__(self, transform: Transform) -> Point:
         vertex = self.vertex @ transform
         ret = self.__class__(*vertex.n)
         ret.vertex = vertex
@@ -848,7 +861,7 @@ class Camera:
 def cube(size_x=1, size_y=1, size_z=1) -> LineSegment:
     k = Vector3.grid([-.5, .5], [-.5, .5], [-.5, .5]).flatten() * \
         (size_x, size_y, size_z)
-    k:Vector3 = k[[0, 1, 2, 3, 4, 5, 6, 7, 0, 2,
+    k: Vector3 = k[[0, 1, 2, 3, 4, 5, 6, 7, 0, 2,
                    2, 6, 6, 4, 4, 0, 1, 3, 3, 7, 7, 5, 5, 1], :]
     return k.as_linesegment()
 
