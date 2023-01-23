@@ -14633,14 +14633,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output " data-mime-type="text/html">
 <style>
-	.py3d_btn {
-		width: 20px;
-		height: 20px;
-		border: none;
-		border-radius: 2px;
-		padding: 0px;
-		margin-right: 1px;
-	}
+    .py3d_btn {
+        width: 20px;
+        height: 20px;
+        border: none;
+        border-radius: 2px;
+        padding: 0px;
+        margin-right: 1px;
+    }
 </style>
 <script>
     class mat {
@@ -14831,12 +14831,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
     class Camera {
         PERSPECTIVE = "P"
         ORTHOGRAPHIC = "O"
-        constructor(type, fovy, aspect, near, far) {
+        constructor(type, fovy, aspect, near, far, min, max) {
             this.fovy = fovy
             this.aspect = aspect
             this.near = near
             this.far = far
-            this.translation = mat.translation(0, 0, -10)
+            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
+            let position = mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, -ysize / 2 / Math.tan(this.fovy / 2))
+            this.translation = position
+            Object.defineProperty(this, "position", {
+                "value": position,
+                "writable": false
+            })
             this.rotation = mat.identity()
             this.update_projection(type)
         }
@@ -14845,7 +14851,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.projection = type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
-            this.translation = mat.translation(0, 0, -10)
+            this.translation = this.position
             this.rotation = mat.identity()
             this.update_projection(this.type)
         }
@@ -14859,7 +14865,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         }
     }
     class Viewer {
-        constructor(id, cache) {
+        constructor(id, data) {
             this.canvas_x = 0
             this.canvas_y = 0
             this.canvas = document.createElement("canvas")
@@ -14868,8 +14874,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.canvas.style.width = this.canvas.width + "px"
             this.canvas.style.height = this.canvas.height + "px"
             this.canvas.style.outlineWidth = 0
-            this.toolbar = new ToolBar(this.canvas.width, cache)
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000)
+            this.toolbar = new ToolBar(this.canvas.width, data.cache)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.labeldiv = document.createElement("div")
             this.labeldiv.style.position = "absolute"
             this.parent = document.getElementById(id)
@@ -14951,22 +14957,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.program = this.gl.createProgram()
             this.vertices_size = 0
             this.set_program(`
-            attribute vec4 position;
-            attribute vec4 color;
-            varying vec4 v_color;
-            uniform mat4 modelview;
-            void main(void) {
-                v_color = color;
-                gl_PointSize = 2.0;
-                gl_Position = modelview * position;
-            }
-        `, `
-            precision mediump float;
-            varying vec4 v_color;
-            void main(void) {
-                gl_FragColor = v_color;
-            } 
-        `)
+                attribute vec4 position;
+                attribute vec4 color;
+                varying vec4 v_color;
+                uniform mat4 modelview;
+                void main(void) {
+                    v_color = color;
+                    gl_PointSize = 2.0;
+                    gl_Position = modelview * position;
+                }
+            `, `
+                precision mediump float;
+                varying vec4 v_color;
+                void main(void) {
+                    gl_FragColor = v_color;
+                } 
+            `)
         }
         set_attribute(name, array, item_size) {
             const buffer = this.gl.createBuffer()
@@ -15024,7 +15030,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                     for (let obj of frame) {
                         if (obj.mode == "TEXT") {
                             this.drawText(obj.text, obj.position, obj.color, modelview)
-                        } else {
+                        } else if (obj.mode) {
                             this.set_attribute("position", obj.vertex, 3)
                             this.set_attribute("color", obj.color, 4)
                             this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -15056,7 +15062,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.37178624, 0.10794375, 0.79953991, 0.39922088])</pre>
+<pre>Color([0.52668936, 0.55367929, 0.66600707, 0.02494095])</pre>
 </div>
 
 </div>
@@ -15096,11 +15102,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.80259144, 0.78286836, 0.54578741, 0.7708531 ]],
+<pre>Color([[[0.5437834 , 0.49815393, 0.45272529, 0.50982167]],
 
-       [[0.47847398, 0.73535816, 0.21494022, 0.13418646]],
+       [[0.51430206, 0.96128905, 0.71002055, 0.86148696]],
 
-       [[0.82910979, 0.28688743, 0.10906615, 0.70632687]]])</pre>
+       [[0.36223761, 0.09122162, 0.41034703, 0.57727786]]])</pre>
 </div>
 
 </div>
