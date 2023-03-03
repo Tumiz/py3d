@@ -33,6 +33,8 @@ py3d.render(cars, t=t)
 py3d.grid()
 ```
 
+![example](docs/index.gif)
+
 ### API reference
 
 [Data](https://tumiz.github.io/scenario/Data.html)
