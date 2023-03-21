@@ -163,7 +163,7 @@ class Data(numpy.ndarray):
 
 
 class Vector(Data):
-
+    # Base class of Vector2, Vector3, Vector4
     def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return super().__new__(cls, data, n)
 
@@ -187,6 +187,9 @@ class Vector(Data):
     def L(self) -> Vector:
         # length
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+
+    def diff(self, n=1) -> Vector:
+        return numpy.diff(self, n, axis=self.ndim-2)
 
 
 class Vector2(Vector):
