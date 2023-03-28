@@ -43,8 +43,6 @@ class View:
         html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
             "PY#D_ARGS", json.dumps(self.__dict__))
         self.cache.clear()
-        self.min = []
-        self.max = []
         return html
 
     def save(self, name):
@@ -63,7 +61,7 @@ class View:
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
 
-    def label(self, text, position: list = [0, 0, 0], color="grey", t=0):
+    def label(self, text: str, position: list = [0, 0, 0], color="grey", t=-1):
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     position=position, color=color)
 
@@ -101,6 +99,18 @@ class View:
             self.label(i, [x0, y0, i], t=t)
         return self
 
+    def xlabel(self, text, color="grey"):
+        return self.label(text, [
+            (self.min[0] + self.max[0])/2, self.min[1]-0.5, self.min[2]-0.5], color)
+
+    def ylabel(self, text, color="grey"):
+        return self.label(text, [
+            self.min[0]-0.5, (self.min[1]+self.max[1])/2, self.min[2]-0.5], color)
+
+    def zlabel(self, text, color="grey"):
+        return self.label(text, [
+            self.min[0]-0.5, self.min[1]-0.5, (self.min[2]+self.max[2])/2], color)
+
 
 default_view = View()
 
@@ -111,8 +121,20 @@ def render(*objs, t=0):
     return default_view
 
 
-def label(text, position: list = [0, 0, 0], color="grey", t=0):
+def label(text, position: list = [0, 0, 0], color="grey", t=-1):
     return default_view.label(text, position, color, t)
+
+
+def xlabel(text, color="grey"):
+    return default_view.xlabel(text, color)
+
+
+def ylabel(text, color="grey"):
+    return default_view.ylabel(text, color)
+
+
+def zlabel(text, color="grey"):
+    return default_view.zlabel(text, color)
 
 
 def grid(step=(1, 1, 1), t=-1):

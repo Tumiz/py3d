@@ -253,16 +253,22 @@
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
             rotate: ctrl+mouse move<br/>
-            translate: shift+mouse move<br/>
+            translate: press+mouse move<br/>
             zoom: mouse wheel`
             }
+            this.canvas.onmousedown = (ev) => {
+                this.canvas.moveable = true
+            }
+            this.canvas.onmouseup = (ev) => {
+                this.canvas.moveable = false
+            }
             this.canvas.onmousemove = (ev) => {
-                if (ev.shiftKey | ev.ctrlKey) {
+                if (this.canvas.moveable | ev.ctrlKey) {
                     let dx = ev.clientX - this.canvas_x
                     let dy = ev.clientY - this.canvas_y
                     let d = Math.hypot(dx, dy)
                     if (d) {
-                        if (ev.shiftKey) {
+                        if (this.canvas.moveable) {
                             const ratio = Math.abs(this.camera.translation[14]) / 200
                             this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                         } else if (ev.ctrlKey) {
