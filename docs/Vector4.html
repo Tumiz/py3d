@@ -14886,16 +14886,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
             rotate: ctrl+mouse move<br/>
-            translate: shift+mouse move<br/>
+            translate: press+mouse move<br/>
             zoom: mouse wheel`
             }
+            this.canvas.onmousedown = (ev) => {
+                this.canvas.moveable = true
+            }
+            this.canvas.onmouseup = (ev) => {
+                this.canvas.moveable = false
+            }
             this.canvas.onmousemove = (ev) => {
-                if (ev.shiftKey | ev.ctrlKey) {
+                if (this.canvas.moveable | ev.ctrlKey) {
                     let dx = ev.clientX - this.canvas_x
                     let dy = ev.clientY - this.canvas_y
                     let d = Math.hypot(dx, dy)
                     if (d) {
-                        if (ev.shiftKey) {
+                        if (this.canvas.moveable) {
                             const ratio = Math.abs(this.camera.translation[14]) / 200
                             this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                         } else if (ev.ctrlKey) {
@@ -15042,16 +15048,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </script>
 </div>
 
-</div>
-<div class="jp-OutputArea-child">
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>Welcome to py3d world, please visit https://tumiz.github.io/scenario/ for more information
-</pre>
-</div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
