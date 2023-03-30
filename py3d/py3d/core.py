@@ -43,6 +43,8 @@ class View:
         html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
             "PY#D_ARGS", json.dumps(self.__dict__))
         self.cache.clear()
+        self.max = []
+        self.min = []
         return html
 
     def save(self, name):
@@ -241,6 +243,9 @@ class Vector3(Vector):
     BASE_SHAPE = 3,
 
     def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0, n=()):
+        '''
+            Represent points, positions and translations
+        '''
         if numpy.any(data):
             return super().__new__(cls, data, n)
         else:

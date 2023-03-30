@@ -14887,16 +14887,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
             rotate: ctrl+mouse move<br/>
-            translate: shift+mouse move<br/>
+            translate: press+mouse move<br/>
             zoom: mouse wheel`
             }
+            this.canvas.onmousedown = (ev) => {
+                this.canvas.moveable = true
+            }
+            this.canvas.onmouseup = (ev) => {
+                this.canvas.moveable = false
+            }
             this.canvas.onmousemove = (ev) => {
-                if (ev.shiftKey | ev.ctrlKey) {
+                if (this.canvas.moveable | ev.ctrlKey) {
                     let dx = ev.clientX - this.canvas_x
                     let dy = ev.clientY - this.canvas_y
                     let d = Math.hypot(dx, dy)
                     if (d) {
-                        if (ev.shiftKey) {
+                        if (this.canvas.moveable) {
                             const ratio = Math.abs(this.camera.translation[14]) / 200
                             this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                         } else if (ev.ctrlKey) {
@@ -15043,16 +15049,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </script>
 </div>
 
-</div>
-<div class="jp-OutputArea-child">
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>Welcome to py3d world, please visit https://tumiz.github.io/scenario/ for more information
-</pre>
-</div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
     
@@ -15533,13 +15529,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Vector([[[0.63727142, 0.04674143, 0.52670059, 0.64519971],
-         [0.69203006, 0.36135262, 0.19724664, 0.14299094],
-         [0.27379501, 0.31730723, 0.72777523, 0.0825077 ]],
+<pre>Vector([[[0.19725639, 0.14068898, 0.28850801, 0.22433515],
+         [0.43763572, 0.35855917, 0.30542006, 0.4182099 ],
+         [0.40457371, 0.74013177, 0.56089152, 0.01195847]],
 
-        [[0.20051668, 0.05630122, 0.8881583 , 0.15834219],
-         [0.07151154, 0.46520204, 0.98258486, 0.2629047 ],
-         [0.92514193, 0.08804101, 0.94241723, 0.31415183]]])</pre>
+        [[0.18072366, 0.47310523, 0.85408756, 0.40841242],
+         [0.14872968, 0.12914586, 0.03351367, 0.49258765],
+         [0.0893777 , 0.1392925 , 0.42274786, 0.01243009]]])</pre>
 </div>
 
 </div>
