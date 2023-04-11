@@ -102,16 +102,13 @@ class View:
         return self
 
     def xlabel(self, text, color="grey"):
-        return self.label(text, [
-            (self.min[0] + self.max[0])/2, self.min[1]-0.5, self.min[2]-0.5], color)
+        return self.label(text, [(self.min[0]+self.max[0])/2, self.min[1]-0.1*(self.max[1]-self.min[1]), self.min[2]-0.1*(self.max[2]-self.min[2])], color)
 
     def ylabel(self, text, color="grey"):
-        return self.label(text, [
-            self.min[0]-0.5, (self.min[1]+self.max[1])/2, self.min[2]-0.5], color)
+        return self.label(text, [self.min[0]-0.1*(self.max[0]-self.min[0]), (self.min[1]+self.max[1])/2, self.min[2]-0.1*(self.max[2]-self.min[2])], color)
 
     def zlabel(self, text, color="grey"):
-        return self.label(text, [
-            self.min[0]-0.5, self.min[1]-0.5, (self.min[2]+self.max[2])/2], color)
+        return self.label(text, [self.min[0]-0.1*(self.max[0]-self.min[0]), self.min[1]-0.1*(self.max[1]-self.min[1]), (self.min[2]+self.max[2])/2], color)
 
 
 default_view = View()
@@ -513,10 +510,16 @@ class Transform(Data):
 
     @classmethod
     def from_translation(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0, n=()) -> Transform:
+        '''
+        translation matrix
+        '''
         return Vector3(xyz_list, x, y, z, n).as_translation()
 
     @classmethod
     def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=1, y=1, z=1, n=()) -> Transform:
+        '''
+        scaling matrix
+        '''
         return Vector3(xyz_list, x, y, z, n).as_scaling()
 
     @classmethod

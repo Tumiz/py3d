@@ -252,7 +252,7 @@
                 this.canvas.tabIndex = 0
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
-            rotate: ctrl+mouse move<br/>
+            rotate: ctrl+press+mouse move<br/>
             translate: press+mouse move<br/>
             zoom: mouse wheel`
             }
@@ -263,16 +263,16 @@
                 this.canvas.moveable = false
             }
             this.canvas.onmousemove = (ev) => {
-                if (this.canvas.moveable | ev.ctrlKey) {
+                if (this.canvas.moveable) {
                     let dx = ev.clientX - this.canvas_x
                     let dy = ev.clientY - this.canvas_y
                     let d = Math.hypot(dx, dy)
                     if (d) {
-                        if (this.canvas.moveable) {
+                        if (ev.ctrlKey) {
+                            this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                        } else {
                             const ratio = Math.abs(this.camera.translation[14]) / 200
                             this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
-                        } else if (ev.ctrlKey) {
-                            this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
                         }
                         this.render()
                     }
