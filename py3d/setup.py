@@ -28,7 +28,7 @@ def next_version(s):
 setup(
     name="py3d",
     version=next_version(latest_version),
-    description="py3d is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in batches.",
+    description="py3d is a 3d computational geometry library that deals with 3d data in batches. And it embedded an interactive viewer that can work in jupyter notebook.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Tumiz",

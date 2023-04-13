@@ -254,6 +254,38 @@ class Vector3(Vector):
             return ret
 
     @classmethod
+    def from_pcd(cls, path):
+        f = open(path)
+        with open(path) as f:
+            d = f.read().split("DATA ascii")[1]
+            f.close()
+            a = numpy.fromstring(d, sep=" ")
+            return a.reshape(a.size//3, 3).view(cls)
+
+    def to_pcd(self, path):
+        flat = self.flatten()
+        size = len(flat)
+        numpy.savetxt(path, flat)
+        f = open(path, "r+")
+        old = f.read()
+        f.seek(0, 0)
+        f.write('''
+# .PCD v0.7 - Point Cloud Data file format
+VERSION 0.7
+FIELDS x y z
+SIZE 4 4 4
+TYPE F F F
+COUNT 1 1 1
+WIDTH {}
+HEIGHT 1
+VIEWPOINT 0 0 0 1 0 0 0
+POINTS {}
+DATA ascii
+'''.format(size, size))
+        f.write(old)
+        f.close()
+
+    @classmethod
     def grid(cls, x=0, y=0, z=0) -> Vector3:
         n = numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
         ret = super().__new__(cls, [0., 0., 0.], n)
