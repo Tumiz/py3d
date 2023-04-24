@@ -22,7 +22,7 @@ class View:
 <div id=PY#D_ID>
 </div>
 <script>
-	new Viewer("PY#D_ID", PY#D_ARGS).render()
+	new Viewer("PY#D_ID", PY#D_ARGS)
 </script>
     """
 
