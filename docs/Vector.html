@@ -15243,14 +15243,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         }
     }
     class ToolBar {
-        constructor(width, cache) {
+        constructor(cache) {
             this.bar = document.createElement("div")
             this.cache = cache
             this.ts = Object.keys(this.cache).sort()
             this.ti = this.ts.length - 1
             this.slider = document.createElement("input")
             this.slider.type = "range"
-            this.slider.style.width = width + "px"
+            this.slider.style.width = "100%"
             this.slider.style.verticalAlign = "middle"
             this.slider.style.height = "3px"
             this.slider.min = 0
@@ -15357,16 +15357,16 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 "writable": false
             })
             this.rotation = mat.identity()
-            this.update_projection(type)
-        }
-        update_projection(type) {
             this.type = type
-            this.projection = type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
+            this.update_projection()
+        }
+        update_projection() {
+            this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
             this.translation = this.position
             this.rotation = mat.identity()
-            this.update_projection(this.type)
+            this.update_projection()
         }
         modelview() {
             return mat.mms(
@@ -15382,17 +15382,27 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.canvas_x = 0
             this.canvas_y = 0
             this.canvas = document.createElement("canvas")
-            this.canvas.width = 400
-            this.canvas.height = 300
-            this.canvas.style.width = this.canvas.width + "px"
-            this.canvas.style.height = this.canvas.height + "px"
+            this.canvas.style.width = "100%"
+            this.canvas.style.height = "100%"
             this.canvas.style.outlineWidth = 0
-            this.toolbar = new ToolBar(this.canvas.width, data.cache)
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.labeldiv = document.createElement("div")
             this.labeldiv.style.position = "absolute"
+            this.canvasdiv = document.createElement("div")
+            this.canvasdiv.style.overflow = "hidden"
+            this.canvasdiv.style.resize = "vertical"
+            this.canvasdiv.append(this.labeldiv, this.canvas)
+            this.toolbar = new ToolBar(data.cache)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.parent = document.getElementById(id)
-            this.parent.append(this.labeldiv, this.canvas, this.toolbar.bar)
+            this.parent.append(this.canvasdiv, this.toolbar.bar)
+            const observer = new ResizeObserver(() => {
+                this.canvas.width = this.canvas.clientWidth
+                this.canvas.height = this.canvas.clientHeight
+                this.camera.aspect = this.canvas.width / this.canvas.height
+                this.camera.update_projection()
+                this.gl.viewport(0, 0, this.canvas.width, this.canvas.height)
+                this.render()
+            }).observe(this.canvas)
             this.canvas.onmouseenter = (ev) => {
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -15430,12 +15440,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.canvas.onwheel = (ev) => {
                 ev.preventDefault()
                 this.camera.translation[14] -= ev.deltaY / 100
-                this.camera.update_projection(this.camera.type)
+                this.camera.update_projection()
                 this.render()
             }
             this.toolbar.btn_orth.onclick = (ev) => {
                 this.toolbar.btn_orth.innerHTML = this.toolbar.btn_orth.innerHTML == this.camera.ORTHOGRAPHIC ? this.camera.PERSPECTIVE : this.camera.ORTHOGRAPHIC
-                this.camera.update_projection(this.toolbar.btn_orth.innerHTML)
+                this.camera.type = this.toolbar.btn_orth.innerHTML
+                this.camera.update_projection()
                 this.render()
             }
             this.toolbar.btn_reset.onclick = (ev) => {
@@ -16042,13 +16053,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Vector([[[0.85851207, 0.17470127, 0.9222075 , 0.72206618],
-         [0.8706488 , 0.7538495 , 0.17621836, 0.66432246],
-         [0.34564698, 0.76648875, 0.78319753, 0.30556064]],
+<pre>Vector([[[0.29213422, 0.39787161, 0.14524895, 0.97749162],
+         [0.6865374 , 0.20315931, 0.13826509, 0.45272506],
+         [0.70892472, 0.65773275, 0.2132766 , 0.88616249]],
 
-        [[0.04605957, 0.3161693 , 0.58756089, 0.8443287 ],
-         [0.78939654, 0.61945922, 0.63931863, 0.65474972],
-         [0.57089746, 0.52712286, 0.7239511 , 0.97964212]]])</pre>
+        [[0.71107576, 0.0703757 , 0.37462818, 0.51736431],
+         [0.86559095, 0.14395644, 0.96267228, 0.56427008],
+         [0.83308031, 0.45781063, 0.51379968, 0.7461933 ]]])</pre>
 </div>
 
 </div>
