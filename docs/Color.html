@@ -15253,7 +15253,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.slider.style.width = "100%"
             this.slider.style.verticalAlign = "middle"
             this.slider.style.height = "3px"
-            this.slider.min = 0
+            this.slider.min = this.ts[0] > 0 ? this.ts[0] : this.ts[1]
             this.slider.max = this.ts[this.ts.length - 1]
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
@@ -15582,7 +15582,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.42897517, 0.27280697, 0.53623756, 0.30920198])</pre>
+<pre>Color([0.84958848, 0.28162069, 0.74911943, 0.53984591])</pre>
 </div>
 
 </div>
@@ -15622,11 +15622,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.80000856, 0.28235232, 0.59041895, 0.5892715 ]],
+<pre>Color([[[0.33191892, 0.73144779, 0.07769842, 0.19289573]],
 
-       [[0.60312261, 0.14436141, 0.62465785, 0.24130503]],
+       [[0.38457303, 0.4439454 , 0.52208228, 0.66879008]],
 
-       [[0.826008  , 0.46509823, 0.4836161 , 0.32981838]]])</pre>
+       [[0.06121186, 0.23394327, 0.23708036, 0.09145402]]])</pre>
 </div>
 
 </div>
