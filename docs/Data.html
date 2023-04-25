@@ -15253,7 +15253,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.slider.style.width = "100%"
             this.slider.style.verticalAlign = "middle"
             this.slider.style.height = "3px"
-            this.slider.min = 0
+            this.slider.min = this.ts[0] > 0 ? this.ts[0] : this.ts[1]
             this.slider.max = this.ts[this.ts.length - 1]
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
@@ -15582,7 +15582,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([0.22247471])</pre>
+<pre>Data([0.17432949])</pre>
 </div>
 
 </div>

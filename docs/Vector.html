@@ -15253,7 +15253,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.slider.style.width = "100%"
             this.slider.style.verticalAlign = "middle"
             this.slider.style.height = "3px"
-            this.slider.min = 0
+            this.slider.min = this.ts[0] > 0 ? this.ts[0] : this.ts[1]
             this.slider.max = this.ts[this.ts.length - 1]
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
@@ -16053,13 +16053,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Vector([[[0.29213422, 0.39787161, 0.14524895, 0.97749162],
-         [0.6865374 , 0.20315931, 0.13826509, 0.45272506],
-         [0.70892472, 0.65773275, 0.2132766 , 0.88616249]],
+<pre>Vector([[[0.59012381, 0.59117906, 0.27742297, 0.07913571],
+         [0.57128422, 0.47422818, 0.01247087, 0.62844697],
+         [0.61619102, 0.39864082, 0.25827397, 0.36501036]],
 
-        [[0.71107576, 0.0703757 , 0.37462818, 0.51736431],
-         [0.86559095, 0.14395644, 0.96267228, 0.56427008],
-         [0.83308031, 0.45781063, 0.51379968, 0.7461933 ]]])</pre>
+        [[0.77111083, 0.81948012, 0.08263052, 0.80651362],
+         [0.63180613, 0.8235083 , 0.72486134, 0.19854641],
+         [0.68016797, 0.13464409, 0.34240708, 0.65056947]]])</pre>
 </div>
 
 </div>
