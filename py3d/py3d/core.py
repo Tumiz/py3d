@@ -794,12 +794,21 @@ class Color(Vector):
         else:
             n += max(numpy.shape(r), numpy.shape(g),
                      numpy.shape(b), numpy.shape(a))
-            ret = super().__new__(cls, [0, 0, 0, 1], n)
+            ret = super().__new__(cls, [0., 0., 0., 1.], n)
             ret[..., 0] = r
             ret[..., 1] = g
             ret[..., 2] = b
             ret[..., 3] = a
         return ret
+
+    @classmethod
+    def map(cls, value, start, end):
+        center = (start + end)/2
+        width = (end - start)/2
+        r = numpy.maximum(value - center, 0)/width
+        g = 1-numpy.abs(value - center)/width
+        b = numpy.maximum(center - value, 0)/width
+        return cls(r=r, g=g, b=b)
 
     @classmethod
     def standard(cls, *n):
