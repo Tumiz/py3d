@@ -15388,6 +15388,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.labeldiv = document.createElement("div")
             this.labeldiv.style.position = "absolute"
             this.canvasdiv = document.createElement("div")
+            this.canvasdiv.style.height = "300px"
             this.canvasdiv.style.overflow = "hidden"
             this.canvasdiv.style.resize = "vertical"
             this.canvasdiv.append(this.labeldiv, this.canvas)
@@ -15412,6 +15413,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             rotate: ctrl+press+mouse move<br/>
             translate: press+mouse move<br/>
             zoom: mouse wheel`
+            }
+            this.canvas.onmouseout = (ev) => {
+                this.canvas.moveable = false
             }
             this.canvas.onmousedown = (ev) => {
                 this.canvas.moveable = true
@@ -15561,6 +15565,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                         if (obj.mode == "TEXT") {
                             this.drawText(obj.text, obj.position, obj.color, modelview)
                         } else if (obj.mode) {
+                            console.log(Math.max(obj.vertex))
                             this.set_attribute("position", obj.vertex, 3)
                             this.set_attribute("color", obj.color, 4)
                             this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -16053,13 +16058,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Vector([[[0.59012381, 0.59117906, 0.27742297, 0.07913571],
-         [0.57128422, 0.47422818, 0.01247087, 0.62844697],
-         [0.61619102, 0.39864082, 0.25827397, 0.36501036]],
+<pre>Vector([[[0.77085143, 0.20837891, 0.1957407 , 0.55211423],
+         [0.9986311 , 0.28993241, 0.22489738, 0.21185274],
+         [0.93969391, 0.06093017, 0.12723441, 0.50429489]],
 
-        [[0.77111083, 0.81948012, 0.08263052, 0.80651362],
-         [0.63180613, 0.8235083 , 0.72486134, 0.19854641],
-         [0.68016797, 0.13464409, 0.34240708, 0.65056947]]])</pre>
+        [[0.75099961, 0.1420021 , 0.22094941, 0.70630463],
+         [0.15317651, 0.68680957, 0.8564321 , 0.14164884],
+         [0.53818338, 0.2560506 , 0.76022651, 0.29869381]]])</pre>
 </div>
 
 </div>

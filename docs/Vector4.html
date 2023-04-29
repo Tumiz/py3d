@@ -15387,6 +15387,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.labeldiv = document.createElement("div")
             this.labeldiv.style.position = "absolute"
             this.canvasdiv = document.createElement("div")
+            this.canvasdiv.style.height = "300px"
             this.canvasdiv.style.overflow = "hidden"
             this.canvasdiv.style.resize = "vertical"
             this.canvasdiv.append(this.labeldiv, this.canvas)
@@ -15411,6 +15412,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             rotate: ctrl+press+mouse move<br/>
             translate: press+mouse move<br/>
             zoom: mouse wheel`
+            }
+            this.canvas.onmouseout = (ev) => {
+                this.canvas.moveable = false
             }
             this.canvas.onmousedown = (ev) => {
                 this.canvas.moveable = true
@@ -15560,6 +15564,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                         if (obj.mode == "TEXT") {
                             this.drawText(obj.text, obj.position, obj.color, modelview)
                         } else if (obj.mode) {
+                            console.log(Math.max(obj.vertex))
                             this.set_attribute("position", obj.vertex, 3)
                             this.set_attribute("color", obj.color, 4)
                             this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)

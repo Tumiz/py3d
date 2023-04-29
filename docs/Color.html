@@ -15388,6 +15388,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.labeldiv = document.createElement("div")
             this.labeldiv.style.position = "absolute"
             this.canvasdiv = document.createElement("div")
+            this.canvasdiv.style.height = "300px"
             this.canvasdiv.style.overflow = "hidden"
             this.canvasdiv.style.resize = "vertical"
             this.canvasdiv.append(this.labeldiv, this.canvas)
@@ -15412,6 +15413,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             rotate: ctrl+press+mouse move<br/>
             translate: press+mouse move<br/>
             zoom: mouse wheel`
+            }
+            this.canvas.onmouseout = (ev) => {
+                this.canvas.moveable = false
             }
             this.canvas.onmousedown = (ev) => {
                 this.canvas.moveable = true
@@ -15561,6 +15565,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                         if (obj.mode == "TEXT") {
                             this.drawText(obj.text, obj.position, obj.color, modelview)
                         } else if (obj.mode) {
+                            console.log(Math.max(obj.vertex))
                             this.set_attribute("position", obj.vertex, 3)
                             this.set_attribute("color", obj.color, 4)
                             this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
@@ -15582,7 +15587,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.84958848, 0.28162069, 0.74911943, 0.53984591])</pre>
+<pre>Color([0.64294728, 0.90362793, 0.68709448, 0.64384336])</pre>
 </div>
 
 </div>
@@ -15622,11 +15627,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.33191892, 0.73144779, 0.07769842, 0.19289573]],
+<pre>Color([[[0.2827526 , 0.04579098, 0.67986911, 0.68228168]],
 
-       [[0.38457303, 0.4439454 , 0.52208228, 0.66879008]],
+       [[0.74456629, 0.84004703, 0.04267767, 0.64389057]],
 
-       [[0.06121186, 0.23394327, 0.23708036, 0.09145402]]])</pre>
+       [[0.75603844, 0.32547142, 0.55882877, 0.99452186]]])</pre>
 </div>
 
 </div>
