@@ -65,50 +65,7 @@ class View:
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=-1):
         return self.__render_args__(t=t, mode="TEXT", text=text,
-                                    position=position, color=color)
-
-    def grid(self, step=(1, 1, 1), t=-1):
-        if type(step) is int or type(step) is float:
-            step = [step] * 3
-        x0, y0, z0 = numpy.floor_divide(self.min, step) * step
-        x1, y1, z1 = numpy.floor_divide(self.max, step) * step + step
-        self.min = [x0, y0, z0]
-        self.max = [x1, y1, z1]
-        rx = numpy.arange(x0, x1+step[0], step[0])
-        ry = numpy.arange(y0, y1+step[1], step[1])
-        rz = numpy.arange(z0, z1+step[2], step[2])
-        xy = (Vector3(x=[x0, rx[-1]], z=z0) @
-              Transform.from_translation(y=ry)).flatten()
-        yx = (Vector3(y=[y0, ry[-1]], z=z0) @
-              Transform.from_translation(x=rx)).flatten()
-        xz = (Vector3(x=[x0, rx[-1]], y=y0) @
-              Transform.from_translation(z=rz)).flatten()
-        zx = (Vector3(z=[z0, rz[-1]], y=y0) @
-              Transform.from_translation(x=rx)).flatten()
-        zy = (Vector3(z=[z0, rz[-1]], x=x0) @
-              Transform.from_translation(y=ry)).flatten()
-        yz = (Vector3(y=[y0, ry[-1]], x=x0) @
-              Transform.from_translation(z=rz)).flatten()
-        l = numpy.concatenate((xy, yx, xz, zx, zy, yz), axis=0).view(
-            Vector3).as_linesegment()
-        self.__render_args__(t=t, mode=l.TYPE, vertex=l.vertex.ravel(
-        ).tolist(), color=l.color.ravel().tolist())
-        for i in rx[1:]:
-            self.label(i, [i, y0, z0], t=t)
-        for i in ry[1:]:
-            self.label(i, [x0, i, z0], t=t)
-        for i in rz[1:]:
-            self.label(i, [x0, y0, i], t=t)
-        return self
-
-    def xlabel(self, text, color="grey"):
-        return self.label(text, [(self.min[0]+self.max[0])/2, self.min[1]-0.1*(self.max[1]-self.min[1]), self.min[2]-0.1*(self.max[2]-self.min[2])], color)
-
-    def ylabel(self, text, color="grey"):
-        return self.label(text, [self.min[0]-0.1*(self.max[0]-self.min[0]), (self.min[1]+self.max[1])/2, self.min[2]-0.1*(self.max[2]-self.min[2])], color)
-
-    def zlabel(self, text, color="grey"):
-        return self.label(text, [self.min[0]-0.1*(self.max[0]-self.min[0]), self.min[1]-0.1*(self.max[1]-self.min[1]), (self.min[2]+self.max[2])/2], color)
+                                    vertex=position, color=color)
 
 
 default_view = View()
@@ -123,21 +80,6 @@ def render(*objs, t=0):
 def label(text, position: list = [0, 0, 0], color="grey", t=-1):
     return default_view.label(text, position, color, t)
 
-
-def xlabel(text, color="grey"):
-    return default_view.xlabel(text, color)
-
-
-def ylabel(text, color="grey"):
-    return default_view.ylabel(text, color)
-
-
-def zlabel(text, color="grey"):
-    return default_view.zlabel(text, color)
-
-
-def grid(step=(1, 1, 1), t=-1):
-    return default_view.grid(step, t)
 
 
 class Data(numpy.ndarray):
