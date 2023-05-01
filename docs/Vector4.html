@@ -15240,6 +15240,30 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             ret[14] = -m[14]
             return ret
         }
+        static vec3_range(array) {
+            let x = array.filter((v, i) => i % 3 == 0)
+            let y = array.filter((v, i) => i % 3 == 1)
+            let z = array.filter((v, i) => i % 3 == 2)
+            return [Math.min(...x), Math.max(...x), Math.min(...y), Math.max(...y), Math.min(...z), Math.max(...z)]
+        }
+        static ticks(min, max) {
+            if (max <= min) {
+                return [[min], min, max, 0]
+            }
+            let dig = Math.round(Math.log10((max - min) / 5))
+            let step = Math.pow(10, dig)
+            let tick_min = min - min % step
+            if (min < tick_min) {
+                tick_min -= step
+            }
+            let tick_max = max - max % step
+            if (max > tick_max) {
+                tick_max += step
+            }
+            let size = Math.ceil((tick_max - tick_min) / step) + 1
+            let ticks = Array.from({ length: size }, (v, i) => (tick_min + step * i).toFixed(Math.max(-dig, 0)))
+            return [ticks, tick_min, tick_max, tick_max - tick_min]
+        }
     }
     class ToolBar {
         constructor(cache) {
@@ -15334,9 +15358,15 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.btn_down.onmouseenter = (ev) => {
                 this.tooltip.innerHTML = `turn down`
             }
+            this.btn_grid = document.createElement("button")
+            this.btn_grid.innerHTML = "G"
+            this.btn_grid.className = "py3d_btn"
+            this.btn_grid.onmouseenter = (ev) => {
+                this.tooltip.innerHTML = `show grid`
+            }
             this.tooltip = document.createElement("div")
             this.tooltip.style.height = "70px"
-            this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_play, this.time, this.slider, this.tooltip)
+            this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_grid, this.btn_play, this.time, this.slider, this.tooltip)
         }
     }
 
@@ -15392,6 +15422,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.canvasdiv.style.resize = "vertical"
             this.canvasdiv.append(this.labeldiv, this.canvas)
             this.toolbar = new ToolBar(data.cache)
+            this.min = data.min
+            this.max = data.max
             this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.parent = document.getElementById(id)
             this.parent.append(this.canvasdiv, this.toolbar.bar)
@@ -15472,6 +15504,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 1, 0, 0), this.camera.rotation)
                 this.render()
             }
+            this.toolbar.btn_grid.onclick = (ev) => {
+                this.toolbar.btn_grid.style.background = this.toolbar.btn_grid.style.background == "grey" ? "buttonface" : "grey"
+                this.render()
+            }
             this.toolbar.slider.oninput = (ev) => {
                 for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
                     let t = this.toolbar.ts[i]
@@ -15488,7 +15524,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 alert("webgl not work")
             }
             this.program = this.gl.createProgram()
-            this.vertices_size = 0
             this.set_program(`
                 attribute vec4 position;
                 attribute vec4 color;
@@ -15514,7 +15549,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             const location = this.gl.getAttribLocation(this.program, name)
             this.gl.enableVertexAttribArray(location)
             this.gl.vertexAttribPointer(location, item_size, this.gl.FLOAT, false, 0, 0)
-            this.vertices_size = array.length / item_size
         }
         set_uniform(name, array) {
             const location = this.gl.getUniformLocation(this.program, name)
@@ -15558,20 +15592,50 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.set_uniform("modelview", modelview)
             let current_t = this.toolbar.ts[this.toolbar.ti]
             for (let t in this.toolbar.cache) {
-                if (t == -1 | t == current_t) {
+                if (t == current_t) {
                     let frame = this.toolbar.cache[t]
                     for (let obj of frame) {
                         if (obj.mode == "TEXT") {
-                            this.drawText(obj.text, obj.position, obj.color, modelview)
+                            this.drawText(obj.text, obj.vertex, obj.color, modelview)
                         } else if (obj.mode) {
-                            console.log(Math.max(obj.vertex))
                             this.set_attribute("position", obj.vertex, 3)
                             this.set_attribute("color", obj.color, 4)
-                            this.gl.drawArrays(this.gl[obj.mode], 0, this.vertices_size)
+                            this.gl.drawArrays(this.gl[obj.mode], 0, obj.vertex.length / 3)
                         }
                     }
+                    if (this.toolbar.btn_grid.style.background == "grey") {
+                        this.grid(this.min, this.max, modelview)
+                    }
+                    break
                 }
             }
+        }
+        grid(min, max, modelview) {
+            const [x_ticks, x_tick_min, x_tick_max, x_range] = mat.ticks(min[0], max[0])
+            const [y_ticks, y_tick_min, y_tick_max, y_range] = mat.ticks(min[1], max[1])
+            const [z_ticks, z_tick_min, z_tick_max, z_range] = mat.ticks(min[2], max[2])
+            let lines = []
+            for (let x of x_ticks) {
+                lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
+                lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
+                this.drawText(x, [x, y_tick_min, z_tick_min], "grey", modelview)
+            }
+            for (let y of y_ticks) {
+                lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
+                lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
+                this.drawText(y, [x_tick_min, y, z_tick_min], "grey", modelview)
+            }
+            for (let z of z_ticks) {
+                lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
+                lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
+                this.drawText(z, [x_tick_min, y_tick_min, z], "grey", modelview)
+            }
+            this.drawText("X", [x_tick_max + x_range * 0.1, y_tick_min, z_tick_min], "grey", modelview)
+            this.drawText("Y", [x_tick_min, y_tick_max + y_range * 0.1, z_tick_min], "grey", modelview)
+            this.drawText("Z", [x_tick_min - x_range * 0.1, y_tick_min - y_range * 0.1, z_tick_max + z_range * 0.1], "grey", modelview)
+            this.set_attribute("position", lines, 3)
+            this.set_attribute("color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 1 : 0.5), 4)
+            this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
         }
     }
 </script>
