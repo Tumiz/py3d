@@ -15425,7 +15425,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.toolbar = new ToolBar(data.cache)
             this.min = data.min
             this.max = data.max
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.parent = document.getElementById(id)
             this.parent.append(this.canvasdiv, this.toolbar.bar)
             const observer = new ResizeObserver(() => {
@@ -15442,33 +15442,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.canvas.tabIndex = 0
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
-            rotate: ctrl+press+mouse move<br/>
-            translate: press+mouse move<br/>
+            rotate: press ctrl key and move mouse or press left mouse button and move mouse<br/>
+            translate: press shift key and move mouse or press middle mouse button and move mouse<br/>
             zoom: mouse wheel`
             }
-            this.canvas.onmouseout = (ev) => {
-                this.canvas.moveable = false
-            }
-            this.canvas.onmousedown = (ev) => {
-                this.canvas.moveable = true
-            }
-            this.canvas.onmouseup = (ev) => {
-                this.canvas.moveable = false
-            }
             this.canvas.onmousemove = (ev) => {
-                if (this.canvas.moveable) {
-                    let dx = ev.clientX - this.canvas_x
-                    let dy = ev.clientY - this.canvas_y
-                    let d = Math.hypot(dx, dy)
-                    if (d) {
-                        if (ev.ctrlKey) {
-                            this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
-                        } else {
-                            const ratio = Math.abs(this.camera.translation[14]) / 200
-                            this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
-                        }
-                        this.render()
+                let dx = ev.clientX - this.canvas_x
+                let dy = ev.clientY - this.canvas_y
+                let d = Math.hypot(dx, dy)
+                if (d) {
+                    if (ev.ctrlKey | ev.buttons == 4) {
+                        this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                    } else if (ev.shiftKey | ev.buttons == 1) {
+                        const ratio = Math.abs(this.camera.translation[14]) / 200
+                        this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                     }
+                    this.render()
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -15651,7 +15640,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.80248469, 0.6054298 , 0.1134866 , 0.7359769 ])</pre>
+<pre>Color([0.4810975 , 0.29907199, 0.20681415, 0.13960151])</pre>
 </div>
 
 </div>
@@ -15691,11 +15680,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.31767375, 0.27280812, 0.50786512, 0.76932652]],
+<pre>Color([[[0.07420458, 0.57446642, 0.67803357, 0.47622845]],
 
-       [[0.85406395, 0.94238499, 0.13470587, 0.37828041]],
+       [[0.67231048, 0.41697249, 0.7682966 , 0.39897309]],
 
-       [[0.55123558, 0.48303884, 0.05373811, 0.08257682]]])</pre>
+       [[0.31824535, 0.47479275, 0.23783914, 0.69226007]]])</pre>
 </div>
 
 </div>

@@ -15425,7 +15425,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.toolbar = new ToolBar(data.cache)
             this.min = data.min
             this.max = data.max
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 3, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, 0.1, 1000, data.min, data.max)
             this.parent = document.getElementById(id)
             this.parent.append(this.canvasdiv, this.toolbar.bar)
             const observer = new ResizeObserver(() => {
@@ -15442,33 +15442,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.canvas.tabIndex = 0
                 this.canvas.focus()
                 this.toolbar.tooltip.innerHTML = `
-            rotate: ctrl+press+mouse move<br/>
-            translate: press+mouse move<br/>
+            rotate: press ctrl key and move mouse or press left mouse button and move mouse<br/>
+            translate: press shift key and move mouse or press middle mouse button and move mouse<br/>
             zoom: mouse wheel`
             }
-            this.canvas.onmouseout = (ev) => {
-                this.canvas.moveable = false
-            }
-            this.canvas.onmousedown = (ev) => {
-                this.canvas.moveable = true
-            }
-            this.canvas.onmouseup = (ev) => {
-                this.canvas.moveable = false
-            }
             this.canvas.onmousemove = (ev) => {
-                if (this.canvas.moveable) {
-                    let dx = ev.clientX - this.canvas_x
-                    let dy = ev.clientY - this.canvas_y
-                    let d = Math.hypot(dx, dy)
-                    if (d) {
-                        if (ev.ctrlKey) {
-                            this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
-                        } else {
-                            const ratio = Math.abs(this.camera.translation[14]) / 200
-                            this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
-                        }
-                        this.render()
+                let dx = ev.clientX - this.canvas_x
+                let dy = ev.clientY - this.canvas_y
+                let d = Math.hypot(dx, dy)
+                if (d) {
+                    if (ev.ctrlKey | ev.buttons == 4) {
+                        this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                    } else if (ev.shiftKey | ev.buttons == 1) {
+                        const ratio = Math.abs(this.camera.translation[14]) / 200
+                        this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                     }
+                    this.render()
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -16122,19 +16111,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Vector([[[3.21334969e-01, 2.71152030e-01, 5.31065705e-01,
-          1.24950578e-01],
-         [6.75156294e-01, 8.77288778e-01, 1.67099668e-01,
-          4.66112154e-04],
-         [6.74297671e-01, 8.92476473e-01, 5.04599042e-02,
-          3.67971547e-02]],
+<pre>Vector([[[0.24825259, 0.75810119, 0.20697738, 0.03636623],
+         [0.69040416, 0.72661935, 0.84146427, 0.217639  ],
+         [0.8304032 , 0.51057618, 0.79794647, 0.50452461]],
 
-        [[9.39874047e-01, 4.97190854e-01, 7.12106191e-01,
-          2.35747467e-01],
-         [8.81725578e-01, 1.25103855e-01, 2.35296724e-01,
-          1.97212771e-01],
-         [8.71063714e-01, 1.19037527e-01, 3.27573957e-01,
-          2.90195301e-01]]])</pre>
+        [[0.33255675, 0.86337306, 0.07359956, 0.80531759],
+         [0.39953553, 0.77315102, 0.44279899, 0.38844625],
+         [0.22882317, 0.57827017, 0.07495217, 0.22078234]]])</pre>
 </div>
 
 </div>
