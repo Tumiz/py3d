@@ -15282,6 +15282,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
             this.slider.style.display = this.slider.max > 0 ? "block" : "none"
+            this.slider.style.margin = "6px"
             this.slider.onmouseenter = (ev) => {
                 this.tooltip.innerHTML = `time line`
             }
@@ -15453,11 +15454,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 if (d) {
                     if (ev.ctrlKey | ev.buttons == 4) {
                         this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                        this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = Math.abs(this.camera.translation[14]) / 200
                         this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
+                        this.render()
                     }
-                    this.render()
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -15640,7 +15642,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.4810975 , 0.29907199, 0.20681415, 0.13960151])</pre>
+<pre>Color([0.45061109, 0.97751751, 0.09235516, 0.18902699])</pre>
 </div>
 
 </div>
@@ -15680,11 +15682,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.07420458, 0.57446642, 0.67803357, 0.47622845]],
+<pre>Color([[[0.62515857, 0.6059025 , 0.89328377, 0.81752448]],
 
-       [[0.67231048, 0.41697249, 0.7682966 , 0.39897309]],
+       [[0.36229956, 0.04668319, 0.57405079, 0.44901209]],
 
-       [[0.31824535, 0.47479275, 0.23783914, 0.69226007]]])</pre>
+       [[0.4435239 , 0.79987112, 0.26437173, 0.9663759 ]]])</pre>
 </div>
 
 </div>

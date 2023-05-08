@@ -7,6 +7,7 @@ from typing import Dict
 import pathlib
 import uuid
 import json
+import struct
 
 pi = numpy.arccos(-1)
 
@@ -53,17 +54,17 @@ class View:
 
     def render(self, obj: Point, t=0):
         if self.max == []:
-            self.max = obj.vertex.flatten().max(axis=0).tolist()
-            self.min = obj.vertex.flatten().min(axis=0).tolist()
+            self.max = obj.xyz.flatten().max(axis=0).tolist()
+            self.min = obj.xyz.flatten().min(axis=0).tolist()
         else:
             self.max = numpy.max(
-                [self.max, obj.vertex.flatten().max(axis=0)], axis=0).tolist()
+                [self.max, obj.xyz.flatten().max(axis=0)], axis=0).tolist()
             self.min = numpy.min(
-                [self.min, obj.vertex.flatten().min(axis=0)], axis=0).tolist()
-        return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.vertex.ravel(
+                [self.min, obj.xyz.flatten().min(axis=0)], axis=0).tolist()
+        return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
 
-    def label(self, text: str, position: list = [0, 0, 0], color="grey", t=-1):
+    def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     vertex=position, color=color)
 
@@ -77,9 +78,50 @@ def render(*objs, t=0):
     return default_view
 
 
-def label(text, position: list = [0, 0, 0], color="grey", t=-1):
+def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
+
+def read_pcd(path):
+    f = open(path, "rb")
+    data_type = ""
+    ret = []
+    tp_map = {
+        (4, "F"): "f",
+        (1, "U"): "B",
+        (8, "F"): "d"
+    }
+    while True:
+        if "binary" not in data_type:
+            r = str(f.readline(), encoding="utf-8")[:-1]
+            if not r:
+                break
+            elif r.startswith("FIELDS"):
+                cols = r.replace("FIELDS ", "").split(" ")
+            elif r.startswith("SIZE"):
+                size = [int(s) for s in r.replace("SIZE ", "").split(" ")]
+            elif r.startswith("TYPE"):
+                tp = r.replace("TYPE ", "").split(" ")
+            elif r.startswith("POINTS"):
+                count = int(r.replace("POINTS ", ""))
+            elif r.startswith("DATA"):
+                data_type = r.replace("DATA ", "")
+            elif data_type == "ascii":
+                ret.append([float(s) for s in r.split(" ")])
+        elif "compressed" in data_type:
+            break
+        else:
+            if count > 0:
+                count -= 1
+            else:
+                break
+            tmp = []
+            for s, t in zip(size, tp):
+                bt = f.read(s)
+                d, = struct.unpack(tp_map[(s, t)], bt)
+                tmp.append(d)
+            ret.append(tmp)
+    return Vector(ret)
 
 
 class Data(numpy.ndarray):
@@ -131,6 +173,38 @@ class Vector(Data):
         return super().__new__(cls, data, n)
 
     @property
+    def x(self):
+        return self[..., 0].view(numpy.ndarray)
+
+    @x.setter
+    def x(self, v):
+        self[..., 0] = v
+
+    @property
+    def y(self):
+        return self[..., 1].view(numpy.ndarray)
+
+    @y.setter
+    def y(self, v):
+        self[..., 1] = v
+
+    @property
+    def z(self):
+        return self[..., 2].view(numpy.ndarray)
+
+    @z.setter
+    def z(self, v):
+        self[..., 2] = v
+
+    @property
+    def xyz(self) -> Vector3:
+        return self[..., 0:3].view(Vector3)
+
+    @xyz.setter
+    def xyz(self, v):
+        self[..., 0:3] = v
+
+    @property
     def U(self) -> Vector:
         # unit vector, direction vector
         n = self.L
@@ -154,28 +228,38 @@ class Vector(Data):
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
 
+    def to_pcd(self, path, fields=""):
+        w = self.shape[-1]
+        pcd = self.reshape(-1, w)
+        width = len(pcd)
+        size = " ".join(["4"] * w)
+        tp = " ".join(["F"] * w)
+        count = " ".join(["1"] * w)
+        if not fields:
+            fields = " ".join([str(i) for i in range(w)])
+        f = open(path, "w")
+        f.write('''# .PCD v0.7 - Point Cloud Data file format
+VERSION 0.7
+FIELDS {}
+SIZE {}
+TYPE {}
+COUNT {}
+WIDTH {}
+HEIGHT 1
+VIEWPOINT 0 0 0 1 0 0 0
+POINTS {}
+DATA ascii
+'''.format(fields, size, tp, count, width, width))
+        for p in pcd:
+            f.write(" ".join([str(a) for a in p]) + "\n")
+        f.close()
+
 
 class Vector2(Vector):
     BASE_SHAPE = 2,
 
     def __new__(cls, data: list | numpy.ndarray = [], n=()):
         return super().__new__(cls, data, n)
-
-    @property
-    def x(self):
-        return self[..., 0].view(numpy.ndarray)
-
-    @x.setter
-    def x(self, v):
-        self[..., 0] = v
-
-    @property
-    def y(self):
-        return self[..., 1].view(numpy.ndarray)
-
-    @y.setter
-    def y(self, v):
-        self[..., 1] = v
 
 
 class Vector3(Vector):
@@ -194,38 +278,6 @@ class Vector3(Vector):
             ret.y = y
             ret.z = z
             return ret
-
-    @classmethod
-    def from_pcd(cls, path):
-        f = open(path)
-        with open(path) as f:
-            d = f.read().split("DATA ascii")[1]
-            f.close()
-            a = numpy.fromstring(d, sep=" ")
-            return a.reshape(a.size//3, 3).view(cls)
-
-    def to_pcd(self, path):
-        flat = self.flatten()
-        size = len(flat)
-        numpy.savetxt(path, flat)
-        f = open(path, "r+")
-        old = f.read()
-        f.seek(0, 0)
-        f.write('''
-# .PCD v0.7 - Point Cloud Data file format
-VERSION 0.7
-FIELDS x y z
-SIZE 4 4 4
-TYPE F F F
-COUNT 1 1 1
-WIDTH {}
-HEIGHT 1
-VIEWPOINT 0 0 0 1 0 0 0
-POINTS {}
-DATA ascii
-'''.format(size, size))
-        f.write(old)
-        f.close()
 
     @classmethod
     def grid(cls, x=0, y=0, z=0) -> Vector3:
@@ -247,30 +299,6 @@ DATA ascii
             return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
         else:
             return self.__matmul__(value)
-
-    @property
-    def x(self):
-        return self[..., 0].view(numpy.ndarray)
-
-    @x.setter
-    def x(self, v):
-        self[..., 0] = v
-
-    @property
-    def y(self):
-        return self[..., 1].view(numpy.ndarray)
-
-    @y.setter
-    def y(self, v):
-        self[..., 1] = v
-
-    @property
-    def z(self):
-        return self[..., 2].view(numpy.ndarray)
-
-    @z.setter
-    def z(self, v):
-        self[..., 2] = v
 
     def dot(self, v) -> Vector3:
         if type(v) is Vector3:
@@ -353,7 +381,7 @@ DATA ascii
 
     def as_point(self, color=None) -> Point:
         entity = Point(*self.n)
-        entity.vertex = self
+        entity.xyz = self
         if color is not None:
             entity.color = color
         return entity
@@ -362,21 +390,21 @@ DATA ascii
         n = list(self.n)
         n[-1] = (n[-1] - 1) * 2
         entity = LineSegment(*n)
-        entity.start.vertex = self[..., :-1, :]
-        entity.end.vertex = self[..., 1:, :]
+        entity.start.xyz = self[..., :-1, :]
+        entity.end.xyz = self[..., 1:, :]
         return entity
 
     def as_lineloop(self) -> LineSegment:
         n = list(self.n)
         n[-1] = n[-1] * 2
         entity = LineSegment(*n)
-        entity.start.vertex = self
-        entity.end.vertex = numpy.roll(self, -1, axis=self.ndim - 2)
+        entity.start.xyz = self
+        entity.end.xyz = numpy.roll(self, -1, axis=self.ndim - 2)
         return entity
 
     def as_linesegment(self) -> LineSegment:
         entity = LineSegment(*self.n)
-        entity.vertex = self
+        entity.xyz = self
         return entity
 
     def as_shape(self) -> Triangle:
@@ -388,13 +416,13 @@ DATA ascii
 
     def as_triangle(self) -> Triangle:
         entity = Triangle(*self.n)
-        entity.vertex = self
+        entity.xyz = self
         return entity
 
     def as_vector(self) -> LineSegment:
         entity = LineSegment(*self.n, 2)
-        entity.start.vertex = 0
-        entity.end.vertex = numpy.expand_dims(self, axis=self.ndim - 1)
+        entity.start.xyz = 0
+        entity.end.xyz = numpy.expand_dims(self, axis=self.ndim - 1)
         return entity
 
 
@@ -415,44 +443,12 @@ class Vector4(Vector):
             return ret
 
     @property
-    def x(self):
-        return self[..., 0].view(numpy.ndarray)
-
-    @x.setter
-    def x(self, v):
-        self[..., 0] = v
-
-    @property
-    def y(self):
-        return self[..., 1].view(numpy.ndarray)
-
-    @y.setter
-    def y(self, v):
-        self[..., 1] = v
-
-    @property
-    def z(self):
-        return self[..., 2].view(numpy.ndarray)
-
-    @z.setter
-    def z(self, v):
-        self[..., 2] = v
-
-    @property
     def w(self):
         return self[..., 3].view(numpy.ndarray)
 
     @w.setter
     def w(self, v):
         self[..., 3] = v
-
-    @property
-    def xyz(self) -> Vector3:
-        return self[..., 0:3].view(Vector3)
-
-    @xyz.setter
-    def xyz(self, v):
-        self[..., 0:3] = v
 
     @property
     def wxyz(self) -> Vector:
@@ -797,7 +793,7 @@ class Color(Vector):
         return self[..., :-1].view(Vector3)
 
 
-class Point(Data):
+class Point(Vector):
     BASE_SHAPE = 7,
     TYPE = "POINTS"
 
@@ -806,14 +802,6 @@ class Point(Data):
         ret.color = Color.standard(*(n[:-1] + (1,)))
         ret.color.a = 1
         return ret
-
-    @property
-    def vertex(self) -> Vector3:
-        return self[..., 0:3].view(Vector3)
-
-    @vertex.setter
-    def vertex(self, v):
-        self[..., 0:3] = v
 
     @property
     def color(self) -> Color:
@@ -828,9 +816,9 @@ class Point(Data):
         return numpy.concatenate((self, v), axis=0).view(self.__class__)
 
     def __matmul__(self, transform: Transform) -> Point:
-        vertex = self.vertex @ transform
+        vertex = self.xyz @ transform
         ret = self.__class__(*vertex.n)
-        ret.vertex = vertex
+        ret.xyz = vertex
         return ret
 
     def _repr_html_(self):
@@ -886,10 +874,10 @@ def car(wheelbase=3, wheel_radius=0.3, track_width=1.6, height=1.5, front_overha
     size_x = wheelbase+front_overhang+rear_overhang
     size_y = track_width
     size_z = height-wheel_radius
-    body = cube(size_x, size_y, size_z).vertex
+    body = cube(size_x, size_y, size_z).xyz
     body @= Transform.from_translation(x=size_x /
                                        2-rear_overhang, z=size_z/2+wheel_radius)
-    wheel = Vector3.circle(wheel_radius).as_lineloop().vertex
+    wheel = Vector3.circle(wheel_radius).as_lineloop().xyz
     wheel @= Transform.from_rpy([pi/2, 0, 0]) @ Vector3.grid(x=[wheelbase, 0], y=[-size_y/2, size_y/2], z=wheel_radius
                                                              ).as_translation()
     return numpy.vstack((body.flatten(), wheel.flatten())).view(Vector3).as_linesegment()

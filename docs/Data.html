@@ -15282,6 +15282,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
             this.slider.style.display = this.slider.max > 0 ? "block" : "none"
+            this.slider.style.margin = "6px"
             this.slider.onmouseenter = (ev) => {
                 this.tooltip.innerHTML = `time line`
             }
@@ -15453,11 +15454,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 if (d) {
                     if (ev.ctrlKey | ev.buttons == 4) {
                         this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                        this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = Math.abs(this.camera.translation[14]) / 200
                         this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
+                        this.render()
                     }
-                    this.render()
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -15640,7 +15642,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([0.41959836])</pre>
+<pre>Data([0.17349486])</pre>
 </div>
 
 </div>
