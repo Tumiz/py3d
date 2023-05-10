@@ -17,13 +17,6 @@
                 0, 0, 1, 0,
                 0, 0, 0, 1]
         }
-        static right_to_left() {
-            return [
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, -1, 0,
-                0, 0, 0, 1]
-        }
         static orthographic(fovy, aspect, near, far, distance) {
             return [
                 1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
@@ -56,6 +49,9 @@
                 -x * z * cos + x * z + y * sin, -x * sin - y * z * cos + y * z, z ** 2 + (1 - z ** 2) * cos, 0,
                 0, 0, 0, 1
             ]
+        }
+        static distance(v0, v1) {
+            return Math.sqrt(Math.pow(v0[0] - v1[0], 2) + Math.pow(v0[1] - v1[1], 2) + Math.pow(v0[2] - v1[2], 2))
         }
         static vm(v, m) {
             console.assert(m.length == 16 && v.length == 3, m, v)
@@ -233,9 +229,10 @@
             this.aspect = aspect
             this.near = near
             this.far = far
+            this.center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
             let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
             Object.defineProperty(this, "origin", {
-                "value": mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, -ysize / 2 / Math.tan(this.fovy / 2)),
+                "value": mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, this.center[2] - ysize / 2 / Math.tan(this.fovy / 2)),
                 "writable": false
             })
             this.translation = this.origin
@@ -248,7 +245,12 @@
             return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
         }
         update_projection() {
-            this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
+            this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(
+                this.fovy,
+                this.aspect,
+                this.near,
+                this.far,
+                mat.distance(this.center, this.translation.slice(12, 15))) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
             this.translation = this.origin
@@ -257,11 +259,10 @@
         }
         modelview() {
             return mat.mms(
-                mat.right_to_left(),
                 mat.I(this.rotation),
                 mat.I(this.translation),
-                this.projection,
-                mat.right_to_left())
+                this.projection
+            )
         }
     }
     class Viewer {
@@ -312,7 +313,7 @@
                         this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
                         this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
-                        const ratio = Math.abs(this.camera.translation[14]) / 200
+                        const ratio = mat.distance(this.camera.center, this.camera.translation.slice(12, 15)) / 200
                         this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
                         this.toolbar.tooltip.innerHTML = this.camera.position()
                         this.render()
