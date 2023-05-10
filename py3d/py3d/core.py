@@ -50,7 +50,6 @@ class View:
 
     def save(self, name):
         open(name, "w").write(self.__preload__.data + self._repr_html_())
-        return self
 
     def render(self, obj: Point, t=0):
         if self.max == []:
