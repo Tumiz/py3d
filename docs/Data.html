@@ -15381,21 +15381,24 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.near = near
             this.far = far
             let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
-            let position = mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, -ysize / 2 / Math.tan(this.fovy / 2))
-            this.translation = position
-            Object.defineProperty(this, "position", {
-                "value": position,
+            Object.defineProperty(this, "origin", {
+                "value": mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, -ysize / 2 / Math.tan(this.fovy / 2)),
                 "writable": false
             })
+            this.translation = this.origin
             this.rotation = mat.identity()
             this.type = type
             this.update_projection()
+        }
+        position() {
+            let p = this.translation.slice(12, 15)
+            return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
         }
         update_projection() {
             this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(this.fovy, this.aspect, this.near, this.far, Math.abs(this.translation[14])) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
-            this.translation = this.position
+            this.translation = this.origin
             this.rotation = mat.identity()
             this.update_projection()
         }
@@ -15458,6 +15461,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = Math.abs(this.camera.translation[14]) / 200
                         this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
+                        this.toolbar.tooltip.innerHTML = this.camera.position()
                         this.render()
                     }
                 }
@@ -15467,6 +15471,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.canvas.onwheel = (ev) => {
                 ev.preventDefault()
                 this.camera.translation[14] -= ev.deltaY / 100
+                this.toolbar.tooltip.innerHTML = this.camera.position()
                 this.camera.update_projection()
                 this.render()
             }
@@ -15571,6 +15576,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 div.style.left = x + "px"
                 div.style.top = y + "px"
                 div.style.color = color
+                div.style.pointerEvents = "none"
                 this.labeldiv.append(div)
             }
         }
@@ -15642,7 +15648,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([0.17349486])</pre>
+<pre>Data([0.96238352])</pre>
 </div>
 
 </div>
