@@ -15179,12 +15179,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 0, 0, (near + far) * range_inv, 1,
                 0, 0, -2 * near * far * range_inv, 0]
         }
-        static translation(x, y, z) {
+        static translation(v) {
             return [
                 1, 0, 0, 0,
                 0, 1, 0, 0,
                 0, 0, 1, 0,
-                x, y, z, 1]
+                v[0], v[1], v[2], 1]
         }
         static angle_axis(angle, x, y, z) {
             const cos = Math.cos(angle)
@@ -15200,7 +15200,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             return Math.sqrt(Math.pow(v0[0] - v1[0], 2) + Math.pow(v0[1] - v1[1], 2) + Math.pow(v0[2] - v1[2], 2))
         }
         static vm(v, m) {
-            console.assert(m.length == 16 && v.length == 3, m, v)
+            console.assert(m.length == 16 && v.length >= 3, m, v)
             let ret = []
             for (let j of [0, 1, 2, 3]) {
                 ret.push(m[j] * v[0] + m[j + 4] * v[1] + m[j + 8] * v[2] + m[j + 12])
@@ -15377,18 +15377,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.far = far
             this.center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
             let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
-            Object.defineProperty(this, "origin", {
-                "value": mat.translation((max[0] + min[0]) / 2, (max[1] + min[1]) / 2, this.center[2] - ysize / 2 / Math.tan(this.fovy / 2)),
+            this.translation = [0, 0, - ysize / 2 / Math.tan(this.fovy / 2)]
+            Object.defineProperty(this, "origin_translation", {
+                "value": this.translation,
                 "writable": false
             })
-            this.translation = this.origin
-            this.rotation = mat.identity()
+            this.rotation = mat.identity() // intrinsic
             this.type = type
             this.update_projection()
         }
         position() {
-            let p = this.translation.slice(12, 15)
-            return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
+            let p = mat.vm(mat.vm(this.center, this.rotation), mat.translation(this.translation))
+            return "camera center = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
         }
         update_projection() {
             this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(
@@ -15396,17 +15396,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.aspect,
                 this.near,
                 this.far,
-                mat.distance(this.center, this.translation.slice(12, 15))) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
+                this.translation[2]) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
-            this.translation = this.origin
+            this.translation = this.origin_translation
             this.rotation = mat.identity()
             this.update_projection()
         }
         modelview() {
             return mat.mms(
+                mat.I(mat.translation(this.center)),
                 mat.I(this.rotation),
-                mat.I(this.translation),
+                mat.I(mat.translation(this.translation)),
                 this.projection
             )
         }
@@ -15459,8 +15460,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                         this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
                         this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
-                        const ratio = mat.distance(this.camera.center, this.camera.translation.slice(12, 15)) / 200
-                        this.camera.translation = mat.mm(this.camera.translation, mat.translation(-dx * ratio, dy * ratio, 0))
+                        const ratio = this.camera.translation[2] / 200
+                        this.camera.translation[0] -= dx * ratio
+                        this.camera.translation[1] += dy * ratio
                         this.toolbar.tooltip.innerHTML = this.camera.position()
                         this.render()
                     }
@@ -15470,7 +15472,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             }
             this.canvas.onwheel = (ev) => {
                 ev.preventDefault()
-                this.camera.translation[14] -= ev.deltaY / 100
+                this.camera.translation[2] -= ev.deltaY / 100
                 this.toolbar.tooltip.innerHTML = this.camera.position()
                 this.camera.update_projection()
                 this.render()
