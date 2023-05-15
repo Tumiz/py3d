@@ -15388,7 +15388,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         }
         position() {
             let p = mat.vm(mat.vm(this.center, this.rotation), mat.translation(this.translation))
-            return "camera center = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
+            return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
         }
         update_projection() {
             this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(
