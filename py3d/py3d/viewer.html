@@ -26,12 +26,11 @@
         }
         static perspective(fovy, aspect, near, far) {
             const f = 1 / Math.tan(fovy / 2)
-            const range_inv = 1.0 / (near - far)
             return [
                 f / aspect, 0, 0, 0,
                 0, f, 0, 0,
-                0, 0, (near + far) * range_inv, 1,
-                0, 0, -2 * near * far * range_inv, 0]
+                0, 0, -(near + far) / (far - near), 1,
+                0, 0, 2 * near * far / (far - near), 0]
         }
         static translation(v) {
             return [
@@ -113,6 +112,51 @@
             let size = Math.ceil((tick_max - tick_min) / step) + 1
             let ticks = Array.from({ length: size }, (v, i) => (tick_min + step * i).toFixed(Math.max(-dig, 0)))
             return [ticks, tick_min, tick_max, tick_max - tick_min]
+        }
+    }
+    class Camera {
+        PERSPECTIVE = "P"
+        ORTHOGRAPHIC = "O"
+        constructor(type, fovy, aspect, near, far, min, max) {
+            this.fovy = fovy
+            this.aspect = aspect
+            this.near = near
+            this.far = far
+            this.center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
+            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
+            Object.defineProperty(this, "origin_translation", {
+                "value": [0, 0, -ysize / 2 / Math.tan(this.fovy / 2)],
+                "writable": false
+            })
+            this.translation = this.origin_translation
+            this.rotation = mat.identity() // intrinsic
+            this.type = type
+            this.update_projection()
+        }
+        position() {
+            let p = mat.vm(mat.vm(this.center, this.rotation), mat.translation(this.translation))
+            return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
+        }
+        update_projection() {
+            this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(
+                this.fovy,
+                this.aspect,
+                this.near,
+                this.far,
+                this.translation[2]) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
+        }
+        reset() {
+            this.translation = this.origin_translation
+            this.rotation = mat.identity()
+            this.update_projection()
+        }
+        modelview() {
+            return mat.mms(
+                mat.I(mat.translation(this.center)),
+                mat.I(this.rotation),
+                mat.I(mat.translation(this.translation)),
+                this.projection
+            )
         }
     }
     class ToolBar {
@@ -220,52 +264,6 @@
             this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_grid, this.btn_play, this.time, this.slider, this.tooltip)
         }
     }
-
-    class Camera {
-        PERSPECTIVE = "P"
-        ORTHOGRAPHIC = "O"
-        constructor(type, fovy, aspect, near, far, min, max) {
-            this.fovy = fovy
-            this.aspect = aspect
-            this.near = near
-            this.far = far
-            this.center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
-            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
-            this.translation = [0, 0, - ysize / 2 / Math.tan(this.fovy / 2)]
-            Object.defineProperty(this, "origin_translation", {
-                "value": this.translation,
-                "writable": false
-            })
-            this.rotation = mat.identity() // intrinsic
-            this.type = type
-            this.update_projection()
-        }
-        position() {
-            let p = mat.vm(mat.vm(this.center, this.rotation), mat.translation(this.translation))
-            return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
-        }
-        update_projection() {
-            this.projection = this.type == this.ORTHOGRAPHIC ? mat.orthographic(
-                this.fovy,
-                this.aspect,
-                this.near,
-                this.far,
-                this.translation[2]) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
-        }
-        reset() {
-            this.translation = this.origin_translation
-            this.rotation = mat.identity()
-            this.update_projection()
-        }
-        modelview() {
-            return mat.mms(
-                mat.I(mat.translation(this.center)),
-                mat.I(this.rotation),
-                mat.I(mat.translation(this.translation)),
-                this.projection
-            )
-        }
-    }
     class Viewer {
         constructor(id, data) {
             this.canvas_x = 0
@@ -326,7 +324,7 @@
             }
             this.canvas.onwheel = (ev) => {
                 ev.preventDefault()
-                this.camera.translation[2] -= ev.deltaY / 100
+                this.camera.translation[2] = Math.min(0, this.camera.translation[2] - ev.deltaY / 100)
                 this.toolbar.tooltip.innerHTML = this.camera.position()
                 this.camera.update_projection()
                 this.render()
@@ -426,9 +424,12 @@
             div.innerHTML = text
             div.style.position = "absolute"
             let p = mat.vm(position, modelview)
-            let x = 0.5 * (1 + p[0] / p[3]) * this.canvas.width
-            let y = 0.5 * (1 - p[1] / p[3]) * this.canvas.height
-            if (x > 0 && x < this.canvas.width && y > 0 && y < this.canvas.height) {
+            let nx = p[0] / p[3]
+            let ny = p[1] / p[3]
+            let nz = p[2] / p[3]
+            if (Math.abs(nx) <= 1 && Math.abs(ny) <= 1 && Math.abs(nz) <= 1) {
+                let x = 0.5 * (1 + nx) * this.canvas.width
+                let y = 0.5 * (1 - ny) * this.canvas.height
                 div.style.left = x + "px"
                 div.style.top = y + "px"
                 div.style.color = color
