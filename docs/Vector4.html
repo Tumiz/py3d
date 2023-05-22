@@ -15167,8 +15167,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             return [
                 1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
                 0, 1 / distance / Math.tan(fovy / 2), 0, 0,
-                0, 0, -1 / (near - far), 0,
-                0, 0, -near / (far - near), 1]
+                0, 0, 1 / (near - far), 0,
+                0, 0, near / (far - near), 1]
         }
         static perspective(fovy, aspect, near, far) {
             const f = 1 / Math.tan(fovy / 2)
@@ -15241,12 +15241,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             let z = array.filter((v, i) => i % 3 == 2)
             return [Math.min(...x), Math.max(...x), Math.min(...y), Math.max(...y), Math.min(...z), Math.max(...z)]
         }
-        static ticks(min, max) {
+        static ticks(min, max, step) {
             if (max <= min) {
                 return [[min], min, max, 0]
             }
-            let dig = Math.round(Math.log10((max - min) / 5))
-            let step = Math.pow(10, dig)
+            let dig = Math.round(Math.log10(step))
             let tick_min = min - min % step
             if (min < tick_min) {
                 tick_min -= step
@@ -15256,8 +15255,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 tick_max += step
             }
             let size = Math.ceil((tick_max - tick_min) / step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => (tick_min + step * i).toFixed(Math.max(-dig, 0)))
-            return [ticks, tick_min, tick_max, tick_max - tick_min]
+            let ticks = Array.from({ length: size }, (v, i) => Number((tick_min + step * i).toFixed(Math.max(-dig, 0))))
+            return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
     class Camera {
@@ -15274,7 +15273,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 "value": [0, 0, ysize / 2 / Math.tan(this.fovy / 2)],
                 "writable": false
             })
-            this.translation = this.origin_translation
+            this.translation = structuredClone(this.origin_translation)
             this.rotation = mat.identity() // intrinsic
             this.type = type
             this.update_projection()
@@ -15292,9 +15291,13 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 this.translation[2]) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
-            this.translation = this.origin_translation
+            Object.assign(this.translation, this.origin_translation)
             this.rotation = mat.identity()
             this.update_projection()
+        }
+        resolution(width) {
+            let p = mat.vm([1, 0, this.translation[2]], this.projection)
+            return Math.abs(2 * p[3] / p[0] / width)
         }
         modelview() {
             return mat.mms(
@@ -15605,16 +15608,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                         }
                     }
                     if (this.toolbar.btn_grid.style.background == "grey") {
-                        this.grid(this.min, this.max, modelview)
+                        let resolution = this.camera.resolution(this.canvas.width)
+                        this.grid(this.min, this.max, modelview, resolution)
                     }
                     break
                 }
             }
         }
-        grid(min, max, modelview) {
-            const [x_ticks, x_tick_min, x_tick_max, x_range] = mat.ticks(min[0], max[0])
-            const [y_ticks, y_tick_min, y_tick_max, y_range] = mat.ticks(min[1], max[1])
-            const [z_ticks, z_tick_min, z_tick_max, z_range] = mat.ticks(min[2], max[2])
+        grid(min, max, modelview, resolution) {
+            let step = 50 * resolution// meter per pixel
+            const [x_ticks, x_tick_min, x_tick_max] = mat.ticks(min[0], max[0], step)
+            const [y_ticks, y_tick_min, y_tick_max] = mat.ticks(min[1], max[1], step)
+            const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(min[2], max[2], step)
             let lines = []
             for (let x of x_ticks) {
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
@@ -15631,9 +15636,9 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
                 this.drawText(z, [x_tick_min, y_tick_min, z], "grey", modelview)
             }
-            this.drawText("X", [x_tick_max + x_range * 0.1, y_tick_min, z_tick_min], "grey", modelview)
-            this.drawText("Y", [x_tick_min, y_tick_max + y_range * 0.1, z_tick_min], "grey", modelview)
-            this.drawText("Z", [x_tick_min - x_range * 0.1, y_tick_min - y_range * 0.1, z_tick_max + z_range * 0.1], "grey", modelview)
+            this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], "grey", modelview)
+            this.drawText("Y", [x_tick_min, y_tick_max + step, z_tick_min], "grey", modelview)
+            this.drawText("Z", [x_tick_min, y_tick_min, z_tick_max + step], "grey", modelview)
             this.set_attribute("position", lines, 3)
             this.set_attribute("color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 1 : 0.5), 4)
             this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
