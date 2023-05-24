@@ -15244,19 +15244,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         }
         static ticks(min, max, step) {
             if (max <= min) {
-                return [[min], min, max, 0]
+                return [[min], min, max]
             }
             let dig = Math.round(Math.log10(step))
-            let tick_min = min - min % step
-            if (min < tick_min) {
-                tick_min -= step
-            }
-            let tick_max = max - max % step
-            if (max > tick_max) {
-                tick_max += step
-            }
-            let size = Math.ceil((tick_max - tick_min) / step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => Number((tick_min + step * i).toFixed(Math.max(-dig, 0))))
+            let size = Math.ceil((max - min) / step) + 1
+            let ticks = Array.from({ length: size }, (v, i) => Number((min + step * i).toFixed(Math.max(-dig, 0))))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
@@ -15657,7 +15649,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.57149149, 0.74347274, 0.22783193, 0.57018591])</pre>
+<pre>Color([0.71369251, 0.256061  , 0.26983258, 0.90306681])</pre>
 </div>
 
 </div>
@@ -15697,11 +15689,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.45978859, 0.54065295, 0.14549002, 0.43976156]],
+<pre>Color([[[9.27129555e-01, 7.98110470e-01, 1.23360204e-01, 8.60122541e-01]],
 
-       [[0.18752668, 0.74772971, 0.57107726, 0.21645964]],
+       [[9.84354959e-01, 9.36259068e-01, 9.58518132e-01, 4.56563418e-01]],
 
-       [[0.50702457, 0.08040776, 0.82370378, 0.29786967]]])</pre>
+       [[6.66011379e-04, 1.97857403e-01, 6.24001437e-01, 2.37632989e-01]]])</pre>
 </div>
 
 </div>

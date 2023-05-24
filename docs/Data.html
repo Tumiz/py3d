@@ -15244,19 +15244,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         }
         static ticks(min, max, step) {
             if (max <= min) {
-                return [[min], min, max, 0]
+                return [[min], min, max]
             }
             let dig = Math.round(Math.log10(step))
-            let tick_min = min - min % step
-            if (min < tick_min) {
-                tick_min -= step
-            }
-            let tick_max = max - max % step
-            if (max > tick_max) {
-                tick_max += step
-            }
-            let size = Math.ceil((tick_max - tick_min) / step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => Number((tick_min + step * i).toFixed(Math.max(-dig, 0))))
+            let size = Math.ceil((max - min) / step) + 1
+            let ticks = Array.from({ length: size }, (v, i) => Number((min + step * i).toFixed(Math.max(-dig, 0))))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
@@ -15657,7 +15649,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Data([0.75780729])</pre>
+<pre>Data([0.39553148])</pre>
 </div>
 
 </div>
