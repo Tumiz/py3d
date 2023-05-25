@@ -362,11 +362,19 @@ class Vector3(Vector):
             plane.normal[:, numpy.newaxis]
         )
 
-    def interp(self, xp, x):
+    def interpolate(self, x, xp) -> Vector3:
+        '''
+        linear interpolation
+        x: 1-D array, the data to be interpolated.
+        xp: 1-D array, the data to interpolate into. For example, time series.
+        '''
+        x = numpy.array(x)
+        xp = numpy.array(xp)
+        assert x.ndim <= xp.ndim == 1
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
-        d = ((x-x0)/(x1-x0))[:, numpy.newaxis]
+        d = ((x-x0)/(x1-x0)).reshape(-1,1)
         f0 = self[i-1]
         f1 = self[i]
         return (1-d)*f0+d*f1
@@ -392,12 +400,14 @@ class Vector3(Vector):
             entity.color = color
         return entity
 
-    def as_line(self) -> LineSegment:
+    def as_line(self, color=None) -> LineSegment:
         n = list(self.n)
         n[-1] = (n[-1] - 1) * 2
         entity = LineSegment(*n)
         entity.start.xyz = self[..., :-1, :]
         entity.end.xyz = self[..., 1:, :]
+        if color is not None:
+            entity.color = color
         return entity
 
     def as_lineloop(self) -> LineSegment:
@@ -413,12 +423,15 @@ class Vector3(Vector):
         entity.xyz = self
         return entity
 
-    def as_shape(self) -> Triangle:
+    def as_shape(self, color=None) -> Triangle:
         v = numpy.repeat(self, 3, axis=self.ndim-2)
         v = numpy.roll(v, 1, axis=v.ndim-2)
         c = self.M[..., numpy.newaxis, :]
         v[..., 1::3, :] = c
-        return v.view(Vector3).as_triangle()
+        entity = v.view(Vector3).as_triangle()
+        if color is not None:
+            entity.color = color
+        return entity
 
     def as_triangle(self) -> Triangle:
         entity = Triangle(*self.n)
@@ -709,7 +722,13 @@ class Transform(Data):
     def from_orthographic(cls, l, r, t, b, n, f):
         pass
 
-    def interp(self, xp, x) -> Transform:
+    def interpolate(self, x, xp) -> Transform:
+        '''
+        Linear interpolation
+        x: 1-D array, the data to be interpolated.
+        xp: 1-D array, the data to interpolate into. For example, time series.
+        Only translation, rotation and scaling can be interpolated
+        '''
         xp = numpy.array(xp)
         x = numpy.array(x)
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
