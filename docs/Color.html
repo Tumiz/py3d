@@ -15196,9 +15196,6 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 0, 0, 0, 1
             ]
         }
-        static distance(v0, v1) {
-            return Math.sqrt(Math.pow(v0[0] - v1[0], 2) + Math.pow(v0[1] - v1[1], 2) + Math.pow(v0[2] - v1[2], 2))
-        }
         static vm(v, m) {
             console.assert(m.length == 16 && v.length >= 3, m, v)
             let ret = []
@@ -15236,19 +15233,27 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             ret[14] = -m[14]
             return ret
         }
-        static vec3_range(array) {
-            let x = array.filter((v, i) => i % 3 == 0)
-            let y = array.filter((v, i) => i % 3 == 1)
-            let z = array.filter((v, i) => i % 3 == 2)
-            return [Math.min(...x), Math.max(...x), Math.min(...y), Math.max(...y), Math.min(...z), Math.max(...z)]
+        static rgb2hex(r, g, b, a) {
+            return "#" + ((1 << 24) + (r * 255 << 16) + (g * 255 << 8) + b * 255 ).toString(16).slice(1)
+        }
+        static fround(value, digits) {
+            let tmp = 10**digits
+            return Math.round(value * tmp) / tmp
+        }
+        static fceil(value, digits) {
+            let tmp = 10**digits
+            return Math.ceil(value * tmp) / tmp
         }
         static ticks(min, max, step) {
             if (max <= min) {
                 return [[min], min, max]
             }
-            let dig = Math.round(Math.log10(step))
-            let size = Math.ceil((max - min) / step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => Number((min + step * i).toFixed(Math.max(-dig, 0))))
+            let dig = Math.max(0, -Math.round(Math.log10(step)))
+            let r_min = mat.fround(min, dig)
+            let r_max = mat.fround(max, dig)
+            let r_step = mat.fceil(step, dig)
+            let size = Math.ceil((r_max - r_min) / r_step) + 1
+            let ticks = Array.from({ length: size }, (v, i) => mat.fround(r_min + r_step * i, dig))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
@@ -15574,7 +15579,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 let y = 0.5 * (1 - ny) * this.canvas.height
                 div.style.left = x + "px"
                 div.style.top = y + "px"
-                div.style.color = color
+                if (typeof(color) == "string") {
+                    div.style.color = color
+                } else {
+                    div.style.color = mat.rgb2hex(color)
+                    div.style.opacity = color[color.length - 1]
+                }
                 div.style.pointerEvents = "none"
                 this.labeldiv.append(div)
             }
@@ -15614,26 +15624,27 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             const [y_ticks, y_tick_min, y_tick_max] = mat.ticks(min[1], max[1], step)
             const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(min[2], max[2], step)
             let lines = []
+            let text_color = [0.3, 0.3, 0.3, 0.6]
             for (let x of x_ticks) {
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
-                this.drawText(x, [x, y_tick_min, z_tick_min], "grey", modelview)
+                this.drawText(x, [x, y_tick_min, z_tick_min], text_color, modelview)
             }
             for (let y of y_ticks) {
                 lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
                 lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
-                this.drawText(y, [x_tick_min, y, z_tick_min], "grey", modelview)
+                this.drawText(y, [x_tick_min, y, z_tick_min], text_color, modelview)
             }
             for (let z of z_ticks) {
                 lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
                 lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
-                this.drawText(z, [x_tick_min, y_tick_min, z], "grey", modelview)
+                this.drawText(z, [x_tick_min, y_tick_min, z], text_color, modelview)
             }
-            this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], "grey", modelview)
-            this.drawText("Y", [x_tick_min, y_tick_max + step, z_tick_min], "grey", modelview)
-            this.drawText("Z", [x_tick_min, y_tick_min, z_tick_max + step], "grey", modelview)
+            this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color, modelview)
+            this.drawText("Y", [x_tick_min, y_tick_max + step, z_tick_min], text_color, modelview)
+            this.drawText("Z", [x_tick_min, y_tick_min, z_tick_max + step], text_color, modelview)
             this.set_attribute("position", lines, 3)
-            this.set_attribute("color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 1 : 0.5), 4)
+            this.set_attribute("color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
             this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
         }
     }
@@ -15649,7 +15660,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.71369251, 0.256061  , 0.26983258, 0.90306681])</pre>
+<pre>Color([0.78310364, 0.97199769, 0.54164731, 0.25558289])</pre>
 </div>
 
 </div>
@@ -15689,11 +15700,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[9.27129555e-01, 7.98110470e-01, 1.23360204e-01, 8.60122541e-01]],
+<pre>Color([[[0.8482681 , 0.0790484 , 0.13477579, 0.23976713]],
 
-       [[9.84354959e-01, 9.36259068e-01, 9.58518132e-01, 4.56563418e-01]],
+       [[0.65401505, 0.99646902, 0.00187313, 0.45515432]],
 
-       [[6.66011379e-04, 1.97857403e-01, 6.24001437e-01, 2.37632989e-01]]])</pre>
+       [[0.09274338, 0.93946452, 0.00533076, 0.5062912 ]]])</pre>
 </div>
 
 </div>
