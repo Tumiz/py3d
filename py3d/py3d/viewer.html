@@ -21,8 +21,8 @@
             return [
                 1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
                 0, 1 / distance / Math.tan(fovy / 2), 0, 0,
-                0, 0, 1 / (near - far), 0,
-                0, 0, near / (far - near), 1]
+                0, 0, -1 / (near - far), 0,
+                0, 0, -near / (far - near), 1]
         }
         static perspective(fovy, aspect, near, far) {
             const f = 1 / Math.tan(fovy / 2)
@@ -87,14 +87,14 @@
             return ret
         }
         static rgb2hex(r, g, b, a) {
-            return "#" + ((1 << 24) + (r * 255 << 16) + (g * 255 << 8) + b * 255 ).toString(16).slice(1)
+            return "#" + ((1 << 24) + (r * 255 << 16) + (g * 255 << 8) + b * 255).toString(16).slice(1)
         }
         static fround(value, digits) {
-            let tmp = 10**digits
+            let tmp = 10 ** digits
             return Math.round(value * tmp) / tmp
         }
         static fceil(value, digits) {
-            let tmp = 10**digits
+            let tmp = 10 ** digits
             return Math.ceil(value * tmp) / tmp
         }
         static ticks(min, max, step) {
@@ -432,7 +432,7 @@
                 let y = 0.5 * (1 - ny) * this.canvas.height
                 div.style.left = x + "px"
                 div.style.top = y + "px"
-                if (typeof(color) == "string") {
+                if (typeof (color) == "string") {
                     div.style.color = color
                 } else {
                     div.style.color = mat.rgb2hex(color)
