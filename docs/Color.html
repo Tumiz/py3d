@@ -15168,8 +15168,8 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             return [
                 1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
                 0, 1 / distance / Math.tan(fovy / 2), 0, 0,
-                0, 0, 1 / (near - far), 0,
-                0, 0, near / (far - near), 1]
+                0, 0, -1 / (near - far), 0,
+                0, 0, -near / (far - near), 1]
         }
         static perspective(fovy, aspect, near, far) {
             const f = 1 / Math.tan(fovy / 2)
@@ -15234,14 +15234,14 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             return ret
         }
         static rgb2hex(r, g, b, a) {
-            return "#" + ((1 << 24) + (r * 255 << 16) + (g * 255 << 8) + b * 255 ).toString(16).slice(1)
+            return "#" + ((1 << 24) + (r * 255 << 16) + (g * 255 << 8) + b * 255).toString(16).slice(1)
         }
         static fround(value, digits) {
-            let tmp = 10**digits
+            let tmp = 10 ** digits
             return Math.round(value * tmp) / tmp
         }
         static fceil(value, digits) {
-            let tmp = 10**digits
+            let tmp = 10 ** digits
             return Math.ceil(value * tmp) / tmp
         }
         static ticks(min, max, step) {
@@ -15579,7 +15579,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 let y = 0.5 * (1 - ny) * this.canvas.height
                 div.style.left = x + "px"
                 div.style.top = y + "px"
-                if (typeof(color) == "string") {
+                if (typeof (color) == "string") {
                     div.style.color = color
                 } else {
                     div.style.color = mat.rgb2hex(color)
@@ -15660,7 +15660,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.78310364, 0.97199769, 0.54164731, 0.25558289])</pre>
+<pre>Color([0.29284278, 0.40259643, 0.10439126, 0.66743976])</pre>
 </div>
 
 </div>
@@ -15700,11 +15700,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.8482681 , 0.0790484 , 0.13477579, 0.23976713]],
+<pre>Color([[[0.49388088, 0.15280311, 0.43852953, 0.02483678]],
 
-       [[0.65401505, 0.99646902, 0.00187313, 0.45515432]],
+       [[0.63713534, 0.53485994, 0.06170063, 0.47685369]],
 
-       [[0.09274338, 0.93946452, 0.00533076, 0.5062912 ]]])</pre>
+       [[0.77475872, 0.72587144, 0.12984515, 0.60990492]]])</pre>
 </div>
 
 </div>

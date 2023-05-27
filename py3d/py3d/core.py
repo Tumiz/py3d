@@ -10,6 +10,7 @@ import json
 import struct
 
 pi = numpy.arccos(-1)
+__module__ = __import__(__name__)
 
 
 def sign(v):
@@ -127,7 +128,10 @@ def read_pcd(path):
                 d, = struct.unpack(tp_map[(s, t)], bt)
                 tmp.append(d)
             ret.append(tmp)
-    return Vector(ret)
+    ret = Vector(ret)
+    for i, c in enumerate(cols):
+        setattr(ret, c, ret[:, i])
+    return ret
 
 
 class Data(numpy.ndarray):
@@ -212,14 +216,23 @@ class Vector(Data):
 
     @property
     def U(self) -> Vector:
-        # unit vector, direction vector
+        '''
+        unit vector, direction vector
+        '''
         n = self.L
         return numpy.divide(self, n, where=n != 0)
 
     @property
     def H(self) -> Vector:
-        # Homogeneous vector
-        return numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1).view(Vector)
+        '''
+        Homogeneous vector
+        '''
+        ret = numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1)
+        w = ret.shape[-1]
+        if w in [2, 3, 4]:
+            return ret.view(getattr(__module__, f"Vector{w}"))
+        else:
+            return ret.view(Vector)
 
     @property
     def M(self) -> Vector:
@@ -374,7 +387,7 @@ class Vector3(Vector):
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
-        d = ((x-x0)/(x1-x0)).reshape(-1,1)
+        d = ((x-x0)/(x1-x0)).reshape(-1, 1)
         f0 = self[i-1]
         f1 = self[i]
         return (1-d)*f0+d*f1
