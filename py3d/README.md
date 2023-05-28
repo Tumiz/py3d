@@ -29,7 +29,7 @@ while t<4:
     py3d.render(cars, t=t)
     cars @= py3d.Transform.from_rpy(py3d.Vector3(z=dt * numpy.linspace(0.1,1,5)))
     t += dt
-py3d.render(cars, t=t)
+py3d.show()
 
 ```
 
