@@ -54,13 +54,13 @@ class View:
 
     def render(self, obj: Point, t=0):
         if self.max == []:
-            self.max = obj.xyz.flatten().max(axis=0).tolist()
-            self.min = obj.xyz.flatten().min(axis=0).tolist()
+            self.max = obj.xyz.flatten().max().tolist()
+            self.min = obj.xyz.flatten().min().tolist()
         else:
             self.max = numpy.max(
-                [self.max, obj.xyz.flatten().max(axis=0)], axis=0).tolist()
+                [self.max, obj.xyz.flatten().max()], axis=0).tolist()
             self.min = numpy.min(
-                [self.min, obj.xyz.flatten().min(axis=0)], axis=0).tolist()
+                [self.min, obj.xyz.flatten().min()], axis=0).tolist()
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
 
@@ -240,6 +240,12 @@ class Vector(Data):
     def L(self) -> Vector:
         # length
         return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+
+    def min(self) -> Vector:
+        return super().min(axis=self.ndim-2)
+
+    def max(self) -> Vector:
+        return super().max(axis=self.ndim-2)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
