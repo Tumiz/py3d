@@ -20,6 +20,9 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: label
+        uses: actions/labeler@v4
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -28,7 +31,7 @@ jobs:
       - name: install deps
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install jupyterlab matplotlib sympy pillow scipy
+          python3 -m pip install jupyterlab sympy pillow scipy
 
       - name: install py3d
         run: python3 -m pip install -e py3d
@@ -43,3 +46,11 @@ jobs:
           git add docs py3d/README.md README.md
           git commit -m "update docs"
           git push
+
+      - name: Merge pull requests (automerge-action)
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_LABELS: "automerge,!work in progress"
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "pull-request-title"

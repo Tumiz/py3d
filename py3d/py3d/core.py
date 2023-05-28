@@ -163,13 +163,6 @@ class Data(numpy.ndarray):
         return numpy.random.rand(*n).view(cls)
 
     @classmethod
-    def load(cls, path) -> Data:
-        return numpy.load(path).view(cls)
-
-    def save(self, path):
-        numpy.save(path, self)
-
-    @classmethod
     def load_csv(cls, path):
         return numpy.loadtxt(path, delimiter=',').view(cls)
 
