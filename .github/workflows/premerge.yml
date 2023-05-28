@@ -20,9 +20,6 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: label
-        uses: actions/labeler@v4
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -46,6 +43,9 @@ jobs:
           git add docs py3d/README.md README.md
           git commit -m "update docs"
           git push
+
+      - name: label
+        uses: actions/labeler@v4
 
       - name: Merge pull requests (automerge-action)
         uses: pascalgn/automerge-action@v0.15.6
