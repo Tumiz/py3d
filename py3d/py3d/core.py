@@ -82,6 +82,10 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
+def show():
+    return default_view
+
+
 def read_pcd(path):
     f = open(path, "rb")
     data_type = ""
@@ -399,21 +403,17 @@ class Vector3(Vector):
         ret[..., 3, 2] = self[..., 2]
         return ret
 
-    def as_point(self, color=None) -> Point:
+    def as_point(self) -> Point:
         entity = Point(*self.n)
         entity.xyz = self
-        if color is not None:
-            entity.color = color
         return entity
 
-    def as_line(self, color=None) -> LineSegment:
+    def as_line(self) -> LineSegment:
         n = list(self.n)
         n[-1] = (n[-1] - 1) * 2
         entity = LineSegment(*n)
         entity.start.xyz = self[..., :-1, :]
         entity.end.xyz = self[..., 1:, :]
-        if color is not None:
-            entity.color = color
         return entity
 
     def as_lineloop(self) -> LineSegment:
@@ -429,15 +429,12 @@ class Vector3(Vector):
         entity.xyz = self
         return entity
 
-    def as_shape(self, color=None) -> Triangle:
+    def as_shape(self) -> Triangle:
         v = numpy.repeat(self, 3, axis=self.ndim-2)
         v = numpy.roll(v, 1, axis=v.ndim-2)
         c = self.M[..., numpy.newaxis, :]
         v[..., 1::3, :] = c
-        entity = v.view(Vector3).as_triangle()
-        if color is not None:
-            entity.color = color
-        return entity
+        return v.view(Vector3).as_triangle()
 
     def as_triangle(self) -> Triangle:
         entity = Triangle(*self.n)
@@ -841,6 +838,10 @@ class Point(Vector):
     @color.setter
     def color(self, v):
         self[..., 3:7] = v
+
+    def paint(self, color):
+        self.color = color
+        return self
 
     def __add__(self, v: Point) -> Point:
         assert self.TYPE == v.TYPE, "Different TYPE"
