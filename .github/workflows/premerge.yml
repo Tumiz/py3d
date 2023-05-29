@@ -47,6 +47,30 @@ jobs:
       - name: label
         uses: actions/labeler@v4
 
+      - name: Install pypa/build
+        if: github.event.pull_request.labels.name == 'automerge'
+        run: >-
+          python3 -m
+          pip install
+          build
+          --user
+
+      - name: Build a binary wheel and a source tarball
+        if: github.event.pull_request.labels.name == 'automerge'
+        run: >-
+          python3 -m
+          build
+          --sdist
+          --wheel
+          --outdir dist/
+          py3d
+
+      - name: Publish distribution to PyPI
+        if: github.event.pull_request.labels.name == 'automerge'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI }}
+
       - name: Merge pull requests (automerge-action)
         uses: pascalgn/automerge-action@v0.15.6
         env:
