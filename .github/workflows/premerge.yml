@@ -7,8 +7,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   pull_request:
     branches: ["master"]
-    paths-ignore:
-      - .github/**
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -22,7 +20,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: install deps
@@ -47,8 +45,15 @@ jobs:
       - name: label
         uses: actions/labeler@v4
 
+      # - name: get labels
+      #   run: |
+      #     labels="$(gh api repos/${{ github.repository_owner }}/${{ github.repository_owner }}/pulls/${{ github.event.pull_request.number }} --jq '.labels.[].name')"
+      #     echo "$labels"
+      #   shell: bash
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install pypa/build
-        if: github.event.pull_request.labels.name == 'automerge'
         run: >-
           python3 -m
           pip install
@@ -56,7 +61,6 @@ jobs:
           --user
 
       - name: Build a binary wheel and a source tarball
-        if: github.event.pull_request.labels.name == 'automerge'
         run: >-
           python3 -m
           build
@@ -66,7 +70,6 @@ jobs:
           py3d
 
       - name: Publish distribution to PyPI
-        if: github.event.pull_request.labels.name == 'automerge'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI }}
