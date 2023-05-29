@@ -204,6 +204,14 @@ class Vector(Data):
         self[..., 2] = v
 
     @property
+    def xy(self) -> Vector2:
+        return self[..., 0:2].view(Vector2)
+
+    @xy.setter
+    def xy(self, v):
+        self[..., 0:2] = v
+
+    @property
     def xyz(self) -> Vector3:
         return self[..., 0:3].view(Vector3)
 
