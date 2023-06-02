@@ -37,7 +37,6 @@ py3d.show()
 
 ### API reference
 
-[Data](https://tumiz.github.io/scenario/Data.html)
 [Vector](https://tumiz.github.io/scenario/Vector.html)
 [Vector3](https://tumiz.github.io/scenario/Vector3.html)
 [Vector4](https://tumiz.github.io/scenario/Vector4.html)
