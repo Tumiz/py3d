@@ -15309,7 +15309,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         constructor(cache) {
             this.bar = document.createElement("div")
             this.cache = cache
-            this.ts = Object.keys(this.cache).sort()
+            this.ts = Object.keys(this.cache).sort((a, b) => { return a - b })
             this.ti = this.ts.length - 1
             this.slider = document.createElement("input")
             this.slider.type = "range"

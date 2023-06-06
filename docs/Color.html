@@ -15310,7 +15310,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         constructor(cache) {
             this.bar = document.createElement("div")
             this.cache = cache
-            this.ts = Object.keys(this.cache).sort()
+            this.ts = Object.keys(this.cache).sort((a, b) => { return a - b })
             this.ti = this.ts.length - 1
             this.slider = document.createElement("input")
             this.slider.type = "range"
@@ -15660,7 +15660,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.83055372, 0.36309371, 0.98751915, 0.32229254])</pre>
+<pre>Color([0.36218565, 0.67610011, 0.6421623 , 0.87433979])</pre>
 </div>
 
 </div>
@@ -15699,11 +15699,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.70466618, 0.88812767, 0.61527172, 0.70681461]],
+<pre>Color([[[0.02810717, 0.38825716, 0.11301527, 0.036052  ]],
 
-       [[0.94897574, 0.40870653, 0.08838292, 0.84410903]],
+       [[0.08864008, 0.8811503 , 0.21201132, 0.5344033 ]],
 
-       [[0.75060734, 0.78011794, 0.81323136, 0.71374976]]])</pre>
+       [[0.46104024, 0.07727282, 0.66206767, 0.15930949]]])</pre>
 </div>
 
 </div>
