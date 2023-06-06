@@ -3,7 +3,7 @@
 from __future__ import annotations
 import numpy
 from IPython.display import display, HTML
-from typing import Dict
+from typing import Dict, Union
 import pathlib
 import uuid
 import json
@@ -226,7 +226,7 @@ class Vector(numpy.ndarray):
         self[..., 0:3] = v
 
     @property
-    def U(self) -> Vector:
+    def U(self) -> Union[Vector, Vector2, Vector3, Vector4]:
         '''
         unit vector, direction vector
         '''
@@ -234,7 +234,7 @@ class Vector(numpy.ndarray):
         return numpy.divide(self, n, where=n != 0)
 
     @property
-    def H(self) -> Vector:
+    def H(self) -> Union[Vector, Vector2, Vector3, Vector4]:
         '''
         Homogeneous vector
         '''
@@ -246,7 +246,7 @@ class Vector(numpy.ndarray):
             return ret.view(Vector)
 
     @property
-    def M(self) -> Vector:
+    def M(self) -> Union[Vector, Vector2, Vector3, Vector4]:
         # mean vector
         return super().mean(axis=self.ndim-2)
 
