@@ -362,7 +362,7 @@
             this.toolbar.slider.oninput = (ev) => {
                 for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
                     let t = this.toolbar.ts[i]
-                    if (t >= this.toolbar.slider.value) {
+                    if (t - this.toolbar.slider.value > 0) {
                         this.toolbar.ti = i
                         this.toolbar.time.innerHTML = t + "/" + this.toolbar.slider.max
                         this.render()
