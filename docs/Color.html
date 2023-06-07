@@ -15509,7 +15509,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             this.toolbar.slider.oninput = (ev) => {
                 for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
                     let t = this.toolbar.ts[i]
-                    if (t >= this.toolbar.slider.value) {
+                    if (t - this.toolbar.slider.value > 0) {
                         this.toolbar.ti = i
                         this.toolbar.time.innerHTML = t + "/" + this.toolbar.slider.max
                         this.render()
@@ -15660,7 +15660,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.36218565, 0.67610011, 0.6421623 , 0.87433979])</pre>
+<pre>Color([0.44961366, 0.51673653, 0.12192498, 0.93368044])</pre>
 </div>
 
 </div>
@@ -15699,11 +15699,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.02810717, 0.38825716, 0.11301527, 0.036052  ]],
+<pre>Color([[[0.68896752, 0.7216325 , 0.97712383, 0.71588457]],
 
-       [[0.08864008, 0.8811503 , 0.21201132, 0.5344033 ]],
+       [[0.37124133, 0.84527336, 0.6065786 , 0.99766043]],
 
-       [[0.46104024, 0.07727282, 0.66206767, 0.15930949]]])</pre>
+       [[0.14620598, 0.05262231, 0.06969433, 0.32561573]]])</pre>
 </div>
 
 </div>
