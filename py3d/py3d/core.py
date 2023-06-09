@@ -3,7 +3,7 @@
 from __future__ import annotations
 import numpy
 from IPython.display import display, HTML
-from typing import Dict, Union
+from typing import Dict
 import pathlib
 import uuid
 import json
@@ -226,7 +226,7 @@ class Vector(numpy.ndarray):
         self[..., 0:3] = v
 
     @property
-    def U(self) -> Union[Vector, Vector2, Vector3, Vector4]:
+    def U(self) -> Vector | Vector2 | Vector3 | Vector4:
         '''
         unit vector, direction vector
         '''
@@ -234,7 +234,7 @@ class Vector(numpy.ndarray):
         return numpy.divide(self, n, where=n != 0)
 
     @property
-    def H(self) -> Union[Vector, Vector2, Vector3, Vector4]:
+    def H(self) -> Vector | Vector2 | Vector3 | Vector4:
         '''
         Homogeneous vector
         '''
@@ -246,7 +246,7 @@ class Vector(numpy.ndarray):
             return ret.view(Vector)
 
     @property
-    def M(self) -> Union[Vector, Vector2, Vector3, Vector4]:
+    def M(self) -> Vector | Vector2 | Vector3 | Vector4:
         # mean vector
         return super().mean(axis=self.ndim-2)
 
@@ -793,7 +793,14 @@ class Color(Vector):
             return ret.view(cls)
 
     @classmethod
-    def map(cls, value, start, end):
+    def map(cls, value: list | numpy.ndarray, start=None, end=None):
+        '''
+        Create a series of colors by giving a a series of value
+        '''
+        if start is None:
+            start = numpy.min(value)
+        if end is None:
+            end = numpy.max(value)
         center = (start + end)/2
         width = (end - start)/2
         r = numpy.maximum(value - center, 0)/width
