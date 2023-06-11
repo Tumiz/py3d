@@ -230,8 +230,8 @@ class Vector(numpy.ndarray):
         '''
         unit vector, direction vector
         '''
-        n = self.L
-        return numpy.divide(self, n, where=n != 0)
+        l = numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+        return numpy.divide(self, l, where=l != 0)
 
     @property
     def H(self) -> Vector | Vector2 | Vector3 | Vector4:
@@ -253,7 +253,7 @@ class Vector(numpy.ndarray):
     @property
     def L(self) -> Vector:
         # length
-        return numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+        return numpy.linalg.norm(self, axis=self.ndim - 1)
 
     def min(self) -> Vector:
         return super().min(axis=self.ndim-2)
@@ -334,14 +334,11 @@ class Vector3(Vector):
         if type(value) is Transform:
             return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
         else:
-            return self.__matmul__(value)
+            return super().__matmul__(value)
 
-    def dot(self, v) -> Vector3:
-        if type(v) is Vector3:
-            product = self * v
-            return product.sum(axis=product.ndim - 1, keepdims=True).view(numpy.ndarray)
-        else:
-            return numpy.dot(self, v)
+    def dot(self, v) -> Vector:
+        product = self * v
+        return numpy.sum(product, axis=product.ndim - 1).view(Vector)
 
     def cross(self, v: numpy.ndarray) -> Vector3:
         return numpy.cross(self, v).view(self.__class__)
@@ -366,10 +363,11 @@ class Vector3(Vector):
         return self.is_parallel_to_vector(normal)
 
     def scalar_projection(self, v: numpy.ndarray) -> float:
-        return self.dot(v) / v.L
+        return self.dot(v) / Vector3(v).L
 
     def vector_projection(self, v: numpy.ndarray) -> Vector3:
-        return self.scalar_projection(v) * v / v.L
+        s = self.scalar_projection(v) / Vector3(v).L
+        return s.reshape(-1, 1) * v
 
     def distance_to_line(self, p0: numpy.ndarray, p1: numpy.ndarray) -> float:
         v0 = p1 - p0
