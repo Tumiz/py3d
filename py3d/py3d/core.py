@@ -178,7 +178,7 @@ class Vector(numpy.ndarray):
             return self.shape
 
     @classmethod
-    def rand(cls, *n) -> Vector:
+    def rand(cls, *n) -> Vector | Vector2 | Vector3 | Vector4:
         n += cls.BASE_SHAPE
         return numpy.random.rand(*n).view(cls)
 
@@ -875,8 +875,17 @@ class Point(Vector):
         return self
 
     def __add__(self, v: Point) -> Point:
-        assert self.TYPE == v.TYPE, "Different TYPE"
-        return numpy.concatenate((self, v), axis=0).view(self.__class__)
+        '''
+        Concatenate two Point
+        '''
+        assert self.TYPE == v.TYPE, f"Different TYPE {self.TYPE}, {v.TYPE}"
+        assert self.shape[1:] == v.shape[1:
+                                         ], f"Different shape {self.shape[1:-1]}, {v.shape[1:-1]}"
+        return numpy.concatenate((self, v), axis=0).view(Point)
+
+    def __iadd__(self, v: Point) -> Point:
+        self = self.__add__(v)
+        return self
 
     def __matmul__(self, transform: Transform) -> Point:
         vertex = self.xyz @ transform
