@@ -263,6 +263,23 @@ class Vector(numpy.ndarray):
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
+    
+    def lerp(self, x, xp) -> Vector:
+        '''
+        linear interpolation
+        x: 1-D array, the data to be interpolated.
+        xp: 1-D array, the data to interpolate into. For example, time series.
+        '''
+        x = numpy.array(x)
+        xp = numpy.array(xp)
+        assert x.ndim <= xp.ndim == 1
+        i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
+        x0 = xp[i-1]
+        x1 = xp[i]
+        d = ((x-x0)/(x1-x0)).reshape(-1, 1)
+        f0 = self[i-1]
+        f1 = self[i]
+        return (1-d)*f0+d*f1
 
     def to_pcd(self, path, fields=""):
         w = self.shape[-1]
@@ -389,23 +406,6 @@ class Vector3(Vector):
         return self + (plane.position[:, numpy.newaxis] - self).vector_projection(
             plane.normal[:, numpy.newaxis]
         )
-
-    def lerp(self, x, xp) -> Vector3:
-        '''
-        linear interpolation
-        x: 1-D array, the data to be interpolated.
-        xp: 1-D array, the data to interpolate into. For example, time series.
-        '''
-        x = numpy.array(x)
-        xp = numpy.array(xp)
-        assert x.ndim <= xp.ndim == 1
-        i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
-        x0 = xp[i-1]
-        x1 = xp[i]
-        d = ((x-x0)/(x1-x0)).reshape(-1, 1)
-        f0 = self[i-1]
-        f1 = self[i]
-        return (1-d)*f0+d*f1
 
     def as_scaling(self) -> Transform:
         ret = Transform
