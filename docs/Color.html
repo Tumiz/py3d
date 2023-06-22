@@ -15565,7 +15565,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 let d = Math.hypot(dx, dy)
                 if (d) {
                     if (ev.ctrlKey | ev.buttons == 4) {
-                        this.camera.rotation = mat.mm(mat.angle_axis(d / 100, -dy / d, dx / d, 0), this.camera.rotation)
+                        this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
                         this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = this.camera.height / 200
@@ -15771,7 +15771,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.14557167, 0.5341767 , 0.50783263, 0.38952261])</pre>
+<pre>Color([0.43867122, 0.71998605, 0.16290485, 0.0660278 ])</pre>
 </div>
 
 </div>
@@ -15810,11 +15810,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.84278894, 0.68167057, 0.64182385, 0.02110083]],
+<pre>Color([[[0.55231096, 0.82351175, 0.68167161, 0.61160467]],
 
-       [[0.04302143, 0.26156584, 0.16323815, 0.92268359]],
+       [[0.01292776, 0.91130699, 0.68297434, 0.59646707]],
 
-       [[0.11445908, 0.25017905, 0.80861133, 0.84190303]]])</pre>
+       [[0.78735723, 0.30805749, 0.33416277, 0.99788242]]])</pre>
 </div>
 
 </div>

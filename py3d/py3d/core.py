@@ -253,7 +253,7 @@ class Vector(numpy.ndarray):
     @property
     def L(self) -> Vector:
         # length
-        return numpy.linalg.norm(self, axis=self.ndim - 1)
+        return numpy.linalg.norm(self, axis=self.ndim - 1).view(Vector)
 
     def min(self) -> Vector:
         return super().min(axis=self.ndim-2)
@@ -263,7 +263,7 @@ class Vector(numpy.ndarray):
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
-    
+
     def lerp(self, x, xp) -> Vector:
         '''
         linear interpolation
@@ -406,6 +406,22 @@ class Vector3(Vector):
         return self + (plane.position[:, numpy.newaxis] - self).vector_projection(
             plane.normal[:, numpy.newaxis]
         )
+
+    def closest_point_to_points(self, points: Vector3 | numpy.ndarray | list) -> Vector3:
+        '''
+        return closest point indexes of one point cloud to another point cloud, and also return indexes of the pair points in the another point cloud
+        both self and points should be flattened
+        '''
+        pts = Vector3(points)
+        assert self.ndim < 3, "self should be flattened"
+        assert pts.ndim < 3, "parameter `points` should be flattened"
+        d: Vector = (self[..., numpy.newaxis, :] - pts).L
+        d = d.reshape(*d.shape[:-2], -1)
+        idx = d.argmin(d.ndim-1)
+        spts = sum(pts.n)
+        idx0 = idx//spts
+        idx1 = idx % spts
+        return idx0, idx1
 
     def as_scaling(self) -> Transform:
         ret = Transform
