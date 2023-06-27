@@ -1,20 +1,20 @@
 # Copyright (c) Tumiz.
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
-import numpy
 from IPython.display import display, HTML
 from typing import Dict
 import pathlib
 import uuid
 import json
 import struct
+import torch
 
-pi = numpy.arccos(-1)
+pi = torch.pi
 __module__ = __import__(__name__)
 
 
 def sign(v):
-    return numpy.sign(v, where=v != 0, out=numpy.ones_like(v))
+    return torch.sign(v, where=v != 0, out=torch.ones_like(v))
 
 
 class View:
@@ -54,12 +54,12 @@ class View:
 
     def render(self, obj: Point, t=0):
         if self.max == []:
-            self.max = obj.xyz.flatten().max().tolist()
-            self.min = obj.xyz.flatten().min().tolist()
+            self.max = obj.xyz.flatten().max()[0].tolist()
+            self.min = obj.xyz.flatten().min()[0].tolist()
         else:
-            self.max = numpy.max(
+            self.max = torch.max(
                 [self.max, obj.xyz.flatten().max()], axis=0).tolist()
-            self.min = numpy.min(
+            self.min = torch.min(
                 [self.min, obj.xyz.flatten().min()], axis=0).tolist()
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
         ).tolist(), color=obj.color.ravel().tolist())
@@ -139,32 +139,32 @@ def read_pcd(path):
 
 
 def read_csv(path):
-    return numpy.loadtxt(path, delimiter=',').view(Vector)
+    return torch.loadtxt(path, delimiter=',').as_subclass(Vector)
 
 
-class Vector(numpy.ndarray):
+class Vector(torch.Tensor):
     '''
     Base class of Vector2, Vector3, Vector4 and Transform
     '''
     BASE_SHAPE = ()
 
-    def __new__(cls, data: list | numpy.ndarray = []):
-        nd = numpy.array(data)
+    def __new__(cls, data: list | torch.Tensor = []):
+        nd = torch.tensor(data)
         if cls.BASE_SHAPE:
             bn = len(cls.BASE_SHAPE)
-            ret = numpy.zeros(nd.shape[:-bn]+cls.BASE_SHAPE)
-            c = numpy.minimum(cls.BASE_SHAPE, nd.shape[-bn:])
+            ret = torch.zeros(nd.shape[:-bn]+cls.BASE_SHAPE)
+            c = torch.minimum(torch.tensor(cls.BASE_SHAPE), torch.tensor(nd.shape[-bn:]))
             mask = ..., *[slice(s) for s in c]
             ret[mask] = nd[mask]
-            return ret.view(cls)
+            return ret.as_subclass(cls)
         else:
-            return nd.view(cls)
+            return nd.as_subclass(cls)
 
     def __imatmul__(self, value) -> Vector:
         return self @ value
 
     def tile(self, *n):
-        return numpy.tile(self, n + self.ndim * (1,))
+        return torch.tile(self, n + self.ndim * (1,))
 
     def flatten(self):
         return self.reshape(-1, *self.BASE_SHAPE)
@@ -180,38 +180,38 @@ class Vector(numpy.ndarray):
     @classmethod
     def rand(cls, *n) -> Vector | Vector2 | Vector3 | Vector4:
         n += cls.BASE_SHAPE
-        return numpy.random.rand(*n).view(cls)
+        return torch.random.rand(*n).as_subclass(cls)
 
     def to_csv(self, path):
-        numpy.savetxt(path, self, delimiter=',')
+        torch.savetxt(path, self, delimiter=',')
 
     @property
     def x(self):
-        return self[..., 0].view(numpy.ndarray)
+        return self[..., 0].as_subclass(torch.Tensor)
 
     @x.setter
     def x(self, v):
-        self[..., 0] = v
+        self[..., 0] = torch.as_tensor(v)
 
     @property
     def y(self):
-        return self[..., 1].view(numpy.ndarray)
+        return self[..., 1].as_subclass(torch.Tensor)
 
     @y.setter
     def y(self, v):
-        self[..., 1] = v
+        self[..., 1] = torch.as_tensor(v)
 
     @property
     def z(self):
-        return self[..., 2].view(numpy.ndarray)
+        return self[..., 2].as_subclass(torch.Tensor)
 
     @z.setter
     def z(self, v):
-        self[..., 2] = v
+        self[..., 2] = torch.as_tensor(v)
 
     @property
     def xy(self) -> Vector2:
-        return self[..., 0:2].view(Vector2)
+        return self[..., 0:2].as_subclass(Vector2)
 
     @xy.setter
     def xy(self, v):
@@ -219,31 +219,35 @@ class Vector(numpy.ndarray):
 
     @property
     def xyz(self) -> Vector3:
-        return self[..., 0:3].view(Vector3)
+        return self[..., 0:3].as_subclass(Vector3)
 
     @xyz.setter
     def xyz(self, v):
-        self[..., 0:3] = v
+        self[..., 0:3] = torch.as_tensor(v)
 
     @property
     def U(self) -> Vector | Vector2 | Vector3 | Vector4:
         '''
         unit vector, direction vector
         '''
-        l = numpy.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
-        return numpy.divide(self, l, where=l != 0)
+        l = torch.linalg.norm(self, axis=self.ndim - 1, keepdims=True)
+        return torch.divide(self, l, where=l != 0)
 
     @property
     def H(self) -> Vector | Vector2 | Vector3 | Vector4:
         '''
         Homogeneous vector
         '''
-        ret = numpy.insert(self, self.shape[-1], 1, axis=self.ndim-1)
+        shape = list(self.shape)
+        shape[-1] += 1
+        ret = torch.empty(shape)
         w = ret.shape[-1]
+        ret[..., :-1] = self
+        ret[..., -1] = 1
         if w in [2, 3, 4]:
-            return ret.view(getattr(__module__, f"Vector{w}"))
+            return ret.as_subclass(getattr(__module__, f"Vector{w}"))
         else:
-            return ret.view(Vector)
+            return ret.as_subclass(Vector)
 
     @property
     def M(self) -> Vector | Vector2 | Vector3 | Vector4:
@@ -253,7 +257,7 @@ class Vector(numpy.ndarray):
     @property
     def L(self) -> Vector:
         # length
-        return numpy.linalg.norm(self, axis=self.ndim - 1).view(Vector)
+        return torch.linalg.norm(self, axis=self.ndim - 1).as_subclass(Vector)
 
     def min(self) -> Vector:
         return super().min(axis=self.ndim-2)
@@ -262,7 +266,7 @@ class Vector(numpy.ndarray):
         return super().max(axis=self.ndim-2)
 
     def diff(self, n=1) -> Vector:
-        return numpy.diff(self, n, axis=self.ndim-2)
+        return torch.diff(self, n, axis=self.ndim-2)
 
     def lerp(self, x, xp) -> Vector:
         '''
@@ -270,10 +274,10 @@ class Vector(numpy.ndarray):
         x: 1-D array, the data to be interpolated.
         xp: 1-D array, the data to interpolate into. For example, time series.
         '''
-        x = numpy.array(x)
-        xp = numpy.array(xp)
+        x = torch.tensor(x)
+        xp = torch.tensor(xp)
         assert x.ndim <= xp.ndim == 1
-        i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
+        i = torch.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
         d = ((x-x0)/(x1-x0)).reshape(-1, 1)
@@ -311,22 +315,22 @@ DATA ascii
 class Vector2(Vector):
     BASE_SHAPE = 2,
 
-    def __new__(cls, data: list | numpy.ndarray = []):
+    def __new__(cls, data: list | torch.Tensor = []):
         return super().__new__(cls, data)
 
 
 class Vector3(Vector):
     BASE_SHAPE = 3,
 
-    def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0):
+    def __new__(cls, data: list | torch.Tensor = [], x=0, y=0, z=0):
         '''
             Represent points, positions and translations
         '''
-        if numpy.any(data):
+        if torch.tensor(data).any():
             return super().__new__(cls, data)
         else:
-            n = max(numpy.shape(x), numpy.shape(y), numpy.shape(z))
-            ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
+            n = max(torch.tensor(x).shape, torch.tensor(y).shape, torch.tensor(z).shape)
+            ret = torch.empty(n + cls.BASE_SHAPE).as_subclass(cls)
             ret.x = x
             ret.y = y
             ret.z = z
@@ -334,80 +338,80 @@ class Vector3(Vector):
 
     @classmethod
     def grid(cls, x=0, y=0, z=0) -> Vector3:
-        n = numpy.shape(x) + numpy.shape(y) + numpy.shape(z)
-        ret = numpy.empty(n+(3, )).view(Vector3)
-        i = numpy.arange(len(n))
-        ret.x = numpy.expand_dims(x, axis=i[i != 0].tolist())
-        ret.y = numpy.expand_dims(y, axis=i[i != 1].tolist())
-        ret.z = numpy.expand_dims(z, axis=i[i != 2].tolist())
+        n = torch.as_tensor(x).shape + torch.as_tensor(y).shape + torch.as_tensor(z).shape
+        ret = torch.empty(*list(n), 3).as_subclass(cls)
+        i = torch.arange(len(n))
+        ret.x = x
+        ret.y = y
+        ret.z = z
         return ret
-
+    
     @classmethod
     def circle(cls, radius=1, segments=20) -> Vector3:
-        a = numpy.linspace(0, 2*numpy.pi, segments, False)
-        return cls(x=radius * numpy.sin(a), y=radius * numpy.cos(a))
+        a = torch.linspace(0, 2*torch.pi, segments, False)
+        return cls(x=radius * torch.sin(a), y=radius * torch.cos(a))
 
     def __matmul__(self, value: Transform) -> Vector3:
         if type(value) is Transform:
-            return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
+            return torch.matmul(self.H, value)[..., 0:3].as_subclass(Vector3)
         else:
             return super().__matmul__(value)
 
     def dot(self, v) -> Vector:
         product = self * v
-        return numpy.sum(product, axis=product.ndim - 1).view(Vector)
+        return torch.sum(product, axis=product.ndim - 1).as_subclass(Vector)
 
-    def cross(self, v: numpy.ndarray) -> Vector3:
-        return numpy.cross(self, v).view(self.__class__)
+    def cross(self, v: torch.Tensor) -> Vector3:
+        return torch.cross(self, v).as_subclass(self.__class__)
 
-    def angle_to_vector(self, to: numpy.ndarray) -> Vector3:
+    def angle_to_vector(self, to: torch.Tensor) -> Vector3:
         cos = self.dot(to) / self.L / Vector3(to).L
-        return numpy.arccos(cos)
+        return torch.arccos(cos)
 
-    def angle_to_plane(self, normal: numpy.ndarray) -> float:
-        return numpy.pi / 2 - self.angle_to_vector(normal)
+    def angle_to_plane(self, normal: torch.Tensor) -> float:
+        return torch.pi / 2 - self.angle_to_vector(normal)
 
-    def is_parallel_to_vector(self, v: numpy.ndarray) -> bool:
+    def is_parallel_to_vector(self, v: torch.Tensor) -> bool:
         return self.U == v.U
 
-    def is_parallel_to_plane(self, normal: numpy.ndarray) -> bool:
+    def is_parallel_to_plane(self, normal: torch.Tensor) -> bool:
         return self.is_perpendicular_to_vector(normal)
 
-    def is_perpendicular_to_vector(self, v: numpy.ndarray) -> bool:
+    def is_perpendicular_to_vector(self, v: torch.Tensor) -> bool:
         return self.dot(v) == 0
 
-    def is_perpendicular_to_plane(self, normal: numpy.ndarray) -> bool:
+    def is_perpendicular_to_plane(self, normal: torch.Tensor) -> bool:
         return self.is_parallel_to_vector(normal)
 
-    def scalar_projection(self, v: numpy.ndarray) -> float:
+    def scalar_projection(self, v: torch.Tensor) -> float:
         return self.dot(v) / Vector3(v).L
 
-    def vector_projection(self, v: numpy.ndarray) -> Vector3:
+    def vector_projection(self, v: torch.Tensor) -> Vector3:
         s = self.scalar_projection(v) / Vector3(v).L
         return s.reshape(-1, 1) * v
 
-    def distance_to_line(self, p0: numpy.ndarray, p1: numpy.ndarray) -> float:
+    def distance_to_line(self, p0: torch.Tensor, p1: torch.Tensor) -> float:
         v0 = p1 - p0
         v1 = self - p0
         return v0.cross(v1).L / v0.L
 
-    def distance_to_plane(self, n: numpy.ndarray, p: numpy.ndarray) -> float:
+    def distance_to_plane(self, n: torch.Tensor, p: torch.Tensor) -> float:
         # n: normal vector of the plane
         # p: a point on the plane
         v = self - p
         return v.scalar_projection(n)
 
     def projection_on_line(
-        self, p0: numpy.ndarray, p1: numpy.ndarray
-    ) -> numpy.ndarray:
+        self, p0: torch.Tensor, p1: torch.Tensor
+    ) -> torch.Tensor:
         return p0 + (self - p0).vector_projection(p1 - p0)
 
-    def projection_on_plane(self, plane) -> numpy.ndarray:
-        return self + (plane.position[:, numpy.newaxis] - self).vector_projection(
-            plane.normal[:, numpy.newaxis]
+    def projection_on_plane(self, plane) -> torch.Tensor:
+        return self + (plane.position[:, torch.newaxis] - self).vector_projection(
+            plane.normal[:, torch.newaxis]
         )
 
-    def closest_point_to_points(self, points: Vector3 | numpy.ndarray | list) -> Vector3:
+    def closest_point_to_points(self, points: Vector3 | torch.Tensor | list) -> Vector3:
         '''
         return closest point indexes of one point cloud to another point cloud, and also return indexes of the pair points in the another point cloud
         both self and points should be flattened
@@ -415,7 +419,7 @@ class Vector3(Vector):
         pts = Vector3(points)
         assert self.ndim < 3, "self should be flattened"
         assert pts.ndim < 3, "parameter `points` should be flattened"
-        d: Vector = (self[..., numpy.newaxis, :] - pts).L
+        d: Vector = (self[..., torch.newaxis, :] - pts).L
         d = d.reshape(*d.shape[:-2], -1)
         idx = d.argmin(d.ndim-1)
         spts = sum(pts.n)
@@ -428,7 +432,7 @@ class Vector3(Vector):
         ret[..., 0, 0] = self[..., 0]
         ret[..., 1, 1] = self[..., 1]
         ret[..., 2, 2] = self[..., 2]
-        return ret.view(Transform)
+        return ret.as_subclass(Transform)
 
     def as_point(self) -> Point:
         entity = Point(*self.n)
@@ -448,7 +452,7 @@ class Vector3(Vector):
         n[-1] = n[-1] * 2
         entity = LineSegment(*n)
         entity.start.xyz = self
-        entity.end.xyz = numpy.roll(self, -1, axis=self.ndim - 2)
+        entity.end.xyz = torch.roll(self, -1, axis=self.ndim - 2)
         return entity
 
     def as_linesegment(self) -> LineSegment:
@@ -457,11 +461,11 @@ class Vector3(Vector):
         return entity
 
     def as_shape(self) -> Triangle:
-        v = numpy.repeat(self, 3, axis=self.ndim-2)
-        v = numpy.roll(v, 1, axis=v.ndim-2)
-        c = self.M[..., numpy.newaxis, :]
+        v = torch.repeat(self, 3, axis=self.ndim-2)
+        v = torch.roll(v, 1, axis=v.ndim-2)
+        c = self.M[..., torch.newaxis, :]
         v[..., 1::3, :] = c
-        return v.view(Vector3).as_triangle()
+        return v.as_subclass(Vector3).as_triangle()
 
     def as_triangle(self) -> Triangle:
         entity = Triangle(*self.n)
@@ -471,20 +475,20 @@ class Vector3(Vector):
     def as_vector(self) -> LineSegment:
         entity = LineSegment(*self.n, 2)
         entity.start.xyz = 0
-        entity.end.xyz = numpy.expand_dims(self, axis=self.ndim - 1)
+        entity.end.xyz = torch.expand_dims(self, axis=self.ndim - 1)
         return entity
 
 
 class Vector4(Vector):
     BASE_SHAPE = 4,
 
-    def __new__(cls, xyzw_list: list | numpy.ndarray = [], x=0, y=0, z=0, w=1):
-        if numpy.any(xyzw_list):
+    def __new__(cls, xyzw_list: list | torch.Tensor = [], x=0, y=0, z=0, w=1):
+        if torch.any(xyzw_list):
             return super().__new__(cls, xyzw_list)
         else:
-            n = max(numpy.shape(x), numpy.shape(y),
-                    numpy.shape(z), numpy.shape(w))
-            ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
+            n = max(torch.shape(x), torch.shape(y),
+                    torch.shape(z), torch.shape(w))
+            ret = torch.empty(n + cls.BASE_SHAPE).as_subclass(cls)
             ret.x = x
             ret.y = y
             ret.z = z
@@ -493,7 +497,7 @@ class Vector4(Vector):
 
     @property
     def w(self):
-        return self[..., 3].view(numpy.ndarray)
+        return self[..., 3].as_subclass(torch.Tensor)
 
     @w.setter
     def w(self, v):
@@ -501,22 +505,22 @@ class Vector4(Vector):
 
     @property
     def wxyz(self) -> Vector:
-        ret = numpy.empty(self.n + self.BASE_SHAPE).view(Vector)
+        ret = torch.empty(self.n + self.BASE_SHAPE).as_subclass(Vector)
         ret[..., 0] = self.w
         ret[..., 1:4] = self.xyz
         return ret
 
     def from_axis_angle_to_quaternion(self) -> Vector4:
-        q = numpy.empty(self.n + self.BASE_SHAPE).view(Vector4)
-        q.xyz = numpy.sin(self.w / 2)[..., numpy.newaxis] * self.xyz.U
-        q.w = numpy.cos(self.w / 2)
+        q = torch.empty(self.n + self.BASE_SHAPE).as_subclass(Vector4)
+        q.xyz = torch.sin(self.w / 2)[..., torch.newaxis] * self.xyz.U
+        q.w = torch.cos(self.w / 2)
         return q
 
     def from_quaternion_to_axis_angle(self) -> Vector4:
-        q = numpy.empty(self.n + self.BASE_SHAPE).view(Vector4)
-        q.w = numpy.arccos(self.w) * 2
-        sin_ha = numpy.sin(q.w / 2)[..., numpy.newaxis]
-        q.xyz = numpy.divide(self.xyz, sin_ha,
+        q = torch.empty(self.n + self.BASE_SHAPE).as_subclass(Vector4)
+        q.w = torch.arccos(self.w) * 2
+        sin_ha = torch.sin(q.w / 2)[..., torch.newaxis]
+        q.xyz = torch.divide(self.xyz, sin_ha,
                              where=sin_ha != 0)
         return q
 
@@ -524,11 +528,11 @@ class Vector4(Vector):
 class Transform(Vector):
     BASE_SHAPE = 4, 4
 
-    def __new__(cls, data: list | numpy.ndarray = numpy.eye(4)):
+    def __new__(cls, data: list | torch.Tensor = torch.eye(4)):
         return super().__new__(cls, data)
 
     @classmethod
-    def from_translation(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0) -> Transform:
+    def from_translation(cls, xyz_list: list | torch.Tensor = [], x=0, y=0, z=0) -> Transform:
         '''
         translation matrix
         '''
@@ -540,7 +544,7 @@ class Transform(Vector):
         return ret
 
     @classmethod
-    def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=1, y=1, z=1) -> Transform:
+    def from_scaling(cls, xyz_list: list | torch.Tensor = [], x=1, y=1, z=1) -> Transform:
         '''
         scaling matrix
         '''
@@ -553,45 +557,45 @@ class Transform(Vector):
 
     @classmethod
     def Rx(cls, a) -> Transform:
-        a = numpy.array(a)
-        ret = numpy.full(a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a)
-        sin = numpy.sin(a)
+        a = torch.tensor(a)
+        ret = torch.full(a.shape + (4, 4), torch.eye(4))
+        cos = torch.cos(a)
+        sin = torch.sin(a)
         ret[..., 1, 1] = cos
         ret[..., 1, 2] = sin
         ret[..., 2, 1] = -sin
         ret[..., 2, 2] = cos
-        return ret.view(cls)
+        return ret.as_subclass(cls)
 
     def rx(self, a) -> Transform:
         return self @ self.Rx(a)
 
     @classmethod
     def Ry(cls, a) -> Transform:
-        a = numpy.array(a)
-        ret = numpy.full(a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a)
-        sin = numpy.sin(a)
+        a = torch.tensor(a)
+        ret = torch.full(a.shape + (4, 4), torch.eye(4))
+        cos = torch.cos(a)
+        sin = torch.sin(a)
         ret[..., 0, 0] = cos
         ret[..., 0, 2] = -sin
         ret[..., 2, 0] = sin
         ret[..., 2, 2] = cos
-        return ret.view(cls)
+        return ret.as_subclass(cls)
 
     def ry(self, a) -> Transform:
         return self @ self.Ry(a)
 
     @classmethod
     def Rz(cls, a) -> Transform:
-        a = numpy.array(a)
-        ret = numpy.full(a.shape + (4, 4), numpy.eye(4))
-        cos = numpy.cos(a)
-        sin = numpy.sin(a)
+        a = torch.tensor(a)
+        ret = torch.full(a.shape + (4, 4), torch.eye(4))
+        cos = torch.cos(a)
+        sin = torch.sin(a)
         ret[..., 0, 0] = cos
         ret[..., 0, 1] = sin
         ret[..., 1, 0] = -sin
         ret[..., 1, 1] = cos
-        return ret.view(cls)
+        return ret.as_subclass(cls)
 
     def rz(self, a) -> Transform:
         return self @ self.Rz(a)
@@ -628,7 +632,7 @@ class Transform(Vector):
         return cls.from_axis_angle(q)
 
     @classmethod
-    def from_quaternion(cls, xyzw_list: list | numpy.ndarray) -> Transform:
+    def from_quaternion(cls, xyzw_list: list | torch.Tensor) -> Transform:
         q = Vector4(xyzw_list)
         ret = Transform().tile(*q.shape[:-1])
         ret[..., 0, 0] = 1 - 2 * q.y ** 2 - 2 * q.z ** 2
@@ -644,24 +648,24 @@ class Transform(Vector):
 
     def as_quaternion(self) -> Vector4:
         q = Vector4().tile(*self.n)
-        q.w = numpy.sqrt(1+self[..., 0, 0]+self[..., 1, 1] + self[..., 2, 2])/2
+        q.w = torch.sqrt(1+self[..., 0, 0]+self[..., 1, 1] + self[..., 2, 2])/2
         m0 = self[q.w == 0]
         m1, w1 = self[q.w != 0], q.w[q.w != 0]
-        q.x[q.w != 0] = numpy.divide(m1[..., 1, 2]-m1[..., 2, 1], 4*w1)
-        q.y[q.w != 0] = numpy.divide(m1[..., 2, 0]-m1[..., 0, 2], 4*w1)
-        q.z[q.w != 0] = numpy.divide(m1[..., 0, 1]-m1[..., 1, 0], 4*w1)
-        q.x[q.w == 0] = sign(m0[..., 1, 2]-m0[..., 2, 1]) * numpy.sqrt(
+        q.x[q.w != 0] = torch.divide(m1[..., 1, 2]-m1[..., 2, 1], 4*w1)
+        q.y[q.w != 0] = torch.divide(m1[..., 2, 0]-m1[..., 0, 2], 4*w1)
+        q.z[q.w != 0] = torch.divide(m1[..., 0, 1]-m1[..., 1, 0], 4*w1)
+        q.x[q.w == 0] = sign(m0[..., 1, 2]-m0[..., 2, 1]) * torch.sqrt(
             1+m0[..., 0, 0]-m0[..., 1, 1] - m0[..., 2, 2])/2
-        q.y[q.w == 0] = sign(m0[..., 2, 0]-m0[..., 0, 2]) * numpy.sqrt(
+        q.y[q.w == 0] = sign(m0[..., 2, 0]-m0[..., 0, 2]) * torch.sqrt(
             1-m0[..., 0, 0]+m0[..., 1, 1] - m0[..., 2, 2])/2
-        q.z[q.w == 0] = sign(m0[..., 0, 1]-m0[..., 1, 0]) * numpy.sqrt(
+        q.z[q.w == 0] = sign(m0[..., 0, 1]-m0[..., 1, 0]) * torch.sqrt(
             1-m0[..., 0, 0]-m0[..., 1, 1] + m0[..., 2, 2])/2
         return q
 
     @classmethod
-    def from_euler(cls, sequence: str, angles_list: list | numpy.ndarray) -> Transform:
+    def from_euler(cls, sequence: str, angles_list: list | torch.Tensor) -> Transform:
         lo = sequence.lower()
-        v = numpy.array(angles_list)
+        v = torch.tensor(angles_list)
         m = {a: getattr(cls, "R" + a.lower()) for a in 'xyz'}
         if sequence.islower():
             return m[lo[0]](v[..., 0]) @ m[lo[1]](v[..., 1]) @ m[lo[2]](v[..., 2])
@@ -684,16 +688,16 @@ class Transform(Vector):
         else:
             b = [1, a[0], a[1], 1, a[2]]
 
-        ret[..., i[0]] = numpy.arctan2(
+        ret[..., i[0]] = torch.arctan2(
             b[0]*self[..., m[1], m[2]], b[1]*self[..., 3-m[0]-m[1], m[2]])
-        ret[..., i[1]] = getattr(numpy, 'arccos' if m[0] == m[2] else 'arcsin')(
+        ret[..., i[1]] = getattr(torch, 'arccos' if m[0] == m[2] else 'arcsin')(
             b[2]*self[..., m[0], m[2]])
-        ret[..., i[2]] = numpy.arctan2(
+        ret[..., i[2]] = torch.arctan2(
             b[3]*self[..., m[0], m[1]], b[4]*self[..., m[0], 3-m[1]-m[2]])
         return ret
 
     @classmethod
-    def from_rpy(cls, angles_list: list | numpy.ndarray) -> Transform:
+    def from_rpy(cls, angles_list: list | torch.Tensor) -> Transform:
         return cls.from_euler('XYZ', angles_list)
 
     def as_rpy(self):
@@ -701,7 +705,7 @@ class Transform(Vector):
 
     @property
     def translation_vector(self) -> Vector3:
-        return self[..., 3, 0:3].view(Vector3)
+        return self[..., 3, 0:3].as_subclass(Vector3)
 
     @translation_vector.setter
     def translation_vector(self, v: Vector3):
@@ -709,7 +713,7 @@ class Transform(Vector):
 
     @property
     def scaling_vector(self) -> Vector3:
-        return numpy.linalg.norm(self[..., 0:3, 0:3], axis=self.ndim-1).view(Vector3)
+        return torch.linalg.norm(self[..., 0:3, 0:3], axis=self.ndim-1).as_subclass(Vector3)
 
     @scaling_vector.setter
     def scaling_vector(self, v: Vector3):
@@ -722,7 +726,7 @@ class Transform(Vector):
         return ret
 
     @translation.setter
-    def translation(self, v: numpy.ndarray):
+    def translation(self, v: torch.Tensor):
         self[..., 3, :3] = v[..., 3, :3]
 
     @property
@@ -732,7 +736,7 @@ class Transform(Vector):
         return ret
 
     @scaling.setter
-    def scaling(self, v: numpy.ndarray):
+    def scaling(self, v: torch.Tensor):
         self[:] = v @ self.scaling.I @ self
 
     @property
@@ -745,13 +749,13 @@ class Transform(Vector):
 
     @property
     def I(self) -> Transform:
-        return numpy.linalg.inv(self)
+        return torch.linalg.inv(self)
 
     @classmethod
     def from_perspective(cls, fovy, aspect, near, far) -> Transform:
-        f = 1 / numpy.tan(fovy/2)
+        f = 1 / torch.tan(fovy/2)
         range_inv = 1.0 / (near - far)
-        return numpy.array([
+        return torch.tensor([
             [f / aspect, 0, 0, 0],
             [0, f, 0, 0],
             [0, 0, (near + far) * range_inv, 1],
@@ -769,12 +773,12 @@ class Transform(Vector):
         xp: 1-D array, the data to interpolate into. For example, time series.
         Only translation, rotation and scaling can be interpolated
         '''
-        xp = numpy.array(xp)
-        x = numpy.array(x)
-        i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
+        xp = torch.tensor(xp)
+        x = torch.tensor(x)
+        i = torch.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
-        d: numpy.ndarray = (x-x0)/(x1-x0)
+        d: torch.Tensor = (x-x0)/(x1-x0)
         r0: Transform = self.rotation[i-1]
         r1: Transform = self.rotation[i]
         t0: Vector3 = self.translation_vector[i-1]
@@ -784,56 +788,56 @@ class Transform(Vector):
         angle, axis = (r0.I@r1).as_angle_axis()
         rotation = Transform.from_angle_axis(d*angle, axis)
         translation = Transform.from_translation(
-            d[..., numpy.newaxis] * (t1 - t0))
+            d[..., torch.newaxis] * (t1 - t0))
         scaling = Transform.from_scaling(
-            d[..., numpy.newaxis] * s1 / s0).as_scaling()
+            d[..., torch.newaxis] * s1 / s0).as_scaling()
         return self[i-1]@scaling@rotation@translation
 
 
 class Color(Vector):
     BASE_SHAPE = 4,
 
-    def __new__(cls, data: numpy.ndarray | list = [], r=0, g=0, b=0, a=1):
-        if numpy.any(data):
+    def __new__(cls, data: torch.Tensor | list = [], r=0, g=0, b=0, a=1):
+        if torch.any(data):
             return super().__new__(cls, data)
         else:
-            n = max(numpy.shape(r), numpy.shape(g),
-                    numpy.shape(b), numpy.shape(a))
-            ret = numpy.empty(n + cls.BASE_SHAPE)
+            n = max(torch.shape(r), torch.shape(g),
+                    torch.shape(b), torch.shape(a))
+            ret = torch.empty(n + cls.BASE_SHAPE)
             ret[..., 0] = r
             ret[..., 1] = g
             ret[..., 2] = b
             ret[..., 3] = a
-            return ret.view(cls)
+            return ret.as_subclass(cls)
 
     @classmethod
-    def map(cls, value: list | numpy.ndarray, start=None, end=None):
+    def map(cls, value: list | torch.Tensor, start=None, end=None):
         '''
         Create a series of colors by giving a a series of value
         '''
         if start is None:
-            start = numpy.min(value)
+            start = torch.min(value)
         if end is None:
-            end = numpy.max(value)
+            end = torch.max(value)
         center = (start + end)/2
         width = (end - start)/2
-        r = numpy.maximum(value - center, 0)/width
-        g = 1-numpy.abs(value - center)/width
-        b = numpy.maximum(center - value, 0)/width
+        r = torch.maximum(value - center, 0)/width
+        g = 1-torch.abs(value - center)/width
+        b = torch.maximum(center - value, 0)/width
         return cls(r=r, g=g, b=b)
 
     @classmethod
     def standard(cls, n):
-        size = numpy.prod(n)
-        c = int(numpy.power(size, 1/3)) + 1
-        s = numpy.linspace(.3, 1, c)
+        size = torch.prod(torch.tensor(n))
+        c = int(torch.pow(size, 1/3)) + 1
+        s = torch.linspace(.3, 1, c)
         rgb: Vector3 = Vector3.grid(x=s, y=s, z=s).flatten()[
             :size].reshape(n+(3,))
-        return rgb.H.view(cls)
+        return rgb.H.as_subclass(cls)
 
     @property
     def r(self):
-        return self[..., 0].view(numpy.ndarray)
+        return self[..., 0].as_subclass(torch.Tensor)
 
     @r.setter
     def r(self, v):
@@ -841,7 +845,7 @@ class Color(Vector):
 
     @property
     def g(self):
-        return self[..., 1].view(numpy.ndarray)
+        return self[..., 1].as_subclass(torch.Tensor)
 
     @g.setter
     def g(self, v):
@@ -849,7 +853,7 @@ class Color(Vector):
 
     @property
     def b(self):
-        return self[..., 2].view(numpy.ndarray)
+        return self[..., 2].as_subclass(torch.Tensor)
 
     @b.setter
     def b(self, v):
@@ -857,7 +861,7 @@ class Color(Vector):
 
     @property
     def a(self):
-        return self[..., 3].view(numpy.ndarray)
+        return self[..., 3].as_subclass(torch.Tensor)
 
     @a.setter
     def a(self, v):
@@ -865,7 +869,7 @@ class Color(Vector):
 
     @property
     def rgb(self):
-        return self[..., :-1].view(Vector3)
+        return self[..., :-1].as_subclass(Vector3)
 
 
 class Point(Vector):
@@ -873,18 +877,18 @@ class Point(Vector):
     TYPE = "POINTS"
 
     def __new__(cls, *n):
-        ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
+        ret = torch.empty(n + cls.BASE_SHAPE).as_subclass(cls)
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
         return ret
 
     @property
     def color(self) -> Color:
-        return self[..., 3:7].view(Color)
+        return self[..., 3:7].as_subclass(Color)
 
     @color.setter
     def color(self, v):
-        self[..., 3:7] = v
+        self[..., 3:7] = v.expa
 
     def paint(self, color):
         self.color = color
@@ -897,7 +901,7 @@ class Point(Vector):
         assert self.TYPE == v.TYPE, f"Different TYPE {self.TYPE}, {v.TYPE}"
         assert self.shape[1:] == v.shape[1:
                                          ], f"Different shape {self.shape[1:-1]}, {v.shape[1:-1]}"
-        return numpy.concatenate((self, v), axis=0).view(Point)
+        return torch.concatenate((self, v), axis=0).as_subclass(Point)
 
     def __iadd__(self, v: Point) -> Point:
         self = self.__add__(v)
@@ -930,11 +934,11 @@ class LineSegment(Point):
 
     @property
     def start(self):
-        return self[..., ::2, :].view(Point)
+        return self[..., ::2, :].as_subclass(Point)
 
     @property
     def end(self):
-        return self[..., 1::2, :].view(Point)
+        return self[..., 1::2, :].as_subclass(Point)
 
 
 class Camera:
@@ -968,7 +972,7 @@ def car(wheelbase=3, wheel_radius=0.3, track_width=1.6, height=1.5, front_overha
     wheel = Vector3.circle(wheel_radius).as_lineloop().xyz
     wheel @= Transform.from_rpy([pi/2, 0, 0]) @ Transform.from_translation(
         Vector3.grid(x=[wheelbase, 0], y=[-size_y/2, size_y/2], z=wheel_radius))
-    return numpy.vstack((body.flatten(), wheel.flatten())).view(Vector3).as_linesegment()
+    return torch.vstack((body.flatten(), wheel.flatten())).as_subclass(Vector3).as_linesegment()
 
 
 def axis(size=5) -> LineSegment:
