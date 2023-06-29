@@ -83,7 +83,7 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
 
 
 def show():
-    return default_view
+    return display(HTML(default_view._repr_html_()))
 
 
 def read_pcd(path):
@@ -251,15 +251,15 @@ class Vector(numpy.ndarray):
         return super().mean(axis=self.ndim-2)
 
     @property
-    def L(self) -> Vector:
+    def L(self) -> numpy.ndarray:
         # length
-        return numpy.linalg.norm(self, axis=self.ndim - 1).view(Vector)
+        return numpy.linalg.norm(self, axis=self.ndim - 1)
 
-    def min(self) -> Vector:
-        return super().min(axis=self.ndim-2)
+    def min(self, axis=-2, keepdims=False) -> Vector:
+        return super().min(axis=axis, keepdims=keepdims)
 
-    def max(self) -> Vector:
-        return super().max(axis=self.ndim-2)
+    def max(self, axis=-2, keepdims=False) -> Vector:
+        return super().max(axis=axis, keepdims=keepdims)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
@@ -422,6 +422,9 @@ class Vector3(Vector):
         idx0 = idx//spts
         idx1 = idx % spts
         return idx0, idx1
+    
+    def distance_to_points(self, points: Vector3) -> numpy.ndarray:
+        return (self[..., None, :] - points).L.min(axis=-1).mean()
 
     def as_scaling(self) -> Transform:
         ret = Transform
