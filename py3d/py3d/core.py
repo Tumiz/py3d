@@ -422,16 +422,9 @@ class Vector3(Vector):
         idx0 = idx//spts
         idx1 = idx % spts
         return idx0, idx1
-    
+
     def distance_to_points(self, points: Vector3) -> numpy.ndarray:
         return (self[..., None, :] - points).L.min(axis=-1).mean()
-
-    def as_scaling(self) -> Transform:
-        ret = Transform
-        ret[..., 0, 0] = self[..., 0]
-        ret[..., 1, 1] = self[..., 1]
-        ret[..., 2, 2] = self[..., 2]
-        return ret.view(Transform)
 
     def as_point(self) -> Point:
         entity = Point(*self.n)
@@ -716,7 +709,7 @@ class Transform(Vector):
 
     @scaling_vector.setter
     def scaling_vector(self, v: Vector3):
-        self[:] = v.as_scaling() @ self.scaling.I @ self
+        self[:] = Transform.from_scaling(v) @ self.scaling.I @ self
 
     @property
     def translation(self) -> Transform:
@@ -789,7 +782,7 @@ class Transform(Vector):
         translation = Transform.from_translation(
             d[..., numpy.newaxis] * (t1 - t0))
         scaling = Transform.from_scaling(
-            d[..., numpy.newaxis] * s1 / s0).as_scaling()
+            d[..., numpy.newaxis] * s1 / s0)
         return self[i-1]@scaling@rotation@translation
 
 
