@@ -15360,11 +15360,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             if (max <= min) {
                 return [[min], min, max]
             }
-            let r_step = 10 ** Math.round(Math.log10(step))
+            let digits = Math.round(Math.log10(step))
+            let r_step = 10 ** digits
             let r_min = mat.floor(min, r_step)
             let r_max = mat.ceil(max, r_step)
             let size = Math.ceil((r_max - r_min) / r_step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => r_min + r_step * i)
+            let ticks = Array.from({ length: size }, (v, i) => (r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
@@ -15771,7 +15772,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([0.02720607, 0.94846581, 0.42944366, 0.5977793 ])</pre>
+<pre>Color([0.76972248, 0.80806596, 0.05965037, 0.38455714])</pre>
 </div>
 
 </div>
@@ -15810,11 +15811,11 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>Color([[[0.34316274, 0.9824631 , 0.88049761, 0.44085762]],
+<pre>Color([[[0.39562108, 0.24033629, 0.2093769 , 0.34403734]],
 
-       [[0.53032331, 0.54406033, 0.45516721, 0.46733227]],
+       [[0.34733395, 0.25021961, 0.99104097, 0.3726768 ]],
 
-       [[0.79533983, 0.14067369, 0.69196504, 0.52042514]]])</pre>
+       [[0.43361511, 0.17135347, 0.07621257, 0.13245082]]])</pre>
 </div>
 
 </div>

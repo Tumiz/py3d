@@ -15359,11 +15359,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
             if (max <= min) {
                 return [[min], min, max]
             }
-            let r_step = 10 ** Math.round(Math.log10(step))
+            let digits = Math.round(Math.log10(step))
+            let r_step = 10 ** digits
             let r_min = mat.floor(min, r_step)
             let r_max = mat.ceil(max, r_step)
             let size = Math.ceil((r_max - r_min) / r_step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => r_min + r_step * i)
+            let ticks = Array.from({ length: size }, (v, i) => (r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
