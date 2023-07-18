@@ -267,7 +267,7 @@ class Vector(numpy.ndarray):
     def lerp(self, x, xp) -> Vector:
         '''
         linear interpolation
-        x: 1-D array, the data to be interpolated.
+        x: 1-D array, the data to be interpolated, with same length as self
         xp: 1-D array, the data to interpolate into. For example, time series.
         '''
         x = numpy.array(x)
@@ -713,7 +713,7 @@ class Transform(Vector):
 
     @property
     def translation(self) -> Transform:
-        ret = Transform(*self.n)
+        ret = Transform().tile(*self.n)
         ret[..., 3, 0:3] = self.translation_vector
         return ret
 
@@ -723,7 +723,7 @@ class Transform(Vector):
 
     @property
     def scaling(self) -> Transform:
-        ret = Transform(*self.n)
+        ret = Transform().tile(*self.n)
         ret[..., range(3), range(3)] = self.scaling_vector
         return ret
 
@@ -767,23 +767,25 @@ class Transform(Vector):
         '''
         xp = numpy.array(xp)
         x = numpy.array(x)
+        assert x.ndim <= xp.ndim == 1
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
-        d: numpy.ndarray = (x-x0)/(x1-x0)
+        d = ((x-x0)/(x1-x0)).reshape(-1, 1)
         r0: Transform = self.rotation[i-1]
         r1: Transform = self.rotation[i]
         t0: Vector3 = self.translation_vector[i-1]
         t1: Vector3 = self.translation_vector[i]
         s0: Vector3 = self.scaling_vector[i-1]
         s1: Vector3 = self.scaling_vector[i]
-        angle, axis = (r0.I@r1).as_angle_axis()
-        rotation = Transform.from_angle_axis(d*angle, axis)
+        axis_angle = (r0.I@r1).as_axis_angle()
+        rotation = r0 @ Transform.from_axis_angle(
+            d*axis_angle.w, axis_angle.xyz)
         translation = Transform.from_translation(
-            d[..., numpy.newaxis] * (t1 - t0))
+            (1-d)*t0+d*t1)
         scaling = Transform.from_scaling(
-            d[..., numpy.newaxis] * s1 / s0)
-        return self[i-1]@scaling@rotation@translation
+            (1-d)*s0+d*s1)
+        return scaling@rotation@translation
 
 
 class Color(Vector):
