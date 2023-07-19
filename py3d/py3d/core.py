@@ -11,6 +11,7 @@ import struct
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
+numpy.set_printoptions(linewidth=200)
 
 
 def sign(v):
@@ -267,8 +268,8 @@ class Vector(numpy.ndarray):
     def lerp(self, x, xp) -> Vector:
         '''
         linear interpolation
-        x: 1-D array, the data to be interpolated, with same length as self
-        xp: 1-D array, the data to interpolate into. For example, time series.
+        x: 1-D array, the data to be interpolated. For example, time series.
+        xp: 1-D array, the data to interpolate into, with same length as self. 
         '''
         x = numpy.array(x)
         xp = numpy.array(xp)
@@ -612,7 +613,7 @@ class Transform(Vector):
 
     def as_rotation_vector(self):
         q = self.as_axis_angle()
-        return q.xyz.U * q.w
+        return q.xyz.U * q.w[..., None]
 
     @classmethod
     def from_two_vectors(cls, a: list | Vector3, b: list | Vector3) -> Transform:
@@ -761,8 +762,8 @@ class Transform(Vector):
     def lerp(self, x, xp) -> Transform:
         '''
         Linear interpolation
-        x: 1-D array, the data to be interpolated.
-        xp: 1-D array, the data to interpolate into. For example, time series.
+        x: 1-D array, the data to be interpolated. For example, time series.
+        xp: 1-D array, the data to interpolate into, with same length as self. 
         Only translation, rotation and scaling can be interpolated
         '''
         xp = numpy.array(xp)
