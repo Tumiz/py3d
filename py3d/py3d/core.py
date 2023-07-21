@@ -744,6 +744,10 @@ class Transform(Vector):
     def I(self) -> Transform:
         return numpy.linalg.inv(self)
 
+    @property
+    def T(self) -> Transform:
+        return self.transpose(*range(self.ndim-2), -1, -2)
+
     @classmethod
     def from_perspective(cls, fovy, aspect, near, far) -> Transform:
         f = 1 / numpy.tan(fovy/2)
