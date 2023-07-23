@@ -713,6 +713,14 @@ class Transform(Vector):
         self[:] = Transform.from_scaling(v) @ self.scaling.I @ self
 
     @property
+    def rotation_vector(self) -> Vector3:
+        return self.rotation.as_rotation_vector()
+
+    @rotation_vector.setter
+    def rotation_vector(self, v: Vector3):
+        self.rotation = Transform.from_rotation_vector(v)
+
+    @property
     def translation(self) -> Transform:
         ret = Transform().tile(*self.n)
         ret[..., 3, 0:3] = self.translation_vector
@@ -785,7 +793,7 @@ class Transform(Vector):
         s1: Vector3 = self.scaling_vector[i]
         axis_angle = (r0.I@r1).as_axis_angle()
         rotation = r0 @ Transform.from_axis_angle(
-            d*axis_angle.w, axis_angle.xyz)
+            axis=axis_angle.xyz, angle=d.flatten()*axis_angle.w)
         translation = Transform.from_translation(
             (1-d)*t0+d*t1)
         scaling = Transform.from_scaling(
