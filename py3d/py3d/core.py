@@ -265,14 +265,15 @@ class Vector(numpy.ndarray):
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
 
-    def lerp(self, x, xp) -> Vector:
+    def lerp(self, target_x, origin_x) -> Vector:
         '''
-        linear interpolation
-        x: 1-D array, the data to be interpolated. For example, time series.
-        xp: 1-D array, the data to interpolate into, with same length as self. 
+        Linear interpolation
+        target_x: 1-D array, the series to be interpolated. For example, time series.
+        origin_x: 1-D array, the series to interpolate 'target_x' into, with same length as self. 
+        Only translation, rotation and scaling can be interpolated
         '''
-        x = numpy.array(x)
-        xp = numpy.array(xp)
+        x = numpy.array(target_x)
+        xp = numpy.array(origin_x)
         assert x.ndim <= xp.ndim == 1
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
@@ -771,15 +772,15 @@ class Transform(Vector):
     def from_orthographic(cls, l, r, t, b, n, f):
         pass
 
-    def lerp(self, x, xp) -> Transform:
+    def lerp(self, target_x, origin_x) -> Transform:
         '''
         Linear interpolation
-        x: 1-D array, the data to be interpolated. For example, time series.
-        xp: 1-D array, the data to interpolate into, with same length as self. 
+        target_x: 1-D array, the series to be interpolated. For example, time series.
+        origin_x: 1-D array, the series to interpolate 'target_x' into, with same length as self. 
         Only translation, rotation and scaling can be interpolated
         '''
-        xp = numpy.array(xp)
-        x = numpy.array(x)
+        x = numpy.array(target_x)
+        xp = numpy.array(origin_x)
         assert x.ndim <= xp.ndim == 1
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
