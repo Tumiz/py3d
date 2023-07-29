@@ -7442,7 +7442,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Color">Color<a class="anchor-link" href="#Color">¶</a></h1><p><strong>Color</strong> is a series of vectors describe colors of vertices</p>
+<h1 id="Color">Color<a class="anchor-link" href="#Color">¶</a></h1><p><strong>Color</strong> is a series of vectors describe colors of vertices. It represent color in RGBA format. Each channel range from 0 to 1.</p>
 </div>
 </div>
 </div>
@@ -7454,8 +7454,8 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">py3d</span> <span class="kn">import</span> <span class="n">Color</span>
-<span class="n">Color</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
+<span class="n">py3d</span><span class="o">.</span><span class="n">Color</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -7579,23 +7579,23 @@ a.anchor-link {
             let r_min = mat.floor(min, r_step)
             let r_max = mat.ceil(max, r_step)
             let size = Math.ceil((r_max - r_min) / r_step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => (r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits))
+            let ticks = Array.from({ length: size }, (v, i) => Number((r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits)))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
     class Camera {
         PERSPECTIVE = "P"
         ORTHOGRAPHIC = "O"
-        constructor(type, fovy, aspect, near, far, min, max) {
+        constructor(type, fovy, aspect, min, max) {
             this.fovy = fovy
             this.aspect = aspect
-            this.near = -near
-            this.far = -far
             this.origin_center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
             this.center = structuredClone(this.origin_center)
-            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
+            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
             this.origin_height = ysize / 2 / Math.tan(this.fovy / 2)
             this.height = this.origin_height
+            this.near = -0.1
+            this.far = -5 * Math.max(this.origin_height, max[2] - min[2])
             this.rotation = mat.identity() // intrinsic
             this.type = type
             this.update_projection()
@@ -7753,7 +7753,7 @@ a.anchor-link {
             this.toolbar = new ToolBar(data.cache)
             this.min = data.min
             this.max = data.max
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, 0.1, 2000, data.min, data.max)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, data.min, data.max)
             this.parent = document.getElementById(id)
             this.parent.append(this.canvasdiv, this.toolbar.bar)
             const observer = new ResizeObserver(() => {
@@ -7948,22 +7948,22 @@ a.anchor-link {
             const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(this.min[2], this.max[2], step)
             let lines = []
             let text_color = [0.3, 0.3, 0.3, 0.6]
-            for (let x of x_ticks) {
+            for (let [i, x] of x_ticks.entries()) {
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
-                if (x != x_tick_min)
+                if (x != x_tick_min && i % 2 == 0)
                     this.drawText(x, [x, y_tick_min, z_tick_min], text_color, world2ndc)
             }
-            for (let y of y_ticks) {
+            for (let [i, y] of y_ticks.entries()) {
                 lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
                 lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
-                if (y != y_tick_min)
+                if (y != y_tick_min && i % 2 == 0)
                     this.drawText(y, [x_tick_min, y, z_tick_min], text_color, world2ndc)
             }
-            for (let z of z_ticks) {
+            for (let [i, z] of z_ticks.entries()) {
                 lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
                 lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
-                if (z != z_tick_min)
+                if (z != z_tick_min && i % 2 == 0)
                     this.drawText(z, [x_tick_min, y_tick_min, z], text_color, world2ndc)
             }
             this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color, world2ndc)
@@ -7980,7 +7980,7 @@ a.anchor-link {
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>Color([0.85804388, 0.15145763, 0.7153684 , 0.76660492])</pre>
+<pre>Color([0., 0., 0., 1.])</pre>
 </div>
 </div>
 </div>
@@ -7993,7 +7993,8 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">Color</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">py3d</span>
+<span class="n">py3d</span><span class="o">.</span><span class="n">Color</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -8006,11 +8007,9 @@ a.anchor-link {
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>Color([[[0.14841514, 0.4408152 , 0.70200754, 0.36932355]],
-
-       [[0.87979791, 0.15087033, 0.08335707, 0.82963843]],
-
-       [[0.1432753 , 0.71611981, 0.3620849 , 0.848918  ]]])</pre>
+<pre>Color([[0. , 0. , 0. , 1. ],
+       [0.5, 0. , 0. , 1. ],
+       [1. , 0. , 0. , 1. ]])</pre>
 </div>
 </div>
 </div>
@@ -8040,6 +8039,20 @@ a.anchor-link {
 <pre>Color([[0.3, 0.3, 0.3, 1. ],
        [0.3, 0.3, 1. , 1. ],
        [0.3, 1. , 0.3, 1. ]])</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span> 
+</pre></div>
 </div>
 </div>
 </div>

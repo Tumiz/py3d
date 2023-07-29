@@ -691,8 +691,8 @@ class Transform(Vector):
         return ret
 
     @classmethod
-    def from_rpy(cls, angles_list: list | numpy.ndarray) -> Transform:
-        return cls.from_euler('XYZ', angles_list)
+    def from_rpy(cls, angles_list: list | numpy.ndarray = [], r=0, p=0, y=0) -> Transform:
+        return cls.from_euler('XYZ', Vector3(angles_list, r, p, y))
 
     def as_rpy(self):
         return self.as_euler('XYZ')
@@ -898,7 +898,9 @@ class Point(Vector):
     def color(self, v):
         self[..., 3:7] = v
 
-    def paint(self, color):
+    def paint(self, color=None):
+        if color is None:
+            color = Color.standard(self.shape[:1])[:, None]
         self.color = color
         return self
 
@@ -916,9 +918,10 @@ class Point(Vector):
         return self
 
     def __matmul__(self, transform: Transform) -> Point:
-        vertex = self.xyz @ transform
-        ret = self.__class__(*vertex.n)
-        ret.xyz = vertex
+        xyz = self.xyz @ transform
+        ret = self.__class__(*xyz.n)
+        ret.xyz = xyz
+        ret.color = self.color
         return ret
 
     def _repr_html_(self):
@@ -949,17 +952,19 @@ class LineSegment(Point):
         return self[..., 1::2, :].view(Point)
 
 
-class Camera:
-    def __init__(self, *n):
-        self.transform = Transform(*n)
-        self.projection = Transform(*n)
-
-    def set_perspective(self, fov, aspect, near, far):
-        self.projection = Transform.from_perspective(fov, aspect, near, far)
-
-    @property
-    def matrix(self):
-        return self.transform.I @ self.projection
+def image(rgba_list: list | numpy.ndarray, align_center=True, sample_rate=10):
+    m = Color(rgba_list)[::-sample_rate, ::sample_rate] / 255
+    if not m.a.any():
+        m.a = 1
+    m = m.transpose(1, 0, 2)
+    w, h, _ = numpy.shape(m)
+    ret = Point(w, h)
+    if align_center:
+        ret.xyz = Vector3.grid(range(-w//2, w//2), range(-h//2, h//2))
+    else:
+        ret.xyz = Vector3.grid(range(w), range(h))
+    ret.color = m
+    return ret.flatten()
 
 
 def cube(size_x=1, size_y=1, size_z=1) -> LineSegment:

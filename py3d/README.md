@@ -23,6 +23,7 @@ pip install py3d
 import py3d
 import numpy
 cars = py3d.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6), z=0.15)
+cars.paint()
 t = 0
 dt = 0.1
 while t<4:
@@ -31,6 +32,11 @@ while t<4:
     t += dt
 py3d.show()
 
+```
+
+
+```python
+py3d.Color.standard((5,))
 ```
 
 ![example](docs/index.gif)
