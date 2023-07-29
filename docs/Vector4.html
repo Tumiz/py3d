@@ -7579,23 +7579,23 @@ a.anchor-link {
             let r_min = mat.floor(min, r_step)
             let r_max = mat.ceil(max, r_step)
             let size = Math.ceil((r_max - r_min) / r_step) + 1
-            let ticks = Array.from({ length: size }, (v, i) => (r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits))
+            let ticks = Array.from({ length: size }, (v, i) => Number((r_min + r_step * i).toFixed(digits > 0 ? 0 : -digits)))
             return [ticks, ticks[0], ticks[ticks.length - 1]]
         }
     }
     class Camera {
         PERSPECTIVE = "P"
         ORTHOGRAPHIC = "O"
-        constructor(type, fovy, aspect, near, far, min, max) {
+        constructor(type, fovy, aspect, min, max) {
             this.fovy = fovy
             this.aspect = aspect
-            this.near = -near
-            this.far = -far
             this.origin_center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
             this.center = structuredClone(this.origin_center)
-            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) + 2
+            let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
             this.origin_height = ysize / 2 / Math.tan(this.fovy / 2)
             this.height = this.origin_height
+            this.near = -0.1
+            this.far = -5 * Math.max(this.origin_height, max[2] - min[2])
             this.rotation = mat.identity() // intrinsic
             this.type = type
             this.update_projection()
@@ -7753,7 +7753,7 @@ a.anchor-link {
             this.toolbar = new ToolBar(data.cache)
             this.min = data.min
             this.max = data.max
-            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, 0.1, 2000, data.min, data.max)
+            this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, data.min, data.max)
             this.parent = document.getElementById(id)
             this.parent.append(this.canvasdiv, this.toolbar.bar)
             const observer = new ResizeObserver(() => {
@@ -7948,22 +7948,22 @@ a.anchor-link {
             const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(this.min[2], this.max[2], step)
             let lines = []
             let text_color = [0.3, 0.3, 0.3, 0.6]
-            for (let x of x_ticks) {
+            for (let [i, x] of x_ticks.entries()) {
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
                 lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
-                if (x != x_tick_min)
+                if (x != x_tick_min && i % 2 == 0)
                     this.drawText(x, [x, y_tick_min, z_tick_min], text_color, world2ndc)
             }
-            for (let y of y_ticks) {
+            for (let [i, y] of y_ticks.entries()) {
                 lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
                 lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
-                if (y != y_tick_min)
+                if (y != y_tick_min && i % 2 == 0)
                     this.drawText(y, [x_tick_min, y, z_tick_min], text_color, world2ndc)
             }
-            for (let z of z_ticks) {
+            for (let [i, z] of z_ticks.entries()) {
                 lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
                 lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
-                if (z != z_tick_min)
+                if (z != z_tick_min && i % 2 == 0)
                     this.drawText(z, [x_tick_min, y_tick_min, z], text_color, world2ndc)
             }
             this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color, world2ndc)
