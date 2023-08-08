@@ -195,7 +195,7 @@
             }
             this.btn_play.onclick = (ev) => {
                 let walk = () => {
-                    if (this.btn_play.innerHTML == "=") {
+                    if (this.btn_play.innerHTML == "■") {
                         this.slider.value = this.ts[this.ti]
                         this.slider.oninput()
                         if (this.ti + 1 < this.ts.length) {
@@ -207,7 +207,7 @@
                     }
                 }
                 if (this.btn_play.innerHTML == "►") {
-                    this.btn_play.innerHTML = "="
+                    this.btn_play.innerHTML = "■"
                     if (this.ti >= this.ts.length - 1) {
                         this.ti = 0
                     }
@@ -255,7 +255,7 @@
                 this.tooltip.innerHTML = `turn down`
             }
             this.btn_grid = document.createElement("button")
-            this.btn_grid.innerHTML = "G"
+            this.btn_grid.innerHTML = "▦"
             this.btn_grid.className = "py3d_btn"
             this.btn_grid.onmouseenter = (ev) => {
                 this.tooltip.innerHTML = `show grid`
