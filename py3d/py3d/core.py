@@ -838,9 +838,9 @@ class Color(Vector):
     def standard(cls, n):
         size = numpy.prod(n)
         c = int(numpy.power(size, 1/3)) + 1
-        s = numpy.linspace(.3, 1, c)
+        s = numpy.linspace(0.5, 1, c)
         rgb: Vector3 = Vector3.grid(x=s, y=s, z=s).flatten()[
-            :size].reshape(n+(3,))
+            1:size+1].reshape(n+(3,))
         return rgb.H.view(cls)
 
     @property
@@ -994,3 +994,17 @@ def axis(size=5) -> LineSegment:
     a[1].color = Color(g=1)
     a[2].color = Color(b=1)
     return a
+
+
+def camera(pixel_width, pixel_height, focal_length_in_pixels, pixel_size=1e-3):
+    ret = LineSegment(16)
+    ret.start[:4].xyz = 0
+    corners = numpy.array([
+        [pixel_width/2, pixel_height/2, focal_length_in_pixels],
+        [-pixel_width/2, pixel_height/2, focal_length_in_pixels],
+        [-pixel_width/2, -pixel_height/2, focal_length_in_pixels],
+        [pixel_width/2, -pixel_height/2, focal_length_in_pixels]], dtype=numpy.float64) * pixel_size
+    ret.end[:4].xyz = corners
+    ret.start[4:].xyz = corners
+    ret.end[4:].xyz = numpy.roll(corners, 1, 0)
+    return ret
