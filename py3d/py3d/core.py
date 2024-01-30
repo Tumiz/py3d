@@ -8,6 +8,9 @@ import pathlib
 import uuid
 import json
 import struct
+import multiprocessing
+import http.server
+import socket
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -16,6 +19,11 @@ numpy.set_printoptions(linewidth=200)
 
 def sign(v):
     return numpy.sign(v, where=v != 0, out=numpy.ones_like(v))
+
+
+def launch_server(ip, port):
+    server=http.server.HTTPServer((ip,port), http.server.SimpleHTTPRequestHandler)
+    server.serve_forever()
 
 
 class View:
@@ -49,9 +57,23 @@ class View:
         self.max = []
         self.min = []
         return html
-
-    def save(self, name):
-        open(name, "w").write(self.__preload__.data + self._repr_html_())
+    
+    def show(self, in_jupyter=True, name="py3d", port=9871):
+        if in_jupyter:
+            return display(HTML(self._repr_html_()))
+        else:
+            index = f"{name}.html"
+            open(index, "w").write(self.__preload__.data + self._repr_html_())
+            sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                sk.connect(("10.255.255.255", 1))
+                ip = sk.getsockname()[0]
+            except:
+                ip = "127.0.0.1"
+            finally:
+                sk.close()
+            print(f"click http://{ip}:{port}/{index} to view")
+            multiprocessing.Process(target=launch_server, args=(ip, port)).start()
 
     def render(self, obj: Point, t=0):
         if self.max == []:
@@ -83,8 +105,8 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show():
-    return display(HTML(default_view._repr_html_()))
+def show(in_jupyter=True, name="py3d", port=9871):
+    return default_view.show(in_jupyter, name, port)
 
 
 def read_pcd(path):
