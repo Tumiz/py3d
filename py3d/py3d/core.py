@@ -186,7 +186,7 @@ class Vector(numpy.ndarray):
     def __imatmul__(self, value) -> Vector:
         return self @ value
 
-    def tile(self, *n):
+    def tile(self, *n) -> Vector:
         return numpy.tile(self, n + self.ndim * (1,))
 
     def flatten(self):
@@ -1010,8 +1010,12 @@ def car(wheelbase=3, wheel_radius=0.3, track_width=1.6, height=1.5, front_overha
     return numpy.vstack((body.flatten(), wheel.flatten())).view(Vector3).as_linesegment()
 
 
-def axis(size=5) -> LineSegment:
-    a = Vector3([[size, 0, 0], [0, size, 0], [0, 0, size]]).as_vector()
+def axis(size=5, dashed=False) -> LineSegment:
+    dash_size = 40 if dashed else 2
+    a: LineSegment = Vector3().tile(3, dash_size).as_linesegment()
+    a[0].x = numpy.linspace(0, size, dash_size)
+    a[1].y = numpy.linspace(0, size, dash_size)
+    a[2].z = numpy.linspace(0, size, dash_size)
     a[0].color = Color(r=1)
     a[1].color = Color(g=1)
     a[2].color = Color(b=1)
