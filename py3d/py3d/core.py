@@ -22,7 +22,8 @@ def sign(v):
 
 
 def launch_server(ip, port):
-    server=http.server.HTTPServer((ip,port), http.server.SimpleHTTPRequestHandler)
+    server = http.server.HTTPServer(
+        (ip, port), http.server.SimpleHTTPRequestHandler)
     server.serve_forever()
 
 
@@ -57,7 +58,7 @@ class View:
         self.max = []
         self.min = []
         return html
-    
+
     def show(self, in_jupyter=True, name="py3d", port=9871):
         if in_jupyter:
             return display(HTML(self._repr_html_()))
@@ -73,7 +74,8 @@ class View:
             finally:
                 sk.close()
             print(f"click http://{ip}:{port}/{index} to view")
-            multiprocessing.Process(target=launch_server, args=(ip, port)).start()
+            multiprocessing.Process(
+                target=launch_server, args=(ip, port)).start()
 
     def render(self, obj: Point, t=0):
         if self.max == []:
@@ -109,7 +111,7 @@ def show(in_jupyter=True, name="py3d", port=9871):
     return default_view.show(in_jupyter, name, port)
 
 
-def read_pcd(path):
+def read_pcd(path) -> Vector:
     f = open(path, "rb")
     data_type = ""
     ret = []
@@ -143,7 +145,7 @@ def read_pcd(path):
             elif data_type == "ascii":
                 ret.append([float(s) for s in r.split(" ")])
         elif "compressed" in data_type:
-            break
+            raise Exception(f"{data_type} PCD is not currently supported")
         else:
             if count > 0:
                 count -= 1
@@ -161,8 +163,12 @@ def read_pcd(path):
     return ret
 
 
-def read_csv(path):
+def read_csv(path) -> Vector:
     return numpy.loadtxt(path, delimiter=',').view(Vector)
+
+
+def read_npy(path) -> Vector:
+    return numpy.load(path).view(Vector)
 
 
 class Vector(numpy.ndarray):
