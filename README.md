@@ -34,11 +34,6 @@ py3d.show()
 
 ```
 
-
-```python
-py3d.Color.standard((5,))
-```
-
 ![example](docs/index.gif)
 
 ### API reference
