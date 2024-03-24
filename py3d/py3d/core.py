@@ -14,7 +14,7 @@ import socket
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
-numpy.set_printoptions(linewidth=200)
+numpy.set_printoptions(linewidth=600)
 
 
 def sign(v):
@@ -87,7 +87,7 @@ class View:
             self.min = numpy.min(
                 [self.min, obj.xyz.flatten().min()], axis=0).tolist()
         return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
-        ).tolist(), color=obj.color.ravel().tolist())
+        ).tolist(), color=obj.color.ravel().tolist(), normal=obj.normal.ravel().tolist())
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -161,6 +161,57 @@ def read_pcd(path) -> Vector:
     for i, c in enumerate(cols):
         setattr(ret, c, ret[:, i])
     return ret
+
+
+def read_ply(path) -> tuple[Vector3, Triangle]:
+    f = open(path, "rb")
+    n_vertex = 0
+    n_face = 0
+    for c in f:
+        c = c.strip().decode("utf-8")
+        if "format" in c:
+            data_type = c.split(" ", 1)[1]
+        elif "element vertex" in c:
+            n_vertex = int(c.split(" ")[-1])
+        elif "element face" in c:
+            n_face = int(c.split(" ")[-1])
+        elif "end_header" in c:
+            break
+    vertices = []
+    while n_vertex:
+        if "ascii" in data_type:
+            c = f.readline().decode("utf-8").strip()
+            vertices.append([float(v) for v in c.split(" ")])
+        else:
+            vertices.append([struct.unpack("f", f.read(4))[0]
+                            for i in range(3)])
+        n_vertex -= 1
+    faces = []
+    while n_face:
+        if "ascii" in data_type:
+            c = f.readline().decode("utf-8").strip()
+            size, *d = [int(v) for v in c.split(" ")]
+        else:
+            size, = struct.unpack("B", f.read(1))
+            d = struct.unpack("<" + "i" * size, f.read(4 * size))
+        if size > 3:
+            tmp = []
+            for i in range(size-2):
+                tmp.append([d[0], d[i+1], d[i+2]])
+            d = tmp
+        faces.append(d)
+        n_face -= 1
+    vertices = Vector3(vertices)
+    triangles: Vector3 = vertices[faces]
+    a = triangles[..., 0, :]
+    b = triangles[..., 1, :]
+    c = triangles[..., 2, :]
+    normals = (b - a).cross(c - b).U
+    mesh = numpy.empty((numpy.prod(triangles.shape[:-1]), 10)).view(Triangle)
+    mesh.xyz = triangles.flatten()
+    mesh.color = Color.standard((1,))
+    mesh.normal = normals.flatten().repeat(3, axis=-2)
+    return vertices, mesh
 
 
 def read_csv(path) -> Vector:
@@ -925,6 +976,14 @@ class Point(Vector):
     @color.setter
     def color(self, v):
         self[..., 3:7] = v
+
+    @property
+    def normal(self):
+        return self[..., 7:10].view(Vector3)
+
+    @normal.setter
+    def normal(self, v):
+        self[..., 7:10] = v
 
     def paint(self, color=None):
         if color is None:
