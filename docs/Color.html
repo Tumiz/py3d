@@ -7557,6 +7557,14 @@ a.anchor-link {
 </style>
 <script>
     class mat {
+        static normalize(array) {
+            let ss = 0
+            for (let v of array) {
+                ss += v ** 2
+            }
+            let l = Math.sqrt(ss)
+            return array.map(x => x / l)
+        }
         static identity() {
             return [
                 1, 0, 0, 0,
@@ -7677,8 +7685,11 @@ a.anchor-link {
             this.type = type
             this.update_projection()
         }
-        position() {
-            let p = mat.vm(mat.vm(this.center, this.rotation), mat.translation([0, 0, this.height]))
+        get position() {
+            return mat.add(mat.vm([0, 0, this.height], this.rotation).slice(0, 3), this.center)
+        }
+        position_str() {
+            let p = this.position
             return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
         }
         update_projection() {
@@ -7862,9 +7873,10 @@ a.anchor-link {
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = this.camera.height / 200
                         this.camera.center = mat.add(this.camera.center, mat.vm([-dx * ratio, dy * ratio, 0], this.camera.rotation))
-                        this.toolbar.tooltip.innerHTML = this.camera.position()
                         this.render()
                     }
+                    this.toolbar.tooltip.innerHTML = this.camera.position_str()
+
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -7873,7 +7885,7 @@ a.anchor-link {
                 ev.preventDefault()
                 let step = ev.deltaY * 10 ** (Math.round(Math.log10(this.camera.height)) - 3)
                 this.camera.height = Math.max(0, this.camera.height - step)
-                this.toolbar.tooltip.innerHTML = this.camera.position()
+                this.toolbar.tooltip.innerHTML = this.camera.position_str()
                 this.camera.update_projection()
                 this.render()
             }
@@ -7922,16 +7934,19 @@ a.anchor-link {
             if (!this.gl) {
                 alert("webgl not work")
             }
-            this.program = this.gl.createProgram()
-            this.set_program(`
-                attribute vec4 position;
-                attribute vec4 color;
+            this.program = this.create_program(`
+                attribute vec4 a_position;
+                attribute vec4 a_color;
+                attribute vec3 a_normal;
+                uniform vec3 u_light_dir;
+                uniform mat4 u_world2ndc;
                 varying vec4 v_color;
-                uniform mat4 world2ndc;
                 void main(void) {
-                    v_color = color;
                     gl_PointSize = 2.0;
-                    gl_Position = world2ndc * position;
+                    gl_Position = u_world2ndc * a_position;
+                    float nDotL = max(dot(u_light_dir, a_normal), 0.0);
+                    vec3 diffuse = vec3(a_color) * nDotL * 0.7;
+                    v_color = vec4(diffuse + a_color.rgb, a_color.a);
                 }
             `, `
                 precision mediump float;
@@ -7940,6 +7955,16 @@ a.anchor-link {
                     gl_FragColor = v_color;
                 } 
             `)
+        }
+        create_program(vertex_shader_code, fragment_shader_code) {
+            const program = this.gl.createProgram()
+            this.set_shader(program, this.gl.VERTEX_SHADER, vertex_shader_code)
+            this.set_shader(program, this.gl.FRAGMENT_SHADER, fragment_shader_code)
+            this.gl.linkProgram(program)
+            if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+                alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(program))
+            }
+            return program
         }
         set_attribute(name, array, item_size) {
             const buffer = this.gl.createBuffer()
@@ -7951,21 +7976,17 @@ a.anchor-link {
         }
         set_uniform(name, array) {
             const location = this.gl.getUniformLocation(this.program, name)
-            this.gl.uniformMatrix4fv(location, false, array)
+            if (array.length == 16) {
+                this.gl.uniformMatrix4fv(location, false, array)
+            } else if (array.length == 3) {
+                this.gl.uniform3fv(location, array)
+            }
         }
-        set_shader(type, code) {
+        set_shader(program, type, code) {
             const shader = this.gl.createShader(type)
             this.gl.shaderSource(shader, code)
             this.gl.compileShader(shader)
-            this.gl.attachShader(this.program, shader)
-        }
-        set_program(vertex_shader_code, fragment_shader_code) {
-            this.set_shader(this.gl.VERTEX_SHADER, vertex_shader_code)
-            this.set_shader(this.gl.FRAGMENT_SHADER, fragment_shader_code)
-            this.gl.linkProgram(this.program)
-            if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
-                alert('Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(this.program))
-            }
+            this.gl.attachShader(program, shader)
         }
         drawText(text, position, color, world2ndc) {
             let div = document.createElement("div")
@@ -7997,7 +8018,8 @@ a.anchor-link {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
             this.gl.useProgram(this.program)
             let world2ndc = this.camera.world2ndc()
-            this.set_uniform("world2ndc", world2ndc)
+            this.set_uniform("u_world2ndc", world2ndc)
+            this.set_uniform("u_light_dir", mat.normalize(this.camera.position))
             let current_t = this.toolbar.ts[this.toolbar.ti]
             for (let t in this.toolbar.cache) {
                 if (t == current_t) {
@@ -8006,8 +8028,11 @@ a.anchor-link {
                         if (obj.mode == "TEXT") {
                             this.drawText(obj.text, obj.vertex, obj.color, world2ndc)
                         } else if (obj.mode) {
-                            this.set_attribute("position", obj.vertex, 3)
-                            this.set_attribute("color", obj.color, 4)
+                            this.set_attribute("a_position", obj.vertex, 3)
+                            this.set_attribute("a_color", obj.color, 4)
+                            if (obj.normal.length) {
+                                this.set_attribute("a_normal", obj.normal, 3)
+                            }
                             this.gl.drawArrays(this.gl[obj.mode], 0, obj.vertex.length / 3)
                         }
                     }
@@ -8046,8 +8071,8 @@ a.anchor-link {
             this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color, world2ndc)
             this.drawText("Y", [x_tick_min, y_tick_max + step, z_tick_min], text_color, world2ndc)
             this.drawText("Z", [x_tick_min, y_tick_min, z_tick_max + step], text_color, world2ndc)
-            this.set_attribute("position", lines, 3)
-            this.set_attribute("color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
+            this.set_attribute("a_position", lines, 3)
+            this.set_attribute("a_color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
             this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
         }
     }
