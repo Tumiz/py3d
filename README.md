@@ -11,16 +11,6 @@ It is under development and unstable currently. But it is designed to be simple,
 * stable means it will have less dependeces and modules, and it will be fully tested
 * customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
 
-Now supported features includes:
-
-* read/visualize ply
-* read/write/visualize npy
-* read/write/visualize csv
-* read/write/visualize pcd
-* apply rotation/translation/scaling on vectors
-* compose or decompose different transforms
-* conversion between rotation matrix, angle axis, quaternion, euler angle and rotation vector
-
 ### Installation
 ```
 pip install py3d
