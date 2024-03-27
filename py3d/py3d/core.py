@@ -388,6 +388,12 @@ DATA ascii
             f.write(" ".join([str(a) for a in p]) + "\n")
         f.close()
 
+    def to_csv(self, path):
+        numpy.savetxt(path, self, delimiter=",")
+
+    def to_npy(self, path):
+        numpy.save(path, self)
+
 
 class Vector2(Vector):
     BASE_SHAPE = 2,
