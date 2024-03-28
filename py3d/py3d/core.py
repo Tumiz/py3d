@@ -262,28 +262,25 @@ class Vector(numpy.ndarray):
         n += cls.BASE_SHAPE
         return numpy.random.rand(*n).view(cls)
 
-    def to_csv(self, path):
-        numpy.savetxt(path, self, delimiter=',')
-
     @property
-    def x(self):
-        return self[..., 0].view(numpy.ndarray)
+    def x(self) -> Vector:
+        return self[..., 0].view(Vector)
 
     @x.setter
     def x(self, v):
         self[..., 0] = v
 
     @property
-    def y(self):
-        return self[..., 1].view(numpy.ndarray)
+    def y(self) -> Vector:
+        return self[..., 1].view(Vector)
 
     @y.setter
     def y(self, v):
         self[..., 1] = v
 
     @property
-    def z(self):
-        return self[..., 2].view(numpy.ndarray)
+    def z(self) -> Vector:
+        return self[..., 2].view(Vector)
 
     @z.setter
     def z(self, v):
@@ -335,11 +332,11 @@ class Vector(numpy.ndarray):
         # length
         return numpy.linalg.norm(self, axis=self.ndim - 1)
 
-    def min(self, axis=-2, keepdims=False) -> Vector:
-        return super().min(axis=axis, keepdims=keepdims)
+    def min(self, axis=-2, keepdims=False, out=None) -> Vector:
+        return super().min(axis=axis, keepdims=keepdims, out=out)
 
-    def max(self, axis=-2, keepdims=False) -> Vector:
-        return super().max(axis=axis, keepdims=keepdims)
+    def max(self, axis=-2, keepdims=False, out=None) -> Vector:
+        return super().max(axis=axis, keepdims=keepdims, out=out)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
@@ -393,6 +390,24 @@ DATA ascii
 
     def to_npy(self, path):
         numpy.save(path, self)
+
+    def as_image(self, align_center=True, sample_rate=10):
+        sample = self[::-sample_rate, ::sample_rate]
+        if sample.dtype == numpy.uint8:
+            sample = sample / 255
+        elif sample.ndim == 2:
+            sample = Color.map(sample)
+        c = numpy.ones(sample.shape[:-1] + (4,)).view(Color)
+        c[..., :min(sample.shape[-1], 4)] = sample
+        c = c.transpose(1, 0, 2)
+        w, h, _ = numpy.shape(c)
+        ret = Point(w, h)
+        if align_center:
+            ret.xyz = Vector3.grid(range(-w//2, w//2), range(-h//2, h//2))
+        else:
+            ret.xyz = Vector3.grid(range(w), range(h))
+        ret.color = c
+        return ret.flatten()
 
 
 class Vector2(Vector):
@@ -909,9 +924,9 @@ class Color(Vector):
         Create a series of colors by giving a a series of value
         '''
         if start is None:
-            start = numpy.min(value)
+            start = numpy.amin(value)
         if end is None:
-            end = numpy.max(value)
+            end = numpy.amax(value)
         center = (start + end)/2
         width = (end - start)/2
         r = numpy.maximum(value - center, 0)/width
@@ -1043,21 +1058,6 @@ class LineSegment(Point):
     @property
     def end(self):
         return self[..., 1::2, :].view(Point)
-
-
-def image(rgba_list: list | numpy.ndarray, align_center=True, sample_rate=10):
-    m = Color(rgba_list)[::-sample_rate, ::sample_rate] / 255
-    if not m.a.any():
-        m.a = 1
-    m = m.transpose(1, 0, 2)
-    w, h, _ = numpy.shape(m)
-    ret = Point(w, h)
-    if align_center:
-        ret.xyz = Vector3.grid(range(-w//2, w//2), range(-h//2, h//2))
-    else:
-        ret.xyz = Vector3.grid(range(w), range(h))
-    ret.color = m
-    return ret.flatten()
 
 
 def cube(size_x=1, size_y=1, size_z=1) -> LineSegment:
