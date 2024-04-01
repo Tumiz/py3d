@@ -359,6 +359,13 @@ class Vector(numpy.ndarray):
         f1 = self[i]
         return (1-d)*f0+d*f1
 
+    def fillna(self, value):
+        self[numpy.isnan(self)] = value
+        return self
+
+    def unique(self, axis=-2) -> Vector:
+        return numpy.unique(self, axis=axis)
+
     def to_pcd(self, path, fields=""):
         w = self.shape[-1]
         pcd = self.reshape(-1, w)
