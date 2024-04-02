@@ -218,6 +218,10 @@ def read_csv(path) -> Vector:
     return numpy.loadtxt(path, delimiter=',').view(Vector)
 
 
+def read_txt(path, delimiter=' ') -> Vector:
+    return numpy.loadtxt(path, delimiter=delimiter).view(Vector)
+
+
 def read_npy(path) -> Vector:
     return numpy.load(path).view(Vector)
 
@@ -364,7 +368,7 @@ class Vector(numpy.ndarray):
         return self
 
     def unique(self, axis=-2) -> Vector:
-        return numpy.unique(self, axis=axis)
+        return numpy.unique(self, axis=axis).view(Vector)
 
     def to_pcd(self, path, fields=""):
         w = self.shape[-1]
