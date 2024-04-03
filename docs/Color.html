@@ -7674,19 +7674,18 @@ a.anchor-link {
         constructor(type, fovy, aspect, min, max) {
             this.fovy = fovy
             this.aspect = aspect
-            this.origin_center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
-            this.center = structuredClone(this.origin_center)
             let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
             this.origin_height = ysize / 2 / Math.tan(this.fovy / 2)
             this.height = this.origin_height
+            this.origin_pose = mat.translation([(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2 + this.height])
+            this.pose = structuredClone(this.origin_pose)
             this.near = -0.1
             this.far = -5 * Math.max(this.origin_height, max[2] - min[2])
-            this.rotation = mat.identity() // intrinsic
             this.type = type
             this.update_projection()
         }
         get position() {
-            return mat.add(mat.vm([0, 0, this.height], this.rotation).slice(0, 3), this.center)
+            return this.pose.slice(12, 15)
         }
         position_str() {
             let p = this.position
@@ -7701,9 +7700,8 @@ a.anchor-link {
                 this.height) : mat.perspective(this.fovy, this.aspect, this.near, this.far)
         }
         reset() {
+            this.pose = this.origin_pose
             this.height = this.origin_height
-            this.center = this.origin_center
-            this.rotation = mat.identity()
             this.update_projection()
         }
         resolution(width) {
@@ -7712,9 +7710,7 @@ a.anchor-link {
         }
         world2ndc() {
             return mat.mms(
-                mat.I(mat.translation(this.center)),
-                mat.I(this.rotation),
-                mat.I(mat.translation([0, 0, this.height])),
+                mat.I(this.pose),
                 this.projection)
         }
     }
@@ -7868,11 +7864,11 @@ a.anchor-link {
                 let d = Math.hypot(dx, dy)
                 if (d) {
                     if (ev.ctrlKey | ev.buttons == 4) {
-                        this.camera.rotation = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.rotation)
+                        this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(d / 100, dy / d, dx / d, 0))
                         this.render()
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = this.camera.height / 200
-                        this.camera.center = mat.add(this.camera.center, mat.vm([-dx * ratio, dy * ratio, 0], this.camera.rotation))
+                        this.camera.pose = mat.mm(this.camera.pose, mat.translation([-dx * ratio, dy * ratio, 0]))
                         this.render()
                     }
                     this.toolbar.tooltip.innerHTML = this.camera.position_str()
