@@ -28,8 +28,7 @@ def launch_server(ip, port):
 
 
 class View:
-    __preload__ = HTML(filename=pathlib.Path(__file__).parent/"viewer.html")
-    display(__preload__)
+    __preload__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
     __template__ = """
 <div id=PY#D_ID>
 </div>
@@ -57,14 +56,14 @@ class View:
         self.cache.clear()
         self.max = []
         self.min = []
-        return html
+        return self.__preload__ + html
 
     def show(self, in_jupyter=True, name="py3d", port=9871):
         if in_jupyter:
             return display(HTML(self._repr_html_()))
         else:
             index = f"{name}.html"
-            open(index, "w").write(self.__preload__.data + self._repr_html_())
+            open(index, "w").write(self._repr_html_())
             sk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             try:
                 sk.connect(("10.255.255.255", 1))
