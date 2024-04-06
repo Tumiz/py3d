@@ -3,12 +3,37 @@
 </head>
 <style>
     .py3d_btn {
+        position: relative;
         width: 20px;
         height: 20px;
         border: none;
         border-radius: 2px;
         padding: 0px;
         margin-right: 1px;
+    }
+
+    .py3d_canvasdiv, .py3d_timediv {
+        position: relative;
+    }
+
+    .py3d_canvasdiv:hover::after,.py3d_timediv:hover::after,.py3d_btn:hover::after {
+        display: block;
+        position: absolute;
+        background-color: black;
+        color: white;
+        border-radius: 5px;
+        width: fit-content;
+        padding: 5px;
+        top: -30px;
+        left: 0px;
+        font-size: 16px;
+        font-family: Arial, Helvetica, sans-serif;
+        content: attr(tooltip);
+        white-space: pre;
+    }
+
+    .py3d_canvasdiv:hover::after {
+        top: 5px;
     }
 </style>
 <script>
@@ -32,23 +57,23 @@
             return [
                 1 / aspect / distance / Math.tan(fovy / 2), 0, 0, 0,
                 0, 1 / distance / Math.tan(fovy / 2), 0, 0,
-                0, 0, -1 / (near - far), 0,
-                0, 0, -near / (far - near), 1]
+                0, 0, 2 / (near - far), 0,
+                0, 0, (far + near) / (near - far), 1]
         }
         static perspective(fovy, aspect, near, far) {
             const f = 1 / Math.tan(fovy / 2)
             return [
                 f / aspect, 0, 0, 0,
                 0, f, 0, 0,
-                0, 0, -(near + far) / (far - near), -1,
-                0, 0, 2 * near * far / (far - near), 0]
+                0, 0, (near + far) / (near - far), -1,
+                0, 0, 2 * near * far / (near - far), 0]
         }
-        static translation(v) {
+        static translation(x, y, z) {
             return [
                 1, 0, 0, 0,
                 0, 1, 0, 0,
                 0, 0, 1, 0,
-                v[0], v[1], v[2], 1]
+                x, y, z, 1]
         }
         static angle_axis(angle, x, y, z) {
             const cos = Math.cos(angle)
@@ -83,13 +108,6 @@
             }
             return ret
         }
-        static mms() {
-            let ret = mat.identity()
-            for (let m of arguments) {
-                ret = mat.mm(ret, m)
-            }
-            return ret
-        }
         static I(m) {
             let ret = mat.identity()
             for (let r of [0, 1, 2]) {
@@ -97,9 +115,10 @@
                     ret[4 * r + c] = m[4 * c + r]
                 }
             }
-            ret[12] = -m[12]
-            ret[13] = -m[13]
-            ret[14] = -m[14]
+            let p = this.vm(m.slice(12,15), ret)
+            ret[12] = -p[0]
+            ret[13] = -p[1]
+            ret[14] = -p[2]
             return ret
         }
         static rgb2hex(r, g, b, a) {
@@ -133,10 +152,10 @@
             let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
             this.origin_height = ysize / 2 / Math.tan(this.fovy / 2)
             this.height = this.origin_height
-            this.origin_pose = mat.translation([(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2 + this.height])
+            this.origin_pose = mat.translation((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2 + this.height)
             this.pose = structuredClone(this.origin_pose)
-            this.near = -0.1
-            this.far = -5 * Math.max(this.origin_height, max[2] - min[2])
+            this.near = 0.1
+            this.far = 10 * Math.max(this.origin_height, max[2] - min[2])
             this.type = type
             this.update_projection()
         }
@@ -165,9 +184,10 @@
             return Math.abs(2 * p[3] / p[0] / width)
         }
         world2ndc() {
-            return mat.mms(
-                mat.I(this.pose),
-                this.projection)
+            return mat.mm(
+                mat.I(this.pose), // world to camera
+                this.projection, // camera to ndc
+                ) 
         }
     }
     class ToolBar {
@@ -185,24 +205,19 @@
             this.slider.max = this.ts[this.ts.length - 1]
             this.slider.step = 0.001
             this.slider.value = this.ts[this.ti]
-            this.slider.style.display = this.slider.max > 0 ? "block" : "none"
+            this.slider.style.visibility = this.slider.max > 0 ? "visible" : "hidden"
             this.slider.style.margin = "6px"
-            this.slider.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `time line`
-            }
             this.time = document.createElement("div")
-            this.time.style.display = this.slider.max > 0 ? "inline" : "none"
+            this.time.className = "py3d_timediv"
+            this.time.style.display = "inline-block"
+            this.time.style.visibility = this.slider.max > 0 ? "visible" : "hidden"
             this.time.innerHTML = this.slider.value + "/" + this.slider.max
-            this.time.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `current time in seconds`
-            }
+            this.time.setAttribute("tooltip", `current time in seconds`)
             this.btn_play = document.createElement("button")
             this.btn_play.innerHTML = "►"
             this.btn_play.className = "py3d_btn"
-            this.btn_play.style.display = this.slider.max > 0 ? "inline" : "none"
-            this.btn_play.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `click to play`
-            }
+            this.btn_play.style.visibility = this.slider.max > 0 ? "visible" : "hidden"
+            this.btn_play.setAttribute("tooltip", `click to play`)
             this.btn_play.onclick = (ev) => {
                 let walk = () => {
                     if (this.btn_play.innerHTML == "■") {
@@ -218,61 +233,45 @@
                 }
                 if (this.btn_play.innerHTML == "►") {
                     this.btn_play.innerHTML = "■"
+                    this.btn_play.setAttribute("tooltip", `click to stop`)
                     if (this.ti >= this.ts.length - 1) {
                         this.ti = 0
                     }
                     walk()
                 } else {
                     this.btn_play.innerHTML = "►"
+                    this.btn_play.setAttribute("tooltip", `click to play`)
                 }
             }
             this.btn_orth = document.createElement("button")
             this.btn_orth.innerHTML = "O"
+            this.btn_orth.setAttribute("tooltip", `O: orthographic projection P: perspective projection`)
             this.btn_orth.className = "py3d_btn"
-            this.btn_orth.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `
-            O: orthographic projection<br/>
-            P: perspective projection`
-            }
             this.btn_reset = document.createElement("button")
             this.btn_reset.innerHTML = "⟰"
             this.btn_reset.className = "py3d_btn"
-            this.btn_reset.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `reset camera pose`
-            }
+            this.btn_reset.setAttribute("tooltip", `reset camera pose`)
             this.btn_left = document.createElement("button")
             this.btn_left.innerHTML = "⇒"
             this.btn_left.className = "py3d_btn"
-            this.btn_left.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `turn left`
-            }
+            this.btn_left.setAttribute("tooltip", `turn left`)
             this.btn_right = document.createElement("button")
             this.btn_right.innerHTML = "⇐"
             this.btn_right.className = "py3d_btn"
-            this.btn_right.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `turn right`
-            }
+            this.btn_right.setAttribute("tooltip", `turn right`)
             this.btn_up = document.createElement("button")
             this.btn_up.innerHTML = "⇑"
             this.btn_up.className = "py3d_btn"
-            this.btn_up.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `turn up`
-            }
+            this.btn_up.setAttribute("tooltip", `turn up`)
             this.btn_down = document.createElement("button")
             this.btn_down.innerHTML = "⇓"
             this.btn_down.className = "py3d_btn"
-            this.btn_down.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `turn down`
-            }
+            this.btn_down.setAttribute("tooltip", `turn down`)
             this.btn_grid = document.createElement("button")
             this.btn_grid.innerHTML = "▦"
             this.btn_grid.className = "py3d_btn"
-            this.btn_grid.onmouseenter = (ev) => {
-                this.tooltip.innerHTML = `show grid`
-            }
-            this.tooltip = document.createElement("div")
-            this.tooltip.style.height = "70px"
-            this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_grid, this.btn_play, this.time, this.slider, this.tooltip)
+            this.btn_grid.setAttribute("tooltip", `show grid`)
+            this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_grid, this.btn_play, this.time, this.slider)
         }
     }
     class Viewer {
@@ -290,6 +289,11 @@
             this.canvasdiv.style.overflow = "hidden"
             this.canvasdiv.style.resize = "vertical"
             this.canvasdiv.append(this.labeldiv, this.canvas)
+            this.canvasdiv.className = "py3d_canvasdiv"
+            this.canvasdiv.setAttribute("tooltip", `\
+rotate: press ctrl key and move mouse or press left mouse button and move mouse
+translate: press shift key and move mouse or press middle mouse button and move mouse
+zoom: mouse wheel`)
             this.toolbar = new ToolBar(data.cache)
             this.min = data.min
             this.max = data.max
@@ -309,10 +313,6 @@
                 this.canvas_y = ev.clientY
                 this.canvas.tabIndex = 0
                 this.canvas.focus()
-                this.toolbar.tooltip.innerHTML = `
-            rotate: press ctrl key and move mouse or press left mouse button and move mouse<br/>
-            translate: press shift key and move mouse or press middle mouse button and move mouse<br/>
-            zoom: mouse wheel`
             }
             this.canvas.onmousemove = (ev) => {
                 let dx = ev.clientX - this.canvas_x
@@ -320,15 +320,15 @@
                 let d = Math.hypot(dx, dy)
                 if (d) {
                     if (ev.ctrlKey | ev.buttons == 4) {
-                        this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(d / 100, dy / d, dx / d, 0))
+                        this.camera.pose = mat.mm(mat.angle_axis(d / 100, dy / d, dx / d, 0), this.camera.pose) // local transform
                         this.render()
+                        this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                     } else if (ev.shiftKey | ev.buttons == 1) {
                         const ratio = this.camera.height / 200
-                        this.camera.pose = mat.mm(this.camera.pose, mat.translation([-dx * ratio, dy * ratio, 0]))
+                        this.camera.pose = mat.mm(mat.translation(-dx * ratio, dy * ratio, 0), this.camera.pose) // local transform
                         this.render()
+                        this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                     }
-                    this.toolbar.tooltip.innerHTML = this.camera.position_str()
-
                 }
                 this.canvas_x = ev.clientX
                 this.canvas_y = ev.clientY
@@ -336,10 +336,11 @@
             this.canvas.onwheel = (ev) => {
                 ev.preventDefault()
                 let step = ev.deltaY * 10 ** (Math.round(Math.log10(this.camera.height)) - 3)
-                this.camera.height = Math.max(0, this.camera.height - step)
-                this.toolbar.tooltip.innerHTML = this.camera.position_str()
+                this.camera.height -= step
+                this.camera.pose = mat.mm(mat.translation(0, 0, -step), this.camera.pose) // local transform
                 this.camera.update_projection()
                 this.render()
+                this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
             }
             this.toolbar.btn_orth.onclick = (ev) => {
                 this.toolbar.btn_orth.innerHTML = this.toolbar.btn_orth.innerHTML == this.camera.ORTHOGRAPHIC ? this.camera.PERSPECTIVE : this.camera.ORTHOGRAPHIC
@@ -352,19 +353,19 @@
                 this.render()
             }
             this.toolbar.btn_left.onclick = (ev) => {
-                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 0, 1, 0), this.camera.rotation)
+                this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(Math.PI / 2, 0, 1, 0))
                 this.render()
             }
             this.toolbar.btn_right.onclick = (ev) => {
-                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 0, -1, 0), this.camera.rotation)
+                this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(Math.PI / 2, 0, -1, 0))
                 this.render()
             }
             this.toolbar.btn_up.onclick = (ev) => {
-                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, -1, 0, 0), this.camera.rotation)
+                this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(Math.PI / 2, -1, 0, 0))
                 this.render()
             }
             this.toolbar.btn_down.onclick = (ev) => {
-                this.camera.rotation = mat.mm(mat.angle_axis(Math.PI / 2, 1, 0, 0), this.camera.rotation)
+                this.camera.pose = mat.mm(this.camera.pose, mat.angle_axis(Math.PI / 2, 1, 0, 0))
                 this.render()
             }
             this.toolbar.btn_grid.onclick = (ev) => {
@@ -528,4 +529,4 @@
             this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
         }
     }
-</script>
+</script>    
