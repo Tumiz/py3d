@@ -32,7 +32,7 @@ class View:
     __template__ = """
 <div id=PY#D_ID>
 </div>
-<script>
+<script loading="lazy">
 	new Viewer("PY#D_ID", PY#D_ARGS)
 </script>
     """
@@ -74,7 +74,7 @@ class View:
                 sk.close()
             print(f"click http://{ip}:{port}/{index} to view")
             multiprocessing.Process(
-                target=launch_server, args=(ip, port)).start()
+                target=launch_server, args=(ip, port), daemon=True).start()
 
     def render(self, obj: Point, t=0):
         if self.max == []:
