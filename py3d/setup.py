@@ -36,7 +36,7 @@ def ipython_version(python_version):
 setup(
     name="py3d",
     version=next_version(latest_version),
-    description="py3d is a 3d computational geometry library that deals with 3d data in batches. And it embedded an interactive viewer that can work in a jupyter notebook or browser.",
+    description="py3d is a pure and lightweight python library of 3d data structures and functions, which can deal with points, lines, planes and 3d meshes in batches, and also visualize them. All the actions can be done in a jupyter notebook.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Tumiz",

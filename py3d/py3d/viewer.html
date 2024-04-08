@@ -154,7 +154,7 @@
             this.height = this.origin_height
             this.origin_pose = mat.translation((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2 + this.height)
             this.pose = structuredClone(this.origin_pose)
-            this.near = 0.1
+            this.near = 0.001
             this.far = 100 * this.height
             this.type = type
             this.update_projection()
