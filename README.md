@@ -3,13 +3,7 @@
 
 ## py3d
 
-**py3d** is one of the **scenario** libraries. It is a python 3d computational geometry library, which can deal with points, lines, planes and 3d meshes in batches.
-
-It is under development and unstable currently. But it is designed to be simple, stable and customizable:
-
-* simple means api will be less than usual and progressive
-* stable means it will have less dependeces and modules, and it will be fully tested
-* customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
+**py3d** is a pure and lightweight python library of 3d data structures and functions, which can deal with points, lines, planes and 3d meshes in batches, and also visualize them. All the actions can be done in a jupyter notebook.
 
 Now supported features includes:
 
@@ -20,6 +14,12 @@ Now supported features includes:
 * apply rotation/translation/scaling on vectors
 * compose or decompose different transforms
 * conversion between rotation matrix, angle axis, quaternion, euler angle and rotation vector
+
+It is under development and unstable currently. But it is designed to be simple, stable and customizable:
+
+* simple means api will be less than usual and progressive
+* stable means it will have less dependeces and modules, and it will be fully tested
+* customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
 
 ### Installation
 ```
