@@ -5,7 +5,6 @@ import numpy
 from IPython.display import display, HTML
 from typing import Dict
 import pathlib
-import uuid
 import json
 import struct
 import multiprocessing
@@ -29,13 +28,6 @@ def launch_server(ip, port):
 
 class View:
     __preload__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
-    __template__ = """
-<div id=PY#D_ID>
-</div>
-<script loading="lazy">
-	new Viewer("PY#D_ID", PY#D_ARGS)
-</script>
-    """
 
     def __init__(self) -> None:
         self.cache: Dict[float, list] = {}
@@ -51,12 +43,12 @@ class View:
         return self
 
     def _repr_html_(self):
-        html = self.__template__.replace("PY#D_ID", str(uuid.uuid1())).replace(
+        html = self.__preload__.replace(
             "PY#D_ARGS", json.dumps(self.__dict__))
         self.cache.clear()
         self.max = []
         self.min = []
-        return self.__preload__ + html
+        return html
 
     def show(self, in_jupyter=True, name="py3d", port=9871):
         if in_jupyter:
