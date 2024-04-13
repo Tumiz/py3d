@@ -42,7 +42,7 @@ setup(
     author="Tumiz",
     author_email="hh11698@163.com",
     python_requires=">=3.7.0",
-    url="https://tumiz.github.io/scenario/",
+    url="https://tumiz.github.io/py3d/",
     install_requires=["numpy", "ipython{}".format(ipython_version(sys.version_info.minor))],
     packages=find_packages(),
     data_files=[
