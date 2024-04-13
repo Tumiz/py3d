@@ -1,9 +1,8 @@
-# Scenario Tool Kit
-**Scenario** [Github](https://github.com/Tumiz/scenario) is a series of python libraries that helping building simulation environment easily and quickly. Click [Here](https://tumiz.github.io/scenario/) to see documents 
-
-## py3d
+# py3d
 
 **py3d** is a pure and lightweight python library of 3d data structures and functions, which can deal with points, lines, planes and 3d meshes in batches, and also visualize them. All the actions can be done in a jupyter notebook.
+
+[Code](https://github.com/Tumiz/py3d) | [Docs](https://tumiz.github.io/py3d)
 
 Now supported features includes:
 
@@ -26,7 +25,7 @@ It is under development and unstable currently. But it is designed to be simple,
 pip install py3d
 ```
 
-### Example
+## Example
 
 
 ```python
@@ -46,15 +45,15 @@ py3d.show()
 
 ![example](docs/index.gif)
 
-### API reference
+## API reference
 
-[Vector](https://tumiz.github.io/scenario/Vector.html)
-[Vector3](https://tumiz.github.io/scenario/Vector3.html)
-[Vector4](https://tumiz.github.io/scenario/Vector4.html)
-[Transform](https://tumiz.github.io/scenario/Transform.html)
-[Rotation](https://tumiz.github.io/scenario/Rotation.html)
-[Color](https://tumiz.github.io/scenario/Color.html)
+[Vector](https://tumiz.github.io/py3d/Vector.html)
+[Vector3](https://tumiz.github.io/py3d/Vector3.html)
+[Vector4](https://tumiz.github.io/py3d/Vector4.html)
+[Transform](https://tumiz.github.io/py3d/Transform.html)
+[Rotation](https://tumiz.github.io/py3d/Rotation.html)
+[Color](https://tumiz.github.io/py3d/Color.html)
 
-[Top](#Scenario-Tool-Kit)
+[Top](#py3d)
 
 
