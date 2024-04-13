@@ -282,12 +282,28 @@ class Vector(numpy.ndarray):
         self[..., 2] = v
 
     @property
+    def w(self):
+        return self[..., 3].view(Vector)
+
+    @w.setter
+    def w(self, v):
+        self[..., 3] = v
+
+    @property
     def xy(self) -> Vector2:
         return self[..., 0:2].view(Vector2)
 
     @xy.setter
     def xy(self, v):
         self[..., 0:2] = v
+
+    @property
+    def yz(self) -> Vector2:
+        return self[..., 1:3].view(Vector2)
+
+    @yz.setter
+    def yz(self, v):
+        self[..., 1:3] = v
 
     @property
     def xyz(self) -> Vector3:
@@ -530,8 +546,8 @@ class Vector3(Vector):
     def distance_to_points(self, points: Vector3) -> numpy.ndarray:
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
-    def as_point(self) -> Point:
-        entity = Point(*self.n)
+    def as_point(self, color=None, colormap=None) -> Point:
+        entity = Point(*self.n).paint(color, colormap)
         entity.xyz = self
         return entity
 
@@ -590,14 +606,6 @@ class Vector4(Vector):
             ret.z = z
             ret.w = w
             return ret
-
-    @property
-    def w(self):
-        return self[..., 3].view(numpy.ndarray)
-
-    @w.setter
-    def w(self, v):
-        self[..., 3] = v
 
     @property
     def wxyz(self) -> Vector:
@@ -1008,9 +1016,11 @@ class Point(Vector):
     def normal(self, v):
         self[..., 7:10] = v
 
-    def paint(self, color=None):
-        if color is None:
-            color = Color.standard(self.shape[:1])[:, None]
+    def paint(self, color=None, colormap=None):
+        if colormap is not None:
+            color = Color.map(colormap)
+        elif color is None:
+            color = Color.standard(self.n[:-1] + (1,))
         self.color = color
         return self
 
