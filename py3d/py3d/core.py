@@ -3,7 +3,7 @@
 from __future__ import annotations
 import numpy
 from IPython.display import display, HTML
-from typing import Dict
+from typing import Dict, Iterable
 import pathlib
 import json
 import struct
@@ -223,7 +223,7 @@ class Vector(numpy.ndarray):
     '''
     BASE_SHAPE = ()
 
-    def __new__(cls, data: list | numpy.ndarray = []):
+    def __new__(cls, data: list | numpy.ndarray = [], columns=[]):
         nd = numpy.array(data)
         if cls.BASE_SHAPE:
             bn = len(cls.BASE_SHAPE)
@@ -233,10 +233,23 @@ class Vector(numpy.ndarray):
             ret[mask] = nd[mask]
             return ret.view(cls)
         else:
-            return nd.view(cls)
+            ret = nd.view(cls)
+            ret.column_indices = {}
+            for i, c in enumerate(columns):
+                ret.column_indices[c] = i
+                setattr(ret, c, ret[..., i])
+            return ret
 
     def __imatmul__(self, value) -> Vector:
         return self @ value
+    
+    def __getitem__(self, keys) -> Vector:
+        if hasattr(self, "column_indices") and type(keys[0]) is str:
+            i = [self.column_indices[key] for key in keys]
+            return self[..., i]
+        else:
+            return super().__getitem__(keys)
+
 
     def tile(self, *n) -> Vector:
         return numpy.tile(self, n + self.ndim * (1,))
@@ -1102,7 +1115,7 @@ def axis(size=5, dashed=False) -> LineSegment:
     a[0].color = Color(r=1)
     a[1].color = Color(g=1)
     a[2].color = Color(b=1)
-    return a
+    return a.flatten()
 
 
 def camera(pixel_width, pixel_height, focal_length_in_pixels, pixel_size=1e-3):
