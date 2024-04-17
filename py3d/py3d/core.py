@@ -242,7 +242,7 @@ class Vector(numpy.ndarray):
 
     def __imatmul__(self, value) -> Vector:
         return self @ value
-    
+
     def __getitem__(self, keys) -> Vector:
         if hasattr(self, "column_indices") and type(keys[0]) is str:
             i = [self.column_indices[key] for key in keys]
@@ -250,12 +250,24 @@ class Vector(numpy.ndarray):
         else:
             return super().__getitem__(keys)
 
-
     def tile(self, *n) -> Vector:
         return numpy.tile(self, n + self.ndim * (1,))
 
-    def flatten(self):
-        return self.reshape(-1, *self.BASE_SHAPE)
+    def flatten(self, base_shape=None) -> Vector:
+        '''
+        Return a copy of the vector reshaped into (-1, *base_shape).
+        '''
+        if base_shape is None:
+            base_shape = self.BASE_SHAPE if self.BASE_SHAPE else self.shape[-1:]
+        return self.reshape(-1, *base_shape)
+
+    def sample(self, n, base_shape=None):
+        '''
+        Return a random sample of items
+        '''
+        flattened = self.flatten(base_shape)
+        indices = numpy.random.randint(0, len(flattened), n)
+        return flattened[indices]
 
     @property
     def n(self):
