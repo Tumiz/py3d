@@ -434,7 +434,12 @@ DATA ascii
     def to_npy(self, path):
         numpy.save(path, self)
 
-    def as_image(self, align_center=True, sample_rate=10):
+    def as_image(self, align_center=True, sample_rate=None):
+        '''
+        visualize the vector as an image
+        '''
+        if not sample_rate:
+            sample_rate = max(round(self.size / 1e6), 1)
         sample = self[::-sample_rate, ::sample_rate]
         if sample.dtype == numpy.uint8:
             sample = sample / 255
@@ -956,17 +961,16 @@ class Color(Vector):
     @classmethod
     def map(cls, value: list | numpy.ndarray, start=None, end=None):
         '''
-        Create a series of colors by giving a a series of value
+        Create a series of colors by giving a a series of value, from black to yellow
         '''
         if start is None:
             start = numpy.amin(value)
         if end is None:
             end = numpy.amax(value)
-        center = (start + end)/2
-        width = (end - start)/2
-        r = numpy.maximum(value - center, 0)/width
-        g = 1-numpy.abs(value - center)/width
-        b = numpy.maximum(center - value, 0)/width
+        position = (value-start)/(end-start)
+        r = numpy.clip(position*1.67-0.67, 0, 1)
+        g = numpy.clip(position*5-1, 0, 1)
+        b = numpy.clip((0.2-abs(position-0.2))*5, 0, 1)
         return cls(r=r, g=g, b=b)
 
     @classmethod
