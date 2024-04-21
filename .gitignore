@@ -1,0 +1,7 @@
+build
+dist
+*egg*
+bundle.js.*
+test
+__pycache__
+node_modules
