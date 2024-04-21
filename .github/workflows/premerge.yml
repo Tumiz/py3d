@@ -32,14 +32,14 @@ jobs:
         run: python3 -m pip install -e .
 
       - name: test
-        run: python3 test.py -d pages
+        run: python3 test.py -d docs
 
-      - name: commit pages
+      - name: commit docs
         run: |
           git config user.email "hh11698@163.com"
           git config user.name "Tumiz"
-          git add pages README.md
-          git commit -m "update pages"
+          git add docs README.md
+          git commit -m "update docs"
           git push
 
       - name: label
