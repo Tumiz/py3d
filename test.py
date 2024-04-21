@@ -8,9 +8,9 @@ import os
 root = pathlib.Path(__file__).absolute().parent
 print(root)
 parser = argparse.ArgumentParser()
-parser.add_argument("--destination", "-d", default="pages")
+parser.add_argument("--destination", "-d", default="docs")
 parser.add_argument("--notebooks", "-n",
-                    default=root/"docs")
+                    default=root/"notebooks/")
 args = parser.parse_args()
 
 path_destination = pathlib.Path(args.destination).absolute()
