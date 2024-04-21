@@ -29,29 +29,21 @@ jobs:
           python3 -m pip install jupyterlab sympy pillow scipy
 
       - name: install py3d
-        run: python3 -m pip install -e py3d
+        run: python3 -m pip install -e .
 
       - name: test
-        run: python3 test.py -d docs
+        run: python3 test.py -d pages
 
-      - name: commit docs
+      - name: commit pages
         run: |
           git config user.email "hh11698@163.com"
           git config user.name "Tumiz"
-          git add docs py3d/README.md README.md
-          git commit -m "update docs"
+          git add pages README.md
+          git commit -m "update pages"
           git push
 
       - name: label
         uses: actions/labeler@v4
-
-      # - name: get labels
-      #   run: |
-      #     labels="$(gh api repos/${{ github.repository_owner }}/${{ github.repository_owner }}/pulls/${{ github.event.pull_request.number }} --jq '.labels.[].name')"
-      #     echo "$labels"
-      #   shell: bash
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install pypa/build
         run: >-
@@ -67,7 +59,7 @@ jobs:
           --sdist
           --wheel
           --outdir dist/
-          py3d
+          .
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

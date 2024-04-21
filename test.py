@@ -8,9 +8,9 @@ import os
 root = pathlib.Path(__file__).absolute().parent
 print(root)
 parser = argparse.ArgumentParser()
-parser.add_argument("--destination", "-d", default="docs")
+parser.add_argument("--destination", "-d", default="pages")
 parser.add_argument("--notebooks", "-n",
-                    default=root/"py3d/doc")
+                    default=root/"docs")
 args = parser.parse_args()
 
 path_destination = pathlib.Path(args.destination).absolute()
@@ -31,7 +31,7 @@ for f in docs:
                 del nb.cells[i]
         body, _ = nbconvert.HTMLExporter().from_notebook_node(nb)
         body = body.replace("<title>Notebook</title>",
-                            "<title>Scenario {}</title>".format(f.stem))
+                            "<title>py3d.{}</title>".format(f.stem))
         open(path_destination/(f.stem+".html"), "w").write(body)
         if f.name == "index.ipynb":
             for i, cell in enumerate(nb.cells):
@@ -40,5 +40,4 @@ for f in docs:
                 if "<script>" in cell.source:
                     del nb.cells[i]
             body, _ = nbconvert.MarkdownExporter().from_notebook_node(nb)
-            open(root/"py3d/README.md", "w").write(body)
             open(root/"README.md", "w").write(body)
