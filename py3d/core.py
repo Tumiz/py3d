@@ -205,8 +205,8 @@ def read_ply(path) -> tuple[Vector3, Triangle]:
     return vertices, mesh
 
 
-def read_csv(path) -> Vector:
-    return numpy.loadtxt(path, delimiter=',').view(Vector)
+def read_csv(path, header=None) -> Vector:
+    return numpy.genfromtxt(path, delimiter=',', names=header).view(Vector)
 
 
 def read_txt(path, delimiter=' ') -> Vector:
