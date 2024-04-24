@@ -205,12 +205,23 @@ def read_ply(path) -> tuple[Vector3, Triangle]:
     return vertices, mesh
 
 
-def read_csv(path, header=None) -> Vector:
-    return numpy.genfromtxt(path, delimiter=',', names=header).view(Vector)
+def read_csv(path, header=1) -> Vector:
+    '''
+    Load data from a csv file. 
+    header: line number of header, 0 if there is no header
+    '''
+    ret = numpy.loadtxt(path, delimiter=',', skiprows=header).view(Vector)
+    with open(path) as f:
+        for i in range(header):
+            ret.columns = f.readline().strip().split(",")
+    return ret
 
 
-def read_txt(path, delimiter=' ') -> Vector:
-    return numpy.loadtxt(path, delimiter=delimiter).view(Vector)
+def read_txt(path, delimiter=' ', **args) -> Vector:
+    '''
+    Load data from a text file
+    '''
+    return numpy.loadtxt(path, delimiter=delimiter, **args).view(Vector)
 
 
 def read_npy(path) -> Vector:
@@ -234,18 +245,17 @@ class Vector(numpy.ndarray):
             return ret.view(cls)
         else:
             ret = nd.view(cls)
-            ret.column_indices = {}
+            ret.columns = []
             for i, c in enumerate(columns):
-                ret.column_indices[c] = i
-                setattr(ret, c, ret[..., i])
+                ret.columns.append(c)
             return ret
 
     def __imatmul__(self, value) -> Vector:
         return self @ value
 
     def __getitem__(self, keys) -> Vector:
-        if hasattr(self, "column_indices") and type(keys[0]) is str:
-            i = [self.column_indices[key] for key in keys]
+        if hasattr(self, "columns") and type(keys[0]) is str:
+            i = [self.columns.index(key) for key in keys]
             return self[..., i]
         else:
             return super().__getitem__(keys)
@@ -429,14 +439,21 @@ DATA ascii
         f.close()
 
     def to_csv(self, path):
-        numpy.savetxt(path, self, delimiter=",")
+        '''
+        Save data to a csv file
+        '''
+        if hasattr(self, "columns"):
+            header = ",".join(self.columns)
+        else:
+            header = ...
+        numpy.savetxt(path, self, delimiter=",", header=header, comments="")
 
     def to_npy(self, path):
         numpy.save(path, self)
 
     def as_image(self, align_center=True, sample_rate=None):
         '''
-        visualize the vector as an image
+        Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
         if not sample_rate:
             sample_rate = max(round(self.size / 1e6), 1)
@@ -975,11 +992,14 @@ class Color(Vector):
 
     @classmethod
     def standard(cls, n):
+        '''
+        Create a standard color series with shape of (*n, 4)
+        '''
         size = numpy.prod(n)
         c = int(numpy.power(size, 1/3)) + 1
         s = numpy.linspace(0.5, 1, c)
         rgb: Vector3 = Vector3.grid(x=s, y=s, z=s).flatten()[
-            1:size+1].reshape(n+(3,))
+            :size].reshape(n+(3,))
         return rgb.H.view(cls)
 
     @property
