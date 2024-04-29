@@ -246,7 +246,7 @@ class Vector(numpy.ndarray):
         else:
             ret = nd.view(cls)
             ret.columns = []
-            for i, c in enumerate(columns):
+            for c in columns:
                 ret.columns.append(c)
             return ret
 
@@ -472,7 +472,7 @@ DATA ascii
         else:
             ret.xyz = Vector3.grid(range(w), range(h))
         ret.color = c
-        return ret.flatten()
+        return ret
 
 
 class Vector2(Vector):
@@ -516,7 +516,7 @@ class Vector3(Vector):
 
     def __matmul__(self, value: Transform) -> Vector3:
         if type(value) is Transform:
-            return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
+            return numpy.matmul(self.H, value[..., None, :, :])[..., 0:3].view(Vector3)
         else:
             return super().__matmul__(value)
 
@@ -980,6 +980,7 @@ class Color(Vector):
         '''
         Create a series of colors by giving a a series of value, from black to yellow
         '''
+        value = numpy.array(value, numpy.float32)
         if start is None:
             start = numpy.amin(value)
         if end is None:
