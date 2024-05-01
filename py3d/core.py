@@ -228,6 +228,18 @@ def read_npy(path) -> Vector:
     return numpy.load(path).view(Vector)
 
 
+def rand(*n) -> Vector | Vector2 | Vector3 | Vector4:
+    '''
+    Create a random vector with shape of n
+    '''
+    w = n[-1]
+    if w in [2, 3, 4]:
+        vtype = getattr(__module__, f"Vector{w}")
+    else:
+        vtype = Vector
+    return numpy.random.rand(*n).view(vtype)
+
+
 class Vector(numpy.ndarray):
     '''
     Base class of Vector2, Vector3, Vector4 and Transform
@@ -286,11 +298,6 @@ class Vector(numpy.ndarray):
             return self.shape[:-base_dims]
         else:
             return self.shape
-
-    @classmethod
-    def rand(cls, *n) -> Vector | Vector2 | Vector3 | Vector4:
-        n += cls.BASE_SHAPE
-        return numpy.random.rand(*n).view(cls)
 
     @property
     def x(self) -> Vector:
@@ -451,7 +458,7 @@ DATA ascii
     def to_npy(self, path):
         numpy.save(path, self)
 
-    def as_image(self, align_center=True, sample_rate=None):
+    def as_image(self, nonzero=True, align_center=True, sample_rate=None):
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
@@ -459,19 +466,18 @@ DATA ascii
             sample_rate = max(round(self.size / 1e6), 1)
         sample = self[::-sample_rate, ::sample_rate]
         if sample.dtype == numpy.uint8:
-            sample = sample / 255
+            sample = Color(sample / 255)
         elif sample.ndim == 2:
             sample = Color.map(sample)
-        c = numpy.ones(sample.shape[:-1] + (4,)).view(Color)
-        c[..., :min(sample.shape[-1], 4)] = sample
-        c = c.transpose(1, 0, 2)
-        w, h, _ = numpy.shape(c)
-        ret = Point(w, h)
+        *_, h, w  = sample.n
+        ret = Point(*_, w, h)
         if align_center:
             ret.xyz = Vector3.grid(range(-w//2, w//2), range(-h//2, h//2))
         else:
             ret.xyz = Vector3.grid(range(w), range(h))
-        ret.color = c
+        ret.color = sample.transpose(1, 0, 2)
+        if nonzero:
+            return ret[ret.color.rgb.any(-1)]
         return ret
 
 
