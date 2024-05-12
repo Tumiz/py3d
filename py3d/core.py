@@ -2,8 +2,8 @@
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
 import numpy
-from IPython.display import display, HTML
-from typing import Dict, Iterable
+from IPython.display import display, HTML, clear_output
+from typing import Dict
 import pathlib
 import json
 import struct
@@ -33,6 +33,9 @@ class View:
         self.cache: Dict[float, list] = {}
         self.min = []
         self.max = []
+        self.viewpoint = None
+        self.lookat = None
+        self.up = None
 
     def __render_args__(self, t, **args):
         t = round(t, 3)
@@ -48,10 +51,21 @@ class View:
         self.cache.clear()
         self.max = []
         self.min = []
+        self.viewpoint = None
+        self.lookat = None
+        self.up = None
         return html
 
-    def show(self, in_jupyter=True, name="py3d", port=9871):
+    def show(self, viewpoint=None, lookat=None, up=None, inplace=True, in_jupyter=True, name="py3d", port=9871):
+        '''
+        same as py3d.show
+        '''
+        self.viewpoint = viewpoint
+        self.lookat = lookat
+        self.up = up
         if in_jupyter:
+            if inplace:
+                clear_output(True)
             return display(HTML(self._repr_html_()))
         else:
             index = f"{name}.html"
@@ -98,8 +112,18 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show(in_jupyter=True, name="py3d", port=9871):
-    return default_view.show(in_jupyter, name, port)
+def show(viewpoint=None, lookat=None, up=None, inplace=True, in_jupyter=True, name="py3d", port=9871):
+    '''
+    display all rendered objects in one scene
+    viewpoint: the position from where to view the scene
+    lookat: the position to look at
+    up: up direction to view the scene
+    inplace: update the output when displayed in jupyter
+    in_jupyter: display in jupyter, as a output, otherwise in a web browser
+    name: name of the page when displayed in a web browser
+    port: port to visit the page when displayed in a web browser
+    '''
+    return default_view.show(viewpoint, lookat, up, inplace, in_jupyter, name, port)
 
 
 def read_pcd(path) -> Vector:

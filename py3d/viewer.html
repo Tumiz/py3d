@@ -39,16 +39,19 @@
         top: 5px;
     }
 </style>
-<div  loading="lazy">
+<div loading="lazy">
     <script>
         {
             class mat {
-                static normalize(array) {
+                static norm(array) {
                     let ss = 0
                     for (let v of array) {
                         ss += v ** 2
                     }
-                    let l = Math.sqrt(ss)
+                    return Math.sqrt(ss)
+                }
+                static normalize(array) {
+                    let l = mat.norm(array)
                     return array.map(x => x / l)
                 }
                 static identity() {
@@ -90,10 +93,33 @@
                         0, 0, 0, 1
                     ]
                 }
+                static lookat(cameraPosition, target, up) {
+                    var zAxis = mat.normalize(
+                        mat.sub(cameraPosition, target))
+                    var xAxis = mat.normalize(mat.cross(up, zAxis))
+                    var yAxis = mat.normalize(mat.cross(zAxis, xAxis))
+                    return [
+                        xAxis[0], xAxis[1], xAxis[2], 0,
+                        yAxis[0], yAxis[1], yAxis[2], 0,
+                        zAxis[0], zAxis[1], zAxis[2], 0,
+                        cameraPosition[0],
+                        cameraPosition[1],
+                        cameraPosition[2],
+                        1,
+                    ]
+                }
                 static add(a0, a1) {
                     return a0.map((item, index) => {
                         return item + a1[index];
-                    });
+                    })
+                }
+                static sub(a0, a1) {
+                    return a0.map((item, index) => {
+                        return item - a1[index];
+                    })
+                }
+                static cross(a, b) {
+                    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
                 }
                 static vm(v, m) {
                     console.assert(m.length == 16 && v.length >= 3, m, v)
@@ -151,14 +177,20 @@
             class Camera {
                 PERSPECTIVE = "P"
                 ORTHOGRAPHIC = "O"
-                constructor(type, fovy, aspect, min, max) {
+                constructor(type, fovy, aspect, min, max, viewpoint, lookat, up) {
                     this.fovy = fovy
                     this.aspect = aspect
-                    let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
-                    this.origin_height = ysize / 2 / Math.tan(this.fovy / 2)
-                    this.height = this.origin_height
-                    this.origin_pose = mat.translation((min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2 + this.height)
-                    this.pose = structuredClone(this.origin_pose)
+                    let center = lookat ? lookat : [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
+                    if (viewpoint) {
+                        this.pose = mat.lookat(viewpoint, center, up ? up : [0, 1, 0])
+                        this.height = mat.norm(mat.sub(viewpoint, center))
+                    } else {
+                        let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
+                        this.height = ysize / 2 / Math.tan(this.fovy / 2)
+                        this.pose = mat.translation(center[0], center[1], center[2] + this.height)
+                    }
+                    this.origin_pose = structuredClone(this.pose)
+                    this.origin_height = this.height
                     this.far = 100 * this.height
                     this.type = type
                     this.update_projection()
@@ -306,7 +338,7 @@ zoom: mouse wheel`)
                     this.toolbar = new ToolBar(data.cache)
                     this.min = data.min
                     this.max = data.max
-                    this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, data.min, data.max)
+                    this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, data.min, data.max, data.viewpoint, data.lookat, data.up)
                     this.parent = document.currentScript.parentElement
                     this.parent.append(this.canvasdiv, this.toolbar.bar)
                     const observer = new ResizeObserver(() => {
@@ -329,7 +361,7 @@ zoom: mouse wheel`)
                         let d = Math.hypot(dx, dy)
                         if (d) {
                             if (ev.ctrlKey | ev.buttons == 4) {
-                                this.camera.pose = mat.mm(mat.angle_axis(d / 100, -dy / d, -dx / d, 0), this.camera.pose) // local transform
+                                this.camera.rotate_by(d / 100, -dy / d, -dx / d, 0)
                                 this.render()
                                 this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                             } else if (ev.shiftKey | ev.buttons == 1) {
@@ -388,7 +420,7 @@ zoom: mouse wheel`)
                     this.toolbar.slider.oninput = (ev) => {
                         for (let i = 0, l = this.toolbar.ts.length; i < l; i++) {
                             let t = this.toolbar.ts[i]
-                            if (t - this.toolbar.slider.value > 0) {
+                            if (t - this.toolbar.slider.value >= 0) {
                                 this.toolbar.ti = i
                                 this.toolbar.time.innerHTML = t + "/" + this.toolbar.slider.max
                                 this.render()
