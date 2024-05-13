@@ -291,7 +291,10 @@ class Vector(numpy.ndarray):
 
     def __getitem__(self, keys) -> Vector:
         if hasattr(self, "columns") and type(keys[0]) is str:
-            i = [self.columns.index(key) for key in keys]
+            if type(keys) is str:
+                i = self.columns.index(keys)
+            else:
+                i = [self.columns.index(key) for key in keys]
             return self[..., i]
         else:
             return super().__getitem__(keys)
