@@ -83,16 +83,17 @@ class View:
                 target=launch_server, args=(ip, port), daemon=True).start()
 
     def render(self, obj: Point, t=0):
-        if self.max == []:
-            self.max = obj.xyz.flatten().max().tolist()
-            self.min = obj.xyz.flatten().min().tolist()
-        else:
-            self.max = numpy.max(
-                [self.max, obj.xyz.flatten().max()], axis=0).tolist()
-            self.min = numpy.min(
-                [self.min, obj.xyz.flatten().min()], axis=0).tolist()
-        return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
-        ).tolist(), color=obj.color.ravel().tolist(), normal=obj.normal.ravel().tolist())
+        if obj.any():
+            if self.max == []:
+                self.max = obj.xyz.flatten().max().tolist()
+                self.min = obj.xyz.flatten().min().tolist()
+            else:
+                self.max = numpy.max(
+                    [self.max, obj.xyz.flatten().max()], axis=0).tolist()
+                self.min = numpy.min(
+                    [self.min, obj.xyz.flatten().min()], axis=0).tolist()
+            return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
+            ).tolist(), color=obj.color.ravel().tolist(), normal=obj.normal.ravel().tolist())
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -485,24 +486,20 @@ DATA ascii
     def to_npy(self, path):
         numpy.save(path, self)
 
-    def as_image(self, nonzero=True, align_center=True, sample_rate=None):
+    def as_image(self, nonzero=True, sample_rate=None):
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
         if not sample_rate:
             sample_rate = max(round(self.size / 1e6), 1)
         sample = self[::-sample_rate, ::sample_rate]
+        h, w, *_ = sample.n
+        ret = Vector3.grid(range(w), range(h)).as_point()
         if sample.dtype == numpy.uint8:
-            sample = Color(sample / 255)
-        elif sample.ndim == 2:
-            sample = Color.map(sample)
-        *_, h, w  = sample.n
-        ret = Point(*_, w, h)
-        if align_center:
-            ret.xyz = Vector3.grid(range(-w//2, w//2), range(-h//2, h//2))
+            color = Color(sample / 255)
         else:
-            ret.xyz = Vector3.grid(range(w), range(h))
-        ret.color = sample.transpose(1, 0, 2)
+            color = Color.map(sample)
+        ret.color = color.transpose(1, 0, 2)
         if nonzero:
             return ret[ret.color.rgb.any(-1)]
         return ret
@@ -1015,14 +1012,20 @@ class Color(Vector):
         '''
         value = numpy.array(value, numpy.float32)
         if start is None:
-            start = numpy.amin(value)
+            start = numpy.amin(value, axis=tuple(range(value.ndim)))
         if end is None:
-            end = numpy.amax(value)
-        position = (value-start)/(end-start)
-        r = numpy.clip(position*1.67-0.67, 0, 1)
-        g = numpy.clip(position*5-1, 0, 1)
-        b = numpy.clip((0.2-abs(position-0.2))*5, 0, 1)
-        return cls(r=r, g=g, b=b)
+            end = numpy.amax(value, axis=tuple(range(value.ndim)))
+        position = numpy.divide(value-start, end-start,
+                                where=value != 0, out=numpy.zeros_like(value))
+        if value.ndim <= 2:
+            r = numpy.clip(position*1.67-0.67, 0, 1)
+            g = numpy.clip(position*5-1, 0, 1)
+            b = numpy.clip((0.2-abs(position-0.2))*5, 0, 1)
+            return cls(r=r, g=g, b=b)
+        else:
+            ret = Color(position[..., :3])
+            ret[..., 3] = 1
+            return ret
 
     @classmethod
     def standard(cls, n):
