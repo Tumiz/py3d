@@ -7978,7 +7978,7 @@ zoom: mouse wheel`)
                     }
                     this.canvas.onwheel = (ev) => {
                         ev.preventDefault()
-                        let step = ev.deltaY * 10 ** (Math.round(Math.log10(this.camera.height)) - 3)
+                        let step = ev.deltaY * Math.abs(this.camera.height) / 1e3
                         this.camera.height -= step
                         this.camera.pose = mat.mm(mat.translation(0, 0, -step), this.camera.pose) // local transform
                         this.camera.update_projection()
