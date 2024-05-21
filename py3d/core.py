@@ -36,6 +36,7 @@ class View:
         self.viewpoint = None
         self.lookat = None
         self.up = None
+        self.size = None
 
     def __render_args__(self, t, **args):
         t = round(t, 3)
@@ -54,15 +55,17 @@ class View:
         self.viewpoint = None
         self.lookat = None
         self.up = None
+        self.size = None
         return html
 
-    def show(self, viewpoint=None, lookat=None, up=None, inplace=True, in_jupyter=True, name="py3d", port=9871):
+    def show(self, viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
         '''
         same as py3d.show
         '''
         self.viewpoint = viewpoint
         self.lookat = lookat
         self.up = up
+        self.size = size
         if in_jupyter:
             if inplace:
                 clear_output(True)
@@ -113,18 +116,19 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show(viewpoint=None, lookat=None, up=None, inplace=True, in_jupyter=True, name="py3d", port=9871):
+def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
     '''
     display all rendered objects in one scene
     viewpoint: the position from where to view the scene
     lookat: the position to look at
     up: up direction to view the scene
     inplace: update the output when displayed in jupyter
+    size: size of the viewer
     in_jupyter: display in jupyter, as a output, otherwise in a web browser
     name: name of the page when displayed in a web browser
     port: port to visit the page when displayed in a web browser
     '''
-    return default_view.show(viewpoint, lookat, up, inplace, in_jupyter, name, port)
+    return default_view.show(viewpoint, lookat, up, inplace, size, in_jupyter, name, port)
 
 
 def read_pcd(path) -> Vector:
@@ -230,7 +234,7 @@ def read_ply(path) -> tuple[Vector3, Triangle]:
     return vertices, mesh
 
 
-def read_csv(path, header=1) -> Vector:
+def read_csv(path, header=0) -> Vector:
     '''
     Load data from a csv file. 
     header: line number of header, 0 if there is no header

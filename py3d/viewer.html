@@ -326,7 +326,8 @@
                     this.labeldiv = document.createElement("div")
                     this.labeldiv.style.position = "absolute"
                     this.canvasdiv = document.createElement("div")
-                    this.canvasdiv.style.height = "300px"
+                    this.canvasdiv.style.height = data.size[0] + "px"
+                    this.canvasdiv.style.width = data.size[1] + "px"
                     this.canvasdiv.style.overflow = "hidden"
                     this.canvasdiv.style.resize = "vertical"
                     this.canvasdiv.append(this.labeldiv, this.canvas)
