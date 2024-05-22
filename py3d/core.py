@@ -36,7 +36,7 @@ class View:
         self.viewpoint = None
         self.lookat = None
         self.up = None
-        self.size = None
+        self.size = (600, 1000)
 
     def __render_args__(self, t, **args):
         t = round(t, 3)
@@ -55,7 +55,7 @@ class View:
         self.viewpoint = None
         self.lookat = None
         self.up = None
-        self.size = None
+        self.size = (600, 1000)
         return html
 
     def show(self, viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
@@ -88,13 +88,13 @@ class View:
     def render(self, obj: Point, t=0):
         if obj.any():
             if self.max == []:
-                self.max = obj.xyz.flatten().max().tolist()
-                self.min = obj.xyz.flatten().min().tolist()
+                self.max = obj.xyz.flatten().max(-2).tolist()
+                self.min = obj.xyz.flatten().min(-2).tolist()
             else:
                 self.max = numpy.max(
-                    [self.max, obj.xyz.flatten().max()], axis=0).tolist()
+                    [self.max, obj.xyz.flatten().max(-2)], axis=0).tolist()
                 self.min = numpy.min(
-                    [self.min, obj.xyz.flatten().min()], axis=0).tolist()
+                    [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
             return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
             ).tolist(), color=obj.color.ravel().tolist(), normal=obj.normal.ravel().tolist())
 
@@ -116,14 +116,14 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
+def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
     '''
     display all rendered objects in one scene
     viewpoint: the position from where to view the scene
     lookat: the position to look at
     up: up direction to view the scene
     inplace: update the output when displayed in jupyter
-    size: size of the viewer
+    size: size of the viewer, (height, width)
     in_jupyter: display in jupyter, as a output, otherwise in a web browser
     name: name of the page when displayed in a web browser
     port: port to visit the page when displayed in a web browser
@@ -416,12 +416,6 @@ class Vector(numpy.ndarray):
     def L(self) -> numpy.ndarray:
         # length
         return numpy.linalg.norm(self, axis=self.ndim - 1)
-
-    def min(self, axis=-2, keepdims=False, out=None) -> Vector:
-        return super().min(axis=axis, keepdims=keepdims, out=out)
-
-    def max(self, axis=-2, keepdims=False, out=None) -> Vector:
-        return super().max(axis=axis, keepdims=keepdims, out=out)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
