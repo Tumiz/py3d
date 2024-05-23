@@ -295,14 +295,12 @@ class Vector(numpy.ndarray):
         return self @ value
 
     def __getitem__(self, keys) -> Vector:
-        if hasattr(self, "columns") and type(keys[0]) is str:
-            if type(keys) is str:
-                i = self.columns.index(keys)
-            else:
-                i = [self.columns.index(key) for key in keys]
-            return self[..., i]
-        else:
-            return super().__getitem__(keys)
+        if hasattr(self, "columns"):
+            if isinstance(keys, str):
+                keys = ..., self.columns.index(keys)
+            elif isinstance(keys, tuple) and all(isinstance(k, str) for k in keys):
+                keys = ..., [self.columns.index(key) for key in keys]
+        return super().__getitem__(keys)
 
     def tile(self, *n) -> Vector:
         return numpy.tile(self, n + self.ndim * (1,))
