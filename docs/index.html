@@ -8035,6 +8035,9 @@ zoom: mouse wheel`)
                     if (!this.gl) {
                         alert("webgl not work")
                     }
+                    this.gl.enable(this.gl.BLEND)
+                    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA)
+                    this.gl.enable(this.gl.DEPTH_TEST)
                     this.program = this.create_program(`
                 attribute vec4 a_position;
                 attribute vec4 a_color;
@@ -8056,6 +8059,7 @@ zoom: mouse wheel`)
                     gl_FragColor = v_color;
                 } 
             `)
+                    this.gl.useProgram(this.program)
                 }
                 create_program(vertex_shader_code, fragment_shader_code) {
                     const program = this.gl.createProgram()
@@ -8115,9 +8119,7 @@ zoom: mouse wheel`)
                 render() {
                     this.labeldiv.innerHTML = ""
                     this.gl.clearColor(0, 0, 0, 0)
-                    this.gl.enable(this.gl.DEPTH_TEST);
-                    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-                    this.gl.useProgram(this.program)
+                    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
                     let world2ndc = this.camera.world2ndc()
                     this.set_uniform("u_world2ndc", world2ndc)
                     this.set_uniform("u_light_dir", mat.normalize(this.camera.position))
