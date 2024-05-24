@@ -308,11 +308,31 @@
                     this.btn_down.innerHTML = "⇓"
                     this.btn_down.className = "py3d_btn"
                     this.btn_down.setAttribute("tooltip", `down`)
+                    this.btn_cw = document.createElement("button")
+                    this.btn_cw.innerHTML = "↻"
+                    this.btn_cw.className = "py3d_btn"
+                    this.btn_cw.setAttribute("tooltip", `rotate clockwise`)
+                    this.btn_ccw = document.createElement("button")
+                    this.btn_ccw.innerHTML = "↺"
+                    this.btn_ccw.className = "py3d_btn"
+                    this.btn_ccw.setAttribute("tooltip", `rotate counterclockwise`)
                     this.btn_grid = document.createElement("button")
                     this.btn_grid.innerHTML = "▦"
                     this.btn_grid.className = "py3d_btn"
                     this.btn_grid.setAttribute("tooltip", `show grid`)
-                    this.bar.append(this.btn_orth, this.btn_reset, this.btn_left, this.btn_right, this.btn_up, this.btn_down, this.btn_grid, this.btn_play, this.time, this.slider)
+                    this.bar.append(
+                        this.btn_orth, 
+                        this.btn_reset, 
+                        this.btn_left, 
+                        this.btn_right, 
+                        this.btn_up, 
+                        this.btn_down,
+                        this.btn_cw,
+                        this.btn_ccw, 
+                        this.btn_grid, 
+                        this.btn_play, 
+                        this.time, 
+                        this.slider)
                 }
             }
             class Viewer {
@@ -411,6 +431,16 @@ zoom: mouse wheel`)
                     }
                     this.toolbar.btn_down.onclick = (ev) => {
                         this.camera.rotate_by(Math.PI / 2, 1, 0, 0)
+                        this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
+                        this.render()
+                    }
+                    this.toolbar.btn_cw.onclick = (ev) => {
+                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI/18, 0, 0, 1), this.camera.pose)
+                        this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
+                        this.render()
+                    }
+                    this.toolbar.btn_ccw.onclick = (ev) => {
+                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI/18, 0, 0, -1), this.camera.pose)
                         this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                         this.render()
                     }
