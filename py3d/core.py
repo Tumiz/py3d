@@ -1,6 +1,7 @@
 # Copyright (c) Tumiz.
 # Distributed under the terms of the GPL-3.0 License.
 from __future__ import annotations
+import PIL.Image
 import numpy
 from IPython.display import display, HTML, clear_output
 from typing import Dict
@@ -129,6 +130,10 @@ def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], i
     port: port to visit the page when displayed in a web browser
     '''
     return default_view.show(viewpoint, lookat, up, inplace, size, in_jupyter, name, port)
+
+
+def read_img(path) -> Vector:
+    return Vector(PIL.Image.open(path))
 
 
 def read_pcd(path) -> Vector:
@@ -989,8 +994,11 @@ class Color(Vector):
     BASE_SHAPE = 4,
 
     def __new__(cls, data: numpy.ndarray | list = [], r=0, g=0, b=0, a=1):
-        if numpy.any(data):
-            return super().__new__(cls, data)
+        data = numpy.array(data)
+        if data.any():
+            ret = super().__new__(cls, data)
+            if data.shape[-1] < 4:
+                ret.a = 1
         else:
             n = max(numpy.shape(r), numpy.shape(g),
                     numpy.shape(b), numpy.shape(a))
@@ -999,7 +1007,7 @@ class Color(Vector):
             ret[..., 1] = g
             ret[..., 2] = b
             ret[..., 3] = a
-            return ret.view(cls)
+        return ret.view(cls)
 
     @classmethod
     def map(cls, value: list | numpy.ndarray, start=None, end=None):
