@@ -494,8 +494,9 @@ DATA ascii
         if not sample_rate:
             sample_rate = max(round(self.size / 1e6), 1)
         sample = self[::-sample_rate, ::sample_rate]
-        h, w, *_ = sample.n
-        ret = Vector3.grid(range(w), range(h)).as_point()
+        h, w, *_ = self.shape
+        ret = Vector3.grid(range(0, w, sample_rate),
+                           range(0, h, sample_rate)).as_point()
         if sample.dtype == numpy.uint8:
             color = Color(sample / 255)
         else:
