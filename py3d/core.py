@@ -96,8 +96,12 @@ class View:
                     [self.max, obj.xyz.flatten().max(-2)], axis=0).tolist()
                 self.min = numpy.min(
                     [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
-            return self.__render_args__(t=t, mode=obj.TYPE, vertex=obj.xyz.ravel(
-            ).tolist(), color=obj.color.ravel().tolist(), normal=obj.normal.ravel().tolist())
+            return self.__render_args__(t=t,
+                                        mode=obj.TYPE,
+                                        vertex=obj.xyz.ravel().tolist(),
+                                        color=obj.color.ravel().tolist(),
+                                        normal=obj.normal.ravel().tolist(),
+                                        pointsize=obj.pointsize if hasattr(obj, "pointsize") else 2)
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -625,8 +629,8 @@ class Vector3(Vector):
     def distance_to_points(self, points: Vector3) -> numpy.ndarray:
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
-    def as_point(self, color=None, colormap=None) -> Point:
-        entity = Point(*self.n).paint(color, colormap)
+    def as_point(self, color=None, colormap=None, pointsize=2) -> Point:
+        entity = Point(*self.n).paint(color, colormap, pointsize)
         entity.xyz = self
         return entity
 
@@ -1089,6 +1093,7 @@ class Point(Vector):
         ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
+        ret.pointsize = 2
         return ret
 
     @property
@@ -1107,12 +1112,13 @@ class Point(Vector):
     def normal(self, v):
         self[..., 7:10] = v
 
-    def paint(self, color=None, colormap=None):
+    def paint(self, color=None, colormap=None, pointsize=2):
         if colormap is not None:
             color = Color.map(colormap)
         elif color is None:
             color = Color.standard(self.n[:-1] + (1,))
         self.color = color
+        self.pointsize = pointsize
         return self
 
     def __add__(self, v: Point) -> Point:
