@@ -470,11 +470,12 @@ zoom: mouse wheel`)
                 attribute vec4 a_position;
                 attribute vec4 a_color;
                 attribute vec3 a_normal;
+                uniform float u_pointsize;
                 uniform vec3 u_light_dir;
                 uniform mat4 u_world2ndc;
                 varying vec4 v_color;
                 void main(void) {
-                    gl_PointSize = 2.0;
+                    gl_PointSize = u_pointsize;
                     gl_Position = u_world2ndc * a_position;
                     float nDotL = max(dot(u_light_dir, a_normal), 0.0);
                     vec3 diffuse = vec3(a_color) * nDotL * 0.7;
@@ -513,6 +514,8 @@ zoom: mouse wheel`)
                         this.gl.uniformMatrix4fv(location, false, array)
                     } else if (array.length == 3) {
                         this.gl.uniform3fv(location, array)
+                    } else if (array.length == 1) {
+                        this.gl.uniform1fv(location, array)
                     }
                 }
                 set_shader(program, type, code) {
@@ -561,6 +564,7 @@ zoom: mouse wheel`)
                                 } else if (obj.mode) {
                                     this.set_attribute("a_position", obj.vertex, 3)
                                     this.set_attribute("a_color", obj.color, 4)
+                                    this.set_uniform("u_pointsize", [obj.pointsize], 1)
                                     if (obj.normal.length) {
                                         this.set_attribute("a_normal", obj.normal, 3)
                                     }
