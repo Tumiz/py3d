@@ -451,6 +451,12 @@ class Vector(numpy.ndarray):
 
     def unique(self, axis=-2) -> Vector:
         return numpy.unique(self, axis=axis).view(Vector)
+    
+    def split(self, indices_or_sections, axis=-1) -> tuple:
+        '''
+        Split a Vector into multiple sub-Vectors
+        '''
+        return numpy.split(self, indices_or_sections, axis)
 
     def to_pcd(self, path, fields=""):
         w = self.shape[-1]
