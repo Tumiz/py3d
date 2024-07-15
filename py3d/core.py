@@ -122,17 +122,33 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
 
 
 def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
-    '''
-    display all rendered objects in one scene
-    viewpoint: the position from where to view the scene
-    lookat: the position to look at
-    up: up direction to view the scene
-    inplace: update the output when displayed in jupyter
-    size: size of the viewer, (height, width)
-    in_jupyter: display in jupyter, as a output, otherwise in a web browser
-    name: name of the page when displayed in a web browser
-    port: port to visit the page when displayed in a web browser
-    '''
+    """
+    Display all rendered objects in one scene
+
+    Parameters
+    ----------
+    viewpoint : list[float] | None
+        the position from where to view the scene.
+    lookat: list[float] | None
+        the position to look at
+    up: list[float] | None
+        up direction to view the scene
+    inplace: bool
+        update the output when displayed in jupyter
+    size: (float, float)
+        size of the viewer, (height, width)
+    in_jupyter: bool
+        display in jupyter, as a output, otherwise in a web browser
+    name: str
+        name of the page when displayed in a web browser
+    port: int
+        port to visit the page when displayed in a web browser
+
+    Returns
+    -------
+    out: View
+    Default view
+    """
     return default_view.show(viewpoint, lookat, up, inplace, size, in_jupyter, name, port)
 
 
