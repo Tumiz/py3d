@@ -467,7 +467,7 @@ class Vector(numpy.ndarray):
 
     def unique(self, axis=-2) -> Vector:
         return numpy.unique(self, axis=axis).view(Vector)
-    
+
     def split(self, indices_or_sections, axis=-1) -> tuple:
         '''
         Split a Vector into multiple sub-Vectors
@@ -735,6 +735,11 @@ class Vector4(Vector):
 
 
 class Transform(Vector):
+    '''
+    4x4 matrix. 
+    This class provides an interface to handle rotation, translation and scaling.
+    See https://tumiz.github.io/py3d/Transform.html for examples.
+    '''
     BASE_SHAPE = 4, 4
 
     def __new__(cls, data: list | numpy.ndarray = numpy.eye(4)):
@@ -743,7 +748,19 @@ class Transform(Vector):
     @classmethod
     def from_translation(cls, xyz_list: list | numpy.ndarray = [], x=0, y=0, z=0) -> Transform:
         '''
-        translation matrix
+        Initialize a `Transform` from translation vectors
+
+        Parameters
+        ----------
+        xyz_list: list | numpy.ndarray
+            translation vectors
+        x, y, z: float or array_like
+            first, second and third elements of translation vectors
+
+        Returns
+        -------
+        transform: Transform
+            4x4 translation matrix
         '''
         vec = Vector3(xyz_list, x, y, z)
         ret = Transform().tile(*vec.n)
