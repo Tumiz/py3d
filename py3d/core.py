@@ -772,7 +772,19 @@ class Transform(Vector):
     @classmethod
     def from_scaling(cls, xyz_list: list | numpy.ndarray = [], x=1, y=1, z=1) -> Transform:
         '''
-        scaling matrix
+        Initialize a `Transform` from scaling vectors
+
+        Parameters
+        ----------
+        xyz_list: list | numpy.ndarray
+            scaling vectors
+        x, y, z: float or array_like
+            first, second and third elements of scaling vectors
+
+        Returns
+        -------
+        transform: Transform
+            4x4 scaling matrix
         '''
         vec = Vector3(xyz_list, x, y, z)
         ret = Transform().tile(*vec.n)
@@ -838,6 +850,21 @@ class Transform(Vector):
 
     @classmethod
     def from_rotation_vector(cls, xyz_list: list | Vector3 = [], x=0, y=0, z=0) -> Transform:
+        '''
+        Initialize a `Transform` from rotation vectors
+
+        Parameters
+        ----------
+        xyz_list: list | numpy.ndarray
+            rotation vectors
+        x, y, z: float or array_like
+            first, second and third elements of rotation vectors
+
+        Returns
+        -------
+        transform: Transform
+            4x4 rotation matrix
+        '''
         rv = Vector3(xyz_list, x, y, z)
         axis_angle_list = Vector4().tile(*rv.n)
         axis_angle_list.w = rv.L
@@ -859,6 +886,19 @@ class Transform(Vector):
 
     @classmethod
     def from_quaternion(cls, xyzw_list: list | numpy.ndarray) -> Transform:
+        '''
+        Initialize a `Transform` from quaternions
+
+        Parameters
+        ----------
+        xyzw_list: list | numpy.ndarray
+            quaternions
+
+        Returns
+        -------
+        transform: Transform
+            4x4 rotation matrix
+        '''
         q = Vector4(xyzw_list)
         ret = Transform().tile(*q.shape[:-1])
         ret[..., 0, 0] = 1 - 2 * q.y ** 2 - 2 * q.z ** 2
