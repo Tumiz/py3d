@@ -541,12 +541,16 @@ class Vector2(Vector):
 
 
 class Vector3(Vector):
+    '''
+    3D vectors
+
+    This class provides an interface to represent points, positions and translations. It is also used to represent scaling vectors and rotation vectors.
+
+    See https://tumiz.github.io/py3d/Vector3.html for examples.
+    '''
     BASE_SHAPE = 3,
 
     def __new__(cls, data: list | numpy.ndarray = [], x=0, y=0, z=0):
-        '''
-            Represent points, positions and translations
-        '''
         if numpy.any(data):
             return super().__new__(cls, data)
         else:
@@ -840,6 +844,23 @@ class Transform(Vector):
 
     @classmethod
     def from_axis_angle(cls, xyz_angle_list: list | Vector4 = [], axis=[0, 0, 1], angle=0) -> Transform:
+        '''
+        Initialize a `Transform` from axis-angles
+
+        Parameters
+        ----------
+        xyz_angle_list: array_like
+            rotation axises and angles
+        axis: array_like
+            rotation axises
+        angle: float or array_like
+            rotation angle around the axis
+
+        Returns
+        -------
+        transform: Transform
+            4x4 rotation matrix
+        '''
         axis = Vector3(axis)
         q = Vector4(xyz_angle_list, axis.x, axis.y, axis.z,
                     angle).from_axis_angle_to_quaternion()
