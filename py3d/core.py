@@ -259,6 +259,10 @@ def read_ply(path) -> tuple[Vector3, Triangle]:
     return vertices, mesh
 
 
+def read_obj(obj_path, texture_path=""):
+    return OBJ(obj_path, texture_path)
+
+
 def read_csv(path, header=0) -> Vector:
     '''
     Load data from a csv file. 
@@ -292,6 +296,51 @@ def rand(*n) -> Vector | Vector2 | Vector3 | Vector4:
     else:
         vtype = Vector
     return numpy.random.rand(*n).view(vtype)
+
+
+class OBJ:
+    def __init__(self, obj_path, texture_path="") -> None:
+        f = open(obj_path)
+        v = []
+        vt = []
+        vi = []
+        vti = []
+        for l in f:
+            tp, *data = l.split(" ")
+            if tp == "v":
+                v.append([float(e) for e in data])
+            elif tp == "vt":
+                vt.append([float(e) for e in data])
+            elif tp == "f":
+                if "/" in l:
+                    vi.append([int(e.split("/")[0])-1 for e in data])
+                    vti.append([int(e.split("/")[1])-1 for e in data])
+                else:
+                    vi.append([float(e) for e in data])
+        self.v = Vector(v)
+        self.vt = Vector(vt)
+        self.vi = Vector(vi)
+        self.vti = Vector(vti)
+        self.texture: Vector = read_img(texture_path) if texture_path else None
+
+    def as_point(self):
+        p = self.v.xyz.as_point()
+        if self.v.shape[-1] > 3:
+            p.color.rgb = self.v[..., 3:]
+        return p
+
+    def as_mesh(self):
+        m = self.v[self.vi].xyz.as_triangle()
+        u, v = self.vt[self.vti].transpose(2, 0, 1)
+        if self.texture is not None:
+            h, w, c = self.texture.shape
+            y = ((1-v) * h).astype(int)
+            x = (u * w).astype(int)
+            if c == 4:
+                m.color = self.texture[y, x]/255
+            elif c == 3:
+                m.color.rgb = self.texture[y, x]/255
+        return m
 
 
 class Vector(numpy.ndarray):
@@ -1182,7 +1231,11 @@ class Color(Vector):
 
     @property
     def rgb(self):
-        return self[..., :-1].view(Vector3)
+        return self[..., :3].view(Vector3)
+
+    @rgb.setter
+    def rgb(self, v):
+        self[..., :3] = v
 
 
 class Point(Vector):
