@@ -316,7 +316,7 @@ class OBJ:
                     vi.append([int(e.split("/")[0])-1 for e in data])
                     vti.append([int(e.split("/")[1])-1 for e in data])
                 else:
-                    vi.append([float(e) for e in data])
+                    vi.append([int(e)-1 for e in data])
         self.v = Vector(v)
         self.vt = Vector(vt)
         self.vi = Vector(vi)
@@ -331,8 +331,8 @@ class OBJ:
 
     def as_mesh(self):
         m = self.v[self.vi].xyz.as_triangle()
-        u, v = self.vt[self.vti].transpose(2, 0, 1)
         if self.texture is not None:
+            u, v = self.vt[self.vti].transpose(2, 0, 1)
             h, w, c = self.texture.shape
             y = ((1-v) * h).astype(int)
             x = (u * w).astype(int)
@@ -341,6 +341,19 @@ class OBJ:
             elif c == 3:
                 m.color.rgb = self.texture[y, x]/255
         return m
+
+    def save(self, path):
+        f = open(path, "w")
+        for v in self.v:
+            f.write(f"v {' '.join([str(e) for e in v])}\n")
+        for v in self.vt:
+            f.write(f"vt {' '.join([str(e) for e in v])}\n")
+        for vi, vti in zip(self.vi, self.vti):
+            row = "f"
+            for a, b in zip(vi, vti):
+                row += f" {a+1}/{b+1}"
+            f.write(row + "\n")
+        f.close()
 
 
 class Vector(numpy.ndarray):
@@ -561,6 +574,9 @@ DATA ascii
 
     def to_npy(self, path):
         numpy.save(path, self)
+
+    def to_image(self, path):
+        PIL.Image.fromarray((self*255).astype(numpy.int8), "RGB").save(path)
 
     def as_image(self, nonzero=True, sample_rate=None):
         '''
