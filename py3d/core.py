@@ -101,7 +101,9 @@ class View:
                                         vertex=obj.xyz.ravel().tolist(),
                                         color=obj.color.ravel().tolist(),
                                         normal=obj.normal.ravel().tolist(),
-                                        pointsize=obj.pointsize if hasattr(obj, "pointsize") else 2)
+                                        pointsize=obj.pointsize if hasattr(
+                                            obj, "pointsize") else 2,
+                                        texture=obj.texture if hasattr(obj, "texture") else "")
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -321,25 +323,20 @@ class OBJ:
         self.vt = Vector(vt)
         self.vi = Vector(vi)
         self.vti = Vector(vti)
-        self.texture: Vector = read_img(texture_path) if texture_path else None
+        self.texture = texture_path
 
-    def as_point(self):
-        p = self.v.xyz.as_point()
+    def as_point(self, color=None, colormap=None, pointsize=2):
+        p = self.v.xyz.as_point(color, colormap, pointsize)
         if self.v.shape[-1] > 3:
-            p.color.rgb = self.v[..., 3:]
+            p.color = Color(self.v[..., 3:])
         return p
 
     def as_mesh(self):
         m = self.v[self.vi].xyz.as_triangle()
-        if self.texture is not None:
-            u, v = self.vt[self.vti].transpose(2, 0, 1)
-            h, w, c = self.texture.shape
-            y = ((1-v) * h).astype(int)
-            x = (u * w).astype(int)
-            if c == 4:
-                m.color = self.texture[y, x]/255
-            elif c == 3:
-                m.color.rgb = self.texture[y, x]/255
+        if self.texture:
+            m.color = 0
+            m.color.xy = self.vt[self.vti]
+            m.texture = self.texture
         return m
 
     def save(self, path):
