@@ -435,12 +435,12 @@ zoom: mouse wheel`)
                         this.render()
                     }
                     this.toolbar.btn_cw.onclick = (ev) => {
-                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI/18, 0, 0, 1), this.camera.pose)
+                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI / 18, 0, 0, 1), this.camera.pose)
                         this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                         this.render()
                     }
                     this.toolbar.btn_ccw.onclick = (ev) => {
-                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI/18, 0, 0, -1), this.camera.pose)
+                        this.camera.pose = mat.mm(mat.angle_axis(Math.PI / 18, 0, 0, -1), this.camera.pose)
                         this.canvasdiv.setAttribute("tooltip", this.camera.position_str())
                         this.render()
                     }
@@ -467,28 +467,38 @@ zoom: mouse wheel`)
                     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA)
                     this.gl.enable(this.gl.DEPTH_TEST)
                     this.program = this.create_program(`
-                attribute vec4 a_position;
-                attribute vec4 a_color;
-                attribute vec3 a_normal;
-                uniform float u_pointsize;
-                uniform vec3 u_light_dir;
-                uniform mat4 u_world2ndc;
-                varying vec4 v_color;
-                void main(void) {
-                    gl_PointSize = u_pointsize;
-                    gl_Position = u_world2ndc * a_position;
-                    float nDotL = max(dot(u_light_dir, a_normal), 0.0);
-                    vec3 diffuse = vec3(a_color) * nDotL * 0.7;
-                    v_color = vec4(diffuse + a_color.rgb, a_color.a);
-                }
-            `, `
-                precision mediump float;
-                varying vec4 v_color;
-                void main(void) {
-                    gl_FragColor = v_color;
-                } 
-            `)
+                        attribute vec4 a_position;
+                        attribute vec4 a_color;
+                        attribute vec3 a_normal;
+                        uniform float u_pointsize;
+                        uniform vec3 u_light_dir;
+                        uniform mat4 u_world2ndc;
+                        varying vec4 v_color;
+                        void main(void) {
+                            gl_PointSize = u_pointsize;
+                            gl_Position = u_world2ndc * a_position;
+                            if ( length(a_normal)>0. ) {
+                                float nDotL = max(dot(u_light_dir, a_normal), 0.0);
+                                vec3 diffuse = vec3(a_color) * nDotL * 0.7;
+                                v_color = vec4(diffuse + a_color.rgb, a_color.a);
+                            } else {
+                                v_color = a_color;
+                            }
+                        }
+                    `, `
+                        precision mediump float;
+                        varying vec4 v_color;
+                        uniform sampler2D u_texture;
+                        void main(void) {
+                            if ( v_color.a>0. ) {
+                                gl_FragColor = v_color;
+                            } else {
+                                gl_FragColor = texture2D(u_texture, v_color.xy);
+                            }
+                        } 
+                    `)
                     this.gl.useProgram(this.program)
+                    this.textures = new Set()
                 }
                 create_program(vertex_shader_code, fragment_shader_code) {
                     const program = this.gl.createProgram()
@@ -510,7 +520,22 @@ zoom: mouse wheel`)
                 }
                 set_uniform(name, array) {
                     const location = this.gl.getUniformLocation(this.program, name)
-                    if (array.length == 16) {
+                    if (typeof(array) == "string" && array.length && !this.textures.has(name) ) {
+                        this.textures.add(name)
+                        console.log("texture")
+                        const texture = this.gl.createTexture()
+                        const image = new Image()
+                        image.src = array
+                        image.onload = () => {
+                            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
+                            this.gl.activeTexture(this.gl.TEXTURE0)
+                            this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
+                            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image)
+                            this.gl.generateMipmap(this.gl.TEXTURE_2D)
+                            this.gl.uniform1i(location, 0)
+                            this.render()
+                        }
+                    } else if (array.length == 16) {
                         this.gl.uniformMatrix4fv(location, false, array)
                     } else if (array.length == 3) {
                         this.gl.uniform3fv(location, array)
@@ -564,7 +589,8 @@ zoom: mouse wheel`)
                                 } else if (obj.mode) {
                                     this.set_attribute("a_position", obj.vertex, 3)
                                     this.set_attribute("a_color", obj.color, 4)
-                                    this.set_uniform("u_pointsize", [obj.pointsize], 1)
+                                    this.set_uniform("u_pointsize", [obj.pointsize])
+                                    this.set_uniform("u_texture", obj.texture)
                                     if (obj.normal.length) {
                                         this.set_attribute("a_normal", obj.normal, 3)
                                     }
