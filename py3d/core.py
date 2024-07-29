@@ -573,26 +573,33 @@ DATA ascii
         numpy.save(path, self)
 
     def to_image(self, path):
-        PIL.Image.fromarray((self*255).astype(numpy.int8), "RGB").save(path)
+        data = self
+        if data.dtype != numpy.uint8:
+            vmax = data.max()
+            vmin = data.min()
+            if vmax >1 or vmin < 0:
+                data = Color.map(data)
+            data = (data*255).astype(numpy.uint8)
+        if data.ndim == 2:
+            data = data[..., None].repeat(3, -1)
+        PIL.Image.fromarray(data.xyz, "RGB").save(path)
 
-    def as_image(self, nonzero=True, sample_rate=None):
+    def as_image(self):
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
-        if not sample_rate:
-            sample_rate = max(round(self.size / 1e6), 1)
-        sample = self[::-sample_rate, ::sample_rate]
+        self.to_image("tmp.jpg")
         h, w, *_ = self.shape
-        ret = Vector3.grid(range(0, w, sample_rate),
-                           range(0, h, sample_rate)).as_point()
-        if sample.dtype == numpy.uint8:
-            color = Color(sample / 255)
-        else:
-            color = Color.map(sample)
-        ret.color = color.transpose(1, 0, 2)
-        if nonzero:
-            return ret[ret.color.rgb.any(-1)]
-        return ret
+        m = Vector([
+            [0, 0, 0, 0, 0, 0, 0],
+            [w, 0, 0, 1, 0, 0, 0],
+            [w, h, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [w, h, 0, 1, 1, 0, 0],
+            [0, h, 0, 0, 1, 0, 0]
+        ]).view(Triangle)
+        m.texture = "tmp.jpg"
+        return m
 
 
 class Vector2(Vector):
@@ -1260,6 +1267,7 @@ class Point(Vector):
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
         ret.pointsize = 2
+        ret.texture = []
         return ret
 
     @property
@@ -1305,6 +1313,8 @@ class Point(Vector):
         ret = self.__class__(*xyz.n)
         ret.xyz = xyz
         ret.color = self.color
+        if hasattr(self, "texture"):
+            ret.texture = self.texture
         return ret
 
     def _repr_html_(self):
