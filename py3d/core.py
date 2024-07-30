@@ -573,6 +573,7 @@ DATA ascii
         numpy.save(path, self)
 
     def to_image(self, path):
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         data = self
         if data.dtype != numpy.uint8:
             vmax = data.max()
@@ -588,7 +589,7 @@ DATA ascii
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
-        self.to_image("tmp.jpg")
+        self.to_image(".py3d/texture.jpg")
         h, w, *_ = self.shape
         m = Vector([
             [0, 0, 0, 0, 0, 0, 0],
@@ -598,7 +599,7 @@ DATA ascii
             [w, h, 0, 1, 1, 0, 0],
             [0, h, 0, 0, 1, 0, 0]
         ]).view(Triangle)
-        m.texture = "tmp.jpg"
+        m.texture = ".py3d/texture.jpg"
         return m
 
 
@@ -647,7 +648,7 @@ class Vector3(Vector):
 
     def __matmul__(self, value: Transform) -> Vector3:
         if type(value) is Transform:
-            return numpy.matmul(self.H, value[..., None, :, :])[..., 0:3].view(Vector3)
+            return numpy.matmul(self.H, value)[..., 0:3].view(Vector3)
         else:
             return super().__matmul__(value)
 

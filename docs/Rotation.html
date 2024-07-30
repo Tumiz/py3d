@@ -8441,7 +8441,7 @@ zoom: mouse wheel`)
 <span class="n">py3d</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">"P"</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 <span class="n">py3d</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">as_point</span><span class="p">()</span><span class="o">.</span><span class="n">paint</span><span class="p">(</span><span class="n">py3d</span><span class="o">.</span><span class="n">Color</span><span class="p">(</span><span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">py3d</span><span class="o">.</span><span class="n">Transform</span><span class="o">.</span><span class="n">from_euler</span><span class="p">(</span><span class="s2">"XYZ"</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="n">p1</span> <span class="o">=</span> <span class="n">p</span> <span class="o">@</span> <span class="n">t</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span> <span class="o">@</span> <span class="n">t</span><span class="p">)</span>
 <span class="n">a</span> <span class="o">=</span> <span class="n">py3d</span><span class="o">.</span><span class="n">axis</span><span class="p">()</span>
 <span class="n">a</span><span class="o">.</span><span class="n">xyz</span> <span class="o">@=</span> <span class="n">t</span>
 <span class="n">py3d</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">"P1"</span><span class="p">,</span> <span class="n">p1</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
@@ -9105,10 +9105,36 @@ zoom: mouse wheel`)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
                 }
             }
-            new Viewer({"cache": {"0": [{"mode": "TEXT", "text": "P", "vertex": [1.0, 3.0, 4.0], "color": "grey"}, {"mode": "POINTS", "vertex": [1.0, 3.0, 4.0], "color": [0.0, 1.0, 0.0, 1.0], "normal": [], "pointsize": 2, "texture": []}, {"mode": "TEXT", "text": "P1", "vertex": [[-1.9841106485555495, 2.4623779024123156, 4.0]], "color": "grey"}, {"mode": "POINTS", "vertex": [-1.9841106485555495, 2.4623779024123156, 4.0], "color": [1.0, 0.0, 0.0, 1.0], "normal": [], "pointsize": 2, "texture": []}, {"mode": "LINES", "vertex": [0.0, 0.0, 0.0, 2.701511529340699, 4.207354924039483, 0.0, 0.0, 0.0, 0.0, -4.207354924039483, 2.701511529340699, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.0], "color": [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0], "normal": [], "pointsize": 2, "texture": ""}]}, "min": [-4.207354924039483, 0.0, 0.0], "max": [2.701511529340699, 4.207354924039483, 5.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000]})
+            new Viewer({"cache": {"0": [{"mode": "TEXT", "text": "P", "vertex": [1.0, 3.0, 4.0], "color": "grey"}, {"mode": "POINTS", "vertex": [1.0, 3.0, 4.0], "color": [0.0, 1.0, 0.0, 1.0], "normal": [], "pointsize": 2, "texture": []}, {"mode": "TEXT", "text": "P1", "vertex": [-1.9841106485555495, 2.4623779024123156, 4.0], "color": "grey"}, {"mode": "POINTS", "vertex": [-1.9841106485555495, 2.4623779024123156, 4.0], "color": [1.0, 0.0, 0.0, 1.0], "normal": [], "pointsize": 2, "texture": []}, {"mode": "LINES", "vertex": [0.0, 0.0, 0.0, 2.701511529340699, 4.207354924039483, 0.0, 0.0, 0.0, 0.0, -4.207354924039483, 2.701511529340699, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.0], "color": [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0], "normal": [], "pointsize": 2, "texture": ""}]}, "min": [-4.207354924039483, 0.0, 0.0], "max": [2.701511529340699, 4.207354924039483, 5.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000]})
         }
     </script>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">p</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child jp-OutputArea-executeResult">
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
+<pre>Vector3([1., 3., 4.])</pre>
 </div>
 </div>
 </div>
@@ -9129,7 +9155,7 @@ zoom: mouse wheel`)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -9152,7 +9178,7 @@ zoom: mouse wheel`)
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <head>
 <meta charset="utf-8"/>
@@ -9825,12 +9851,11 @@ zoom: mouse wheel`)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">import</span> <span class="nn">py3d</span><span class="o">,</span> <span class="nn">numpy</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">py3d</span><span class="o">.</span><span class="n">Vector</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"20220917214012.jpg"</span><span class="p">))</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span><span class="o">,</span> <span class="nn">numpy</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">py3d</span><span class="o">.</span><span class="n">read_img</span><span class="p">(</span><span class="s2">"20220917214012.jpg"</span><span class="p">)</span>
 <span class="n">data</span><span class="o">.</span><span class="n">as_image</span><span class="p">()</span> <span class="o">@</span> <span class="n">py3d</span><span class="o">.</span><span class="n">Transform</span><span class="o">.</span><span class="n">from_rpy</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">py3d</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">@</span> <span class="n">py3d</span><span class="o">.</span><span class="n">Transform</span><span class="o">.</span><span class="n">from_translation</span><span class="p">(</span><span class="n">z</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -9842,7 +9867,7 @@ zoom: mouse wheel`)
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <head>
 <meta charset="utf-8"/>
@@ -10491,7 +10516,7 @@ zoom: mouse wheel`)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
                 }
             }
-            new Viewer({"cache": {"0": [{"mode": "TRIANGLES", "vertex": [0.0, 0.0, 0.0, 1706.0, 0.0, 0.0, 1706.0, 1280.0, 0.0, 0.0, 0.0, 0.0, 1706.0, 1280.0, 0.0, 0.0, 1280.0, 0.0, 0.0, 0.0, 150.0, 1477.4393388562523, 0.0, -702.9999999999999, 1477.4393388562523, 1280.0, -702.9999999999999, 0.0, 0.0, 150.0, 1477.4393388562523, 1280.0, -702.9999999999999, 0.0, 1280.0, 150.0, 0.0, 0.0, 300.0, 853.0000000000002, 0.0, -1177.4393388562523, 853.0000000000002, 1280.0, -1177.4393388562523, 0.0, 0.0, 300.0, 853.0000000000002, 1280.0, -1177.4393388562523, 0.0, 1280.0, 300.0], "color": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], "normal": [], "pointsize": 2, "texture": "tmp.jpg"}]}, "min": [0.0, 0.0, -1177.4393388562523], "max": [1706.0, 1280.0, 300.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000]})
+            new Viewer({"cache": {"0": [{"mode": "TRIANGLES", "vertex": [0.0, 0.0, 0.0, 1706.0, 0.0, 0.0, 1706.0, 1280.0, 0.0, 0.0, 0.0, 0.0, 1706.0, 1280.0, 0.0, 0.0, 1280.0, 0.0, 0.0, 0.0, 150.0, 1477.4393388562523, 0.0, -702.9999999999999, 1477.4393388562523, 1280.0, -702.9999999999999, 0.0, 0.0, 150.0, 1477.4393388562523, 1280.0, -702.9999999999999, 0.0, 1280.0, 150.0, 0.0, 0.0, 300.0, 853.0000000000002, 0.0, -1177.4393388562523, 853.0000000000002, 1280.0, -1177.4393388562523, 0.0, 0.0, 300.0, 853.0000000000002, 1280.0, -1177.4393388562523, 0.0, 1280.0, 300.0], "color": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0], "normal": [], "pointsize": 2, "texture": ".py3d/texture.jpg"}]}, "min": [0.0, 0.0, -1177.4393388562523], "max": [1706.0, 1280.0, 300.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000]})
         }
     </script>
 </div>
@@ -10526,7 +10551,7 @@ zoom: mouse wheel`)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sympy.vector</span> <span class="kn">import</span> <span class="n">AxisOrienter</span><span class="p">,</span> <span class="n">CoordSys3D</span>
@@ -10545,7 +10570,7 @@ zoom: mouse wheel`)
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 <div class="jp-RenderedLatex jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/latex" tabindex="0">
 $\displaystyle \left[\begin{matrix}x^{2} + \left(1 - x^{2}\right) \cos{\left(\theta \right)} &amp; - x y \cos{\left(\theta \right)} + x y + z \sin{\left(\theta \right)} &amp; - x z \cos{\left(\theta \right)} + x z - y \sin{\left(\theta \right)}\\- x y \cos{\left(\theta \right)} + x y - z \sin{\left(\theta \right)} &amp; y^{2} + \left(1 - y^{2}\right) \cos{\left(\theta \right)} &amp; x \sin{\left(\theta \right)} - y z \cos{\left(\theta \right)} + y z\\- x z \cos{\left(\theta \right)} + x z + y \sin{\left(\theta \right)} &amp; - x \sin{\left(\theta \right)} - y z \cos{\left(\theta \right)} + y z &amp; z^{2} + \left(1 - z^{2}\right) \cos{\left(\theta \right)}\end{matrix}\right]$
 </div>
@@ -10557,7 +10582,7 @@ $\displaystyle \left[\begin{matrix}x^{2} + \left(1 - x^{2}\right) \cos{\left(\th
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10572,7 +10597,7 @@ $\displaystyle \left[\begin{matrix}x^{2} + \left(1 - x^{2}\right) \cos{\left(\th
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Transform([[[ 0.82533561,  0.56464247,  0.        ,  0.        ],
             [-0.56464247,  0.82533561,  0.        ,  0.        ],
@@ -10603,7 +10628,7 @@ $\displaystyle \left[\begin{matrix}x^{2} + \left(1 - x^{2}\right) \cos{\left(\th
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sympy</span>
@@ -10633,7 +10658,7 @@ $\displaystyle \left[\begin{matrix}x^{2} + \left(1 - x^{2}\right) \cos{\left(\th
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
 <div class="jp-RenderedLatex jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/latex" tabindex="0">
 $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} &amp; r_{4} &amp; r_{5} &amp; 0\\r_{6} &amp; r_{7} &amp; r_{8} &amp; 0\\t_{0} &amp; t_{1} &amp; t_{2} &amp; 1\end{matrix}\right]$
 </div>
@@ -10656,7 +10681,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10671,7 +10696,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Vector3([ 0.        , -1.57079633,  0.        ])</pre>
 </div>
@@ -10694,7 +10719,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10710,7 +10735,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Transform([[[-0.69492056, -0.19200697,  0.69297817,  0.        ],
             [ 0.71352099, -0.30378504,  0.6313497 ,  0.        ],
@@ -10730,7 +10755,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">r</span><span class="o">.</span><span class="n">as_rotation_vector</span><span class="p">()</span>
@@ -10744,7 +10769,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Vector3([[-0.67925191, -1.35850382, -2.03775573],
          [-0.11142341,  0.        ,  0.77996389]])</pre>
@@ -10768,7 +10793,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10783,7 +10808,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Vector4([0., 0., 0., 1.])</pre>
 </div>
@@ -10795,7 +10820,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10810,7 +10835,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Transform([[1., 0., 0., 0.],
            [0., 1., 0., 0.],
@@ -10836,7 +10861,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10863,7 +10888,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Transform([[ 0.33333333,  0.9106836 , -0.24401694,  0.        ],
            [-0.24401694,  0.33333333,  0.9106836 ,  0.        ],
@@ -10878,7 +10903,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10899,7 +10924,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Transform([[[ 1.,  0.,  0.,  0.],
             [ 0.,  1.,  0.,  0.],
@@ -10940,7 +10965,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -10957,7 +10982,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[24]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[25]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Vector4([0.26726125, 0.53452248, 0.80178373, 1.50408018])</pre>
 </div>
@@ -10980,7 +11005,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [27]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -11002,7 +11027,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[26]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Vector4([[ 0.        ,  0.        , -1.        ,  0.        ],
          [ 0.        ,  0.        ,  0.9999875 ,  0.00499998],
@@ -11019,7 +11044,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [28]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [29]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">py3d</span>
@@ -11066,7 +11091,7 @@ $\displaystyle \left[\begin{matrix}r_{0} &amp; r_{1} &amp; r_{2} &amp; 0\\r_{3} 
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[28]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[29]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <head>
 <meta charset="utf-8"/>
