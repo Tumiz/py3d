@@ -324,17 +324,17 @@
                     this.btn_grid.className = "py3d_btn"
                     this.btn_grid.setAttribute("tooltip", `show grid`)
                     this.bar.append(
-                        this.btn_orth, 
-                        this.btn_reset, 
-                        this.btn_left, 
-                        this.btn_right, 
-                        this.btn_up, 
+                        this.btn_orth,
+                        this.btn_reset,
+                        this.btn_left,
+                        this.btn_right,
+                        this.btn_up,
                         this.btn_down,
                         this.btn_cw,
-                        this.btn_ccw, 
-                        this.btn_grid, 
-                        this.btn_play, 
-                        this.time, 
+                        this.btn_ccw,
+                        this.btn_grid,
+                        this.btn_play,
+                        this.time,
                         this.slider)
                 }
             }
@@ -523,11 +523,11 @@ zoom: mouse wheel`)
                 }
                 set_uniform(name, array) {
                     const location = this.gl.getUniformLocation(this.program, name)
-                    if (typeof(array) == "string" && array.length && !this.textures.has(array) ) {
+                    if (typeof (array) == "string" && array.length && !this.textures.has(array)) {
                         this.textures.add(array)
                         const texture = this.gl.createTexture()
                         const image = new Image()
-                        image.src = array
+                        image.src = "data:image/jpg;base64," + array
                         image.onload = () => {
                             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
                             this.gl.activeTexture(this.gl.TEXTURE0)

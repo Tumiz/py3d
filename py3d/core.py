@@ -11,6 +11,7 @@ import struct
 import multiprocessing
 import http.server
 import socket
+import base64
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -96,6 +97,11 @@ class View:
                     [self.max, obj.xyz.flatten().max(-2)], axis=0).tolist()
                 self.min = numpy.min(
                     [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
+            if hasattr(obj, "texture") and obj.texture:
+                texture = base64.b64encode(
+                    open(obj.texture, "rb").read()).decode('utf-8')
+            else:
+                texture = ""
             return self.__render_args__(t=t,
                                         mode=obj.TYPE,
                                         vertex=obj.xyz.ravel().tolist(),
@@ -103,7 +109,7 @@ class View:
                                         normal=obj.normal.ravel().tolist(),
                                         pointsize=obj.pointsize if hasattr(
                                             obj, "pointsize") else 2,
-                                        texture=obj.texture if hasattr(obj, "texture") else "")
+                                        texture=texture)
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -578,7 +584,7 @@ DATA ascii
         if data.dtype != numpy.uint8:
             vmax = data.max()
             vmin = data.min()
-            if vmax >1 or vmin < 0:
+            if vmax > 1 or vmin < 0:
                 data = Color.map(data)
             data = (data*255).astype(numpy.uint8)
         if data.ndim == 2:
@@ -1268,7 +1274,7 @@ class Point(Vector):
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
         ret.pointsize = 2
-        ret.texture = []
+        ret.texture = ""
         return ret
 
     @property
