@@ -4,9 +4,7 @@ from __future__ import annotations
 import PIL.Image
 import numpy
 from IPython.display import display, HTML, clear_output
-from typing import Dict
 import pathlib
-import json
 import struct
 import multiprocessing
 import http.server
@@ -15,6 +13,8 @@ import socket
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
 numpy.set_printoptions(linewidth=600)
+__tmp__ = pathlib.Path(".py3d")
+__tmp__.mkdir(parents=True, exist_ok=True)
 
 
 def sign(v):
@@ -31,35 +31,30 @@ class View:
     __preload__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
     def __init__(self) -> None:
-        self.cache: Dict[float, list] = {}
-        self.min = []
-        self.max = []
-        self.viewpoint = None
-        self.lookat = None
-        self.up = None
+        self.cache = b""
+        self.min = [0, 0, 0]
+        self.max = [0, 0, 0]
+        self.viewpoint = [0, 0, 0]
+        self.lookat = [0, 0, 0]
+        self.up = [0, 0, 0]
         self.size = (600, 1000)
-
-    def __render_args__(self, t, **args):
-        t = round(t, 3)
-        if t in self.cache:
-            self.cache[t].append(args)
-        else:
-            self.cache[t] = [args]
-        return self
 
     def _repr_html_(self):
-        html = self.__preload__.replace(
-            "PY#D_ARGS", json.dumps(self.__dict__))
-        self.cache.clear()
-        self.max = []
-        self.min = []
-        self.viewpoint = None
-        self.lookat = None
-        self.up = None
+        f = open(__tmp__/"cache", "wb")
+        f.write(struct.pack("3f3f3f3f3f2H", *self.min, *self.max,
+                         *self.viewpoint, *self.lookat, *self.up, *self.size))
+        f.write(self.cache)
+        f.close()
+        self.cache =b""
+        self.min = [0, 0, 0]
+        self.max = [0, 0, 0]
+        self.viewpoint = [0, 0, 0]
+        self.lookat = [0, 0, 0]
+        self.up = [0, 0, 0]
         self.size = (600, 1000)
-        return html
+        return self.__preload__
 
-    def show(self, viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
+    def show(self, viewpoint=[0,0,0], lookat=[0,0,0], up=[0,0,0], inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
         '''
         same as py3d.show
         '''
@@ -88,22 +83,23 @@ class View:
 
     def render(self, obj: Point, t=0):
         if obj.any():
-            if self.max == []:
-                self.max = obj.xyz.flatten().max(-2).tolist()
-                self.min = obj.xyz.flatten().min(-2).tolist()
+            if not any(self.max) and not any(self.min):
+                self.max = obj.xyz.flatten().max(-2)
+                self.min = obj.xyz.flatten().min(-2)
             else:
                 self.max = numpy.max(
-                    [self.max, obj.xyz.flatten().max(-2)], axis=0).tolist()
+                    [self.max, obj.xyz.flatten().max(-2)], axis=0)
                 self.min = numpy.min(
-                    [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
-            return self.__render_args__(t=t,
-                                        mode=obj.TYPE,
-                                        vertex=obj.xyz.ravel().tolist(),
-                                        color=obj.color.ravel().tolist(),
-                                        normal=obj.normal.ravel().tolist(),
-                                        pointsize=obj.pointsize if hasattr(
-                                            obj, "pointsize") else 2,
-                                        texture=obj.texture if hasattr(obj, "texture") else "")
+                    [self.min, obj.xyz.flatten().min(-2)], axis=0)
+            btexture = obj.texture.encode("utf-8") if hasattr(obj, "texture") else b""
+            self.cache += struct.pack("f", t)
+            self.cache += struct.pack("B", len(obj.TYPE)) + obj.TYPE.encode("utf-8")
+            self.cache += struct.pack("I", obj.xyz.size) + obj.xyz.astype(numpy.float32).tobytes()
+            self.cache += struct.pack("I", obj.color.size) + obj.color.astype(numpy.float32).tobytes()
+            self.cache += struct.pack("I", obj.normal.size) + obj.normal.astype(numpy.float32).tobytes()
+            self.cache += struct.pack("B", obj.pointsize if hasattr(obj,"pointsize") else 2)
+            self.cache += struct.pack("H", len(btexture)) + btexture
+            return self
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         return self.__render_args__(t=t, mode="TEXT", text=text,
@@ -123,7 +119,7 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
+def show(viewpoint=[0,0,0], lookat=[0,0,0], up=[0,0,0], inplace=True, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
     """
     Display all rendered objects in one scene
 
@@ -573,12 +569,11 @@ DATA ascii
         numpy.save(path, self)
 
     def to_image(self, path):
-        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         data = self
         if data.dtype != numpy.uint8:
             vmax = data.max()
             vmin = data.min()
-            if vmax >1 or vmin < 0:
+            if vmax > 1 or vmin < 0:
                 data = Color.map(data)
             data = (data*255).astype(numpy.uint8)
         if data.ndim == 2:
@@ -589,7 +584,7 @@ DATA ascii
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
-        self.to_image(".py3d/texture.jpg")
+        self.to_image(__tmp__/"texture.jpg")
         h, w, *_ = self.shape
         m = Vector([
             [0, 0, 0, 0, 0, 0, 0],
@@ -599,7 +594,7 @@ DATA ascii
             [w, h, 0, 1, 1, 0, 0],
             [0, h, 0, 0, 1, 0, 0]
         ]).view(Triangle)
-        m.texture = ".py3d/texture.jpg"
+        m.texture = str(__tmp__/"texture.jpg")
         return m
 
 
@@ -1268,7 +1263,7 @@ class Point(Vector):
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
         ret.pointsize = 2
-        ret.texture = []
+        ret.texture = ""
         return ret
 
     @property

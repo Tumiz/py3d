@@ -43,6 +43,9 @@
     <script>
         {
             class mat {
+                static equal(arr1, arr2) {
+                    return JSON.stringify(arr1) === JSON.stringify(arr2)
+                }
                 static norm(array) {
                     let ss = 0
                     for (let v of array) {
@@ -183,11 +186,11 @@
                 constructor(type, fovy, aspect, min, max, viewpoint, lookat, up) {
                     this.fovy = fovy
                     this.aspect = aspect
-                    let center = lookat ? lookat : [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
-                    if (viewpoint) {
-                        this.pose = mat.lookat(viewpoint, center, up ? up : [0, 1, 0])
-                        this.height = mat.norm(mat.sub(viewpoint, center))
+                    if (!mat.equal(viewpoint, lookat)) {
+                        this.pose = mat.lookat(viewpoint, lookat, up ? up : [0, 1, 0])
+                        this.height = mat.norm(mat.sub(viewpoint, lookat))
                     } else {
+                        let center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
                         let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
                         this.height = ysize / 2 / Math.tan(this.fovy / 2)
                         this.pose = mat.translation(center[0], center[1], center[2] + this.height)
@@ -203,6 +206,7 @@
                 }
                 position_str() {
                     let p = this.position
+                    console.log(p)
                     return "camera position = " + p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3)
                 }
                 rotate_by(angle, x, y, z) { // rotate around center axis
@@ -324,22 +328,22 @@
                     this.btn_grid.className = "py3d_btn"
                     this.btn_grid.setAttribute("tooltip", `show grid`)
                     this.bar.append(
-                        this.btn_orth, 
-                        this.btn_reset, 
-                        this.btn_left, 
-                        this.btn_right, 
-                        this.btn_up, 
+                        this.btn_orth,
+                        this.btn_reset,
+                        this.btn_left,
+                        this.btn_right,
+                        this.btn_up,
                         this.btn_down,
                         this.btn_cw,
-                        this.btn_ccw, 
-                        this.btn_grid, 
-                        this.btn_play, 
-                        this.time, 
+                        this.btn_ccw,
+                        this.btn_grid,
+                        this.btn_play,
+                        this.time,
                         this.slider)
                 }
             }
             class Viewer {
-                constructor(data) {
+                constructor(data, parent) {
                     this.canvas_x = 0
                     this.canvas_y = 0
                     this.canvas = document.createElement("canvas")
@@ -363,7 +367,7 @@ zoom: mouse wheel`)
                     this.min = data.min
                     this.max = data.max
                     this.camera = new Camera(this.toolbar.btn_orth.innerHTML, Math.PI / 4, this.canvas.width / this.canvas.height, data.min, data.max, data.viewpoint, data.lookat, data.up)
-                    this.parent = document.currentScript.parentElement
+                    this.parent = parent
                     this.parent.append(this.canvasdiv, this.toolbar.bar)
                     const observer = new ResizeObserver(() => {
                         this.canvas.width = this.canvas.clientWidth
@@ -516,14 +520,14 @@ zoom: mouse wheel`)
                 set_attribute(name, array, item_size) {
                     const buffer = this.gl.createBuffer()
                     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
-                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(array), this.gl.STATIC_DRAW)
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, array, this.gl.STATIC_DRAW)
                     const location = this.gl.getAttribLocation(this.program, name)
                     this.gl.enableVertexAttribArray(location)
                     this.gl.vertexAttribPointer(location, item_size, this.gl.FLOAT, false, 0, 0)
                 }
                 set_uniform(name, array) {
                     const location = this.gl.getUniformLocation(this.program, name)
-                    if (typeof(array) == "string" && array.length && !this.textures.has(array) ) {
+                    if (typeof (array) == "string" && array.length && !this.textures.has(array)) {
                         this.textures.add(array)
                         const texture = this.gl.createTexture()
                         const image = new Image()
@@ -597,7 +601,7 @@ zoom: mouse wheel`)
                                 } else if (obj.mode) {
                                     this.set_attribute("a_position", obj.vertex, 3)
                                     this.set_attribute("a_color", obj.color, 4)
-                                    this.set_uniform("u_pointsize", [obj.pointsize])
+                                    this.set_uniform("u_pointsize", obj.pointsize)
                                     this.set_uniform("u_texture", obj.texture)
                                     if (obj.normal.length) {
                                         this.set_attribute("a_normal", obj.normal, 3)
@@ -645,7 +649,53 @@ zoom: mouse wheel`)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
                 }
             }
-            new Viewer(PY#D_ARGS)
+            let parent = document.currentScript.parentElement
+            fetch(".py3d/cache")
+                .then((response) => response.arrayBuffer())
+                .then((buffer) => {
+                    let data = {}
+                    data.min = new Float32Array(buffer, 0, 3)
+                    data.max = new Float32Array(buffer, 12, 3)
+                    data.viewpoint = new Float32Array(buffer, 24, 3)
+                    data.lookat = new Float32Array(buffer, 36, 3)
+                    data.up = new Float32Array(buffer, 48, 3)
+                    data.size = new Uint16Array(buffer, 60, 2)
+                    let i = 64
+                    data.cache = {}
+                    let decoder = new TextDecoder("UTF-8")
+                    while (i < buffer.byteLength) {
+                        let t = new Float32Array(buffer.slice(i, i + 4))
+                        i += 4
+                        let obj = {}
+                        let s_model = new Uint8Array(buffer.slice(i, i + 1))[0]
+                        i += 1
+                        obj.mode = decoder.decode(buffer.slice(i, i + s_model))
+                        i += s_model
+                        let s_vertex = new Uint32Array(buffer.slice(i, i + 4))[0]
+                        i += 4
+                        obj.vertex = new Float32Array(buffer.slice(i, i + s_vertex * 4))
+                        i += s_vertex * 4
+                        let s_color = new Uint32Array(buffer.slice(i, i + 4))[0]
+                        i += 4
+                        obj.color = new Float32Array(buffer.slice(i, i + s_color * 4))
+                        i += s_color * 4
+                        let s_normal = new Uint32Array(buffer.slice(i, i + 4))[0]
+                        i += 4
+                        obj.normal = new Float32Array(buffer.slice(i, i + s_normal * 4))
+                        i += s_normal * 4
+                        obj.pointsize = new Uint8Array(buffer.slice(i, i + 1))
+                        i += 1
+                        s_texture = new Uint16Array(buffer.slice(i, i + 2))[0]
+                        i += 2
+                        obj.texture = decoder.decode(buffer.slice(i, i + s_texture))
+                        i += s_texture
+                        if (t in data.cache) {
+                            data.cache[t].push(obj)
+                        } else {
+                            data.cache[t] = [obj]
+                        }
+                    }
+                    new Viewer(data, parent)
+                })
         }
     </script>
-</div>
