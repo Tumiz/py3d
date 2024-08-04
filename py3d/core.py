@@ -598,14 +598,17 @@ DATA ascii
         self.to_image(".py3d/texture.jpg")
         h, w, *_ = self.shape
         m = Vector([
-            [0, 0, 0, 0, 0, 0, 0],
-            [w, 0, 0, 1, 0, 0, 0],
-            [w, h, 0, 1, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0],
-            [w, h, 0, 1, 1, 0, 0],
-            [0, h, 0, 0, 1, 0, 0]
+            [0, 0, 0, 0, 1, 0, 0],
+            [w, 0, 0, 1, 1, 0, 0],
+            [w, h, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [w, h, 0, 1, 0, 0, 0],
+            [0, h, 0, 0, 0, 0, 0]
         ]).view(Triangle)
         m.texture = ".py3d/texture.jpg"
+        default_view.viewpoint = [w/2, h/2, -w]
+        default_view.lookat = [w/2, h/2, 0]
+        default_view.up = [0, -1, 0]
         return m
 
 
@@ -1273,7 +1276,7 @@ class Point(Vector):
         ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
         ret.color = Color.standard(n[:-1] + (1,))
         ret.color.a = 1
-        ret.pointsize = 2
+        ret.pointsize = 2.
         ret.texture = ""
         return ret
 
@@ -1293,7 +1296,7 @@ class Point(Vector):
     def normal(self, v):
         self[..., 7:10] = v
 
-    def paint(self, color=None, colormap=None, pointsize=2):
+    def paint(self, color=None, colormap=None, pointsize=0):
         if colormap is not None:
             color = Color.map(colormap)
         elif color is None:
@@ -1333,6 +1336,7 @@ class Triangle(Point):
 
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
+        ret.pointsize = 0.
         return ret
 
 
@@ -1341,6 +1345,7 @@ class LineSegment(Point):
 
     def __new__(cls, *n):
         ret = super().__new__(cls, *n)
+        ret.pointsize = 0.
         return ret
 
     @property
