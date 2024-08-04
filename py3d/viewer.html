@@ -183,15 +183,16 @@
                 constructor(type, fovy, aspect, min, max, viewpoint, lookat, up) {
                     this.fovy = fovy
                     this.aspect = aspect
-                    let center = lookat ? lookat : [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
-                    if (viewpoint) {
-                        this.pose = mat.lookat(viewpoint, center, up ? up : [0, 1, 0])
-                        this.height = mat.norm(mat.sub(viewpoint, center))
-                    } else {
-                        let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
-                        this.height = ysize / 2 / Math.tan(this.fovy / 2)
-                        this.pose = mat.translation(center[0], center[1], center[2] + this.height)
+                    if (!lookat) {
+                        lookat = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
                     }
+                    if (!viewpoint) {
+                        let ysize = Math.max((max[0] - min[0]) / this.aspect, max[1] - min[1]) * 1.1
+                        let height = ysize / 2 / Math.tan(this.fovy / 2)
+                        viewpoint = [lookat[0], lookat[1], lookat[2] + height]
+                    }
+                    this.pose = mat.lookat(viewpoint, lookat, up ? up : [0, 1, 0])
+                    this.height = mat.norm(mat.sub(viewpoint, lookat))
                     this.origin_pose = structuredClone(this.pose)
                     this.origin_height = this.height
                     this.far = 100 * this.height
@@ -477,8 +478,10 @@ zoom: mouse wheel`)
                         uniform vec3 u_light_dir;
                         uniform mat4 u_world2ndc;
                         varying vec4 v_color;
+                        varying float v_pointsize;
                         void main(void) {
                             gl_PointSize = u_pointsize;
+                            v_pointsize = u_pointsize;
                             gl_Position = u_world2ndc * a_position;
                             if ( length(a_normal)>0. ) {
                                 float nDotL = max(dot(u_light_dir, a_normal), 0.0);
@@ -491,9 +494,15 @@ zoom: mouse wheel`)
                     `, `
                         precision mediump float;
                         varying vec4 v_color;
+                        varying float v_pointsize;
                         uniform sampler2D u_texture;
                         void main(void) {
                             if ( v_color.a>0. ) {
+                                if (v_pointsize > 0.) {
+                                    if (distance(gl_PointCoord, vec2(0.5, 0.5)) > 0.5) {
+                                        discard;
+                                    }
+                                }
                                 gl_FragColor = v_color;
                             } else {
                                 gl_FragColor = texture2D(u_texture, v_color.xy);
