@@ -8138,7 +8138,7 @@ zoom: mouse wheel`)
                         this.textures.add(array)
                         const texture = this.gl.createTexture()
                         const image = new Image()
-                        image.src = "data:image/jpg;base64," + array
+                        image.src = array
                         image.onload = () => {
                             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
                             this.gl.activeTexture(this.gl.TEXTURE0)
@@ -8150,7 +8150,8 @@ zoom: mouse wheel`)
                             } else {
                                 this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
                                 this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
-                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR)
+                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST)
+                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
                             }
                             this.render()
                         }
