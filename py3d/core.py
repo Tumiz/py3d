@@ -98,7 +98,8 @@ class View:
                 self.min = numpy.min(
                     [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
             if hasattr(obj, "texture") and obj.texture:
-                texture = base64.b64encode(
+                ext = pathlib.Path(obj.texture).suffix
+                texture = f"data:image/{ext};base64," + base64.b64encode(
                     open(obj.texture, "rb").read()).decode('utf-8')
             else:
                 texture = ""
@@ -589,13 +590,14 @@ DATA ascii
             data = (data*255).astype(numpy.uint8)
         if data.ndim == 2:
             data = data[..., None].repeat(3, -1)
-        PIL.Image.fromarray(data.xyz, "RGB").save(path)
+        mode = "RGBA" if data.shape[-1] > 3 else "RGB"
+        PIL.Image.fromarray(data, mode).save(path)
 
     def as_image(self):
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
-        self.to_image(".py3d/texture.jpg")
+        self.to_image(".py3d/texture.png")
         h, w, *_ = self.shape
         m = Vector([
             [0, 0, 0, 0, 1, 0, 0],
@@ -605,7 +607,7 @@ DATA ascii
             [w, h, 0, 1, 0, 0, 0],
             [0, h, 0, 0, 0, 0, 0]
         ]).view(Triangle)
-        m.texture = ".py3d/texture.jpg"
+        m.texture = ".py3d/texture.png"
         default_view.viewpoint = [w/2, h/2, -w]
         default_view.lookat = [w/2, h/2, 0]
         default_view.up = [0, -1, 0]
