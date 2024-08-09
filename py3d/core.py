@@ -109,7 +109,7 @@ class View:
                                         color=obj.color.ravel().tolist(),
                                         normal=obj.normal.ravel().tolist(),
                                         pointsize=obj.pointsize if hasattr(
-                                            obj, "pointsize") else 2,
+                                            obj, "pointsize") else 0,
                                         texture=texture)
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
@@ -599,15 +599,14 @@ DATA ascii
         '''
         self.to_image(".py3d/texture.png")
         h, w, *_ = self.shape
-        m = Vector([
+        m = Triangle([
             [0, 0, 0, 0, 1, 0, 0],
             [w, 0, 0, 1, 1, 0, 0],
             [w, h, 0, 1, 0, 0, 0],
             [0, 0, 0, 0, 1, 0, 0],
             [w, h, 0, 1, 0, 0, 0],
             [0, h, 0, 0, 0, 0, 0]
-        ]).view(Triangle)
-        m.texture = ".py3d/texture.png"
+        ], texture=".py3d/texture.png")
         default_view.viewpoint = [w/2, h/2, -w]
         default_view.lookat = [w/2, h/2, 0]
         default_view.up = [0, -1, 0]
@@ -737,14 +736,13 @@ class Vector3(Vector):
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
     def as_point(self, color=None, colormap=None, pointsize=2) -> Point:
-        entity = Point(*self.n).paint(color, colormap, pointsize)
-        entity.xyz = self
+        entity = Point(self).paint(color, colormap, pointsize)
         return entity
 
     def as_line(self) -> LineSegment:
         n = list(self.n)
         n[-1] = (n[-1] - 1) * 2
-        entity = LineSegment(*n)
+        entity = LineSegment().tile(*n)
         entity.start.xyz = self[..., :-1, :]
         entity.end.xyz = self[..., 1:, :]
         return entity
@@ -752,14 +750,13 @@ class Vector3(Vector):
     def as_lineloop(self) -> LineSegment:
         n = list(self.n)
         n[-1] = n[-1] * 2
-        entity = LineSegment(*n)
+        entity = LineSegment().tile(*n)
         entity.start.xyz = self
         entity.end.xyz = numpy.roll(self, -1, axis=self.ndim - 2)
         return entity
 
     def as_linesegment(self) -> LineSegment:
-        entity = LineSegment(*self.n)
-        entity.xyz = self
+        entity = LineSegment(self)
         return entity
 
     def as_shape(self) -> Triangle:
@@ -770,12 +767,11 @@ class Vector3(Vector):
         return v.view(Vector3).as_triangle()
 
     def as_triangle(self) -> Triangle:
-        entity = Triangle(*self.n)
-        entity.xyz = self
+        entity = Triangle(self)
         return entity
 
     def as_vector(self) -> LineSegment:
-        entity = LineSegment(*self.n, 2)
+        entity = LineSegment().tile(*self.n, 2)
         entity.start.xyz = 0
         entity.end.xyz = numpy.expand_dims(self, axis=self.ndim - 1)
         return entity
@@ -1274,12 +1270,13 @@ class Point(Vector):
     BASE_SHAPE = 7,
     TYPE = "POINTS"
 
-    def __new__(cls, *n):
-        ret = numpy.empty(n + cls.BASE_SHAPE).view(cls)
-        ret.color = Color.standard(n[:-1] + (1,))
-        ret.color.a = 1
-        ret.pointsize = 2.
-        ret.texture = ""
+    def __new__(cls, data=[], pointsize=2, texture=""):
+        ret = super().__new__(cls, data)
+        if not texture:
+            ret.color = Color.standard(ret.shape[:-2] + (1,))
+            ret.color.a = 1
+        ret.pointsize = pointsize
+        ret.texture = texture
         return ret
 
     @property
@@ -1322,8 +1319,7 @@ class Point(Vector):
 
     def __matmul__(self, transform: Transform) -> Point:
         xyz = self.xyz @ transform
-        ret = self.__class__(*xyz.n)
-        ret.xyz = xyz
+        ret = self.__class__(xyz)
         ret.color = self.color
         if hasattr(self, "texture"):
             ret.texture = self.texture
@@ -1336,18 +1332,16 @@ class Point(Vector):
 class Triangle(Point):
     TYPE = "TRIANGLES"
 
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        ret.pointsize = 0.
+    def __new__(cls, data=[], texture=""):
+        ret = super().__new__(cls, data, 0, texture)
         return ret
 
 
 class LineSegment(Point):
     TYPE = "LINES"
 
-    def __new__(cls, *n):
-        ret = super().__new__(cls, *n)
-        ret.pointsize = 0.
+    def __new__(cls, data=[]):
+        ret = super().__new__(cls, data, 0)
         return ret
 
     @property
@@ -1393,7 +1387,7 @@ def axis(size=5, dashed=False) -> LineSegment:
 
 
 def camera(pixel_width, pixel_height, focal_length_in_pixels, pixel_size=1e-3):
-    ret = LineSegment(16)
+    ret = LineSegment().tile(16)
     ret.start[:4].xyz = 0
     corners = numpy.array([
         [pixel_width/2, pixel_height/2, focal_length_in_pixels],
