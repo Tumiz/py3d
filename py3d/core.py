@@ -345,6 +345,9 @@ class OBJ:
             m.color.xy = self.vt[self.vti]
             m.texture = self.texture
         return m
+    
+    def as_wireframe(self):
+        return self.v[self.vi].xyz.as_lineloop()
 
     def save(self, path):
         f = open(path, "w")
