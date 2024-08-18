@@ -161,12 +161,10 @@
                 static ceil(value, base) {
                     return Math.ceil(value / base) * base
                 }
-                static ticks(min, max, step) {
+                static ticks(min, max, r_step, digits) {
                     if (max <= min) {
                         return [[min], min, max]
                     }
-                    let digits = Math.round(Math.log10(step))
-                    let r_step = 10 ** digits
                     let r_min = mat.floor(min, r_step)
                     let r_max = mat.ceil(max, r_step)
                     let size = Math.ceil((r_max - r_min) / r_step) + 1
@@ -631,36 +629,41 @@ zoom: mouse wheel`)
                 grid() {
                     let resolution = this.camera.resolution(this.canvas.width)
                     let step = 100 * resolution// meter per pixel
-                    const [x_ticks, x_tick_min, x_tick_max] = mat.ticks(this.min[0], this.max[0], step)
-                    const [y_ticks, y_tick_min, y_tick_max] = mat.ticks(this.min[1], this.max[1], step)
-                    const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(this.min[2], this.max[2], step)
+                    let digits = Math.round(Math.log10(step))
+                    let r_step = 10 ** digits
+                    const [x_ticks, x_tick_min, x_tick_max] = mat.ticks(this.min[0], this.max[0], r_step, digits)
+                    const [y_ticks, y_tick_min, y_tick_max] = mat.ticks(this.min[1], this.max[1], r_step, digits)
+                    const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(this.min[2], this.max[2], r_step, digits)
                     let lines = []
                     let text_color = [0.3, 0.3, 0.3, 0.6]
                     let ri = mat.I(this.camera.rotation)
                     let x1 = mat.vm([1, 0, 0], ri)
                     let y1 = mat.vm([0, 1, 0], ri)
                     let z1 = mat.vm([0, 0, 1], ri)
+                    let xaxis_anchor = [y1[0] + z1[0] > 0 ? "right" : "left", y1[1] + z1[1] > 0 ? "top" : "bottom"]
+                    let yaxis_anchor = [x1[0] + z1[0] > 0 ? "right" : "left", x1[1] + z1[1] > 0 ? "top" : "bottom"]
+                    let zaxis_anchor = [y1[0] + x1[0] > 0 ? "right" : "left", y1[1] + x1[1] > 0 ? "top" : "bottom"]
                     for (let [i, x] of x_ticks.entries()) {
                         lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
                         lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
                         if (x != x_tick_min)
-                            this.label(x, [x, y_tick_min, z_tick_min], text_color, y1[0] >-1e-3 && z1[0] > -1e-3 ? "right" : "left", y1[1] >-1e-3 && z1[1] > -1e-3 ? "top" : "bottom")
+                            this.label(x, [x, y_tick_min, z_tick_min], text_color, ...xaxis_anchor)
                     }
                     for (let [i, y] of y_ticks.entries()) {
                         lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
                         lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
                         if (y != y_tick_min)
-                            this.label(y, [x_tick_min, y, z_tick_min], text_color, x1[0] >-1e-3 && z1[0] > -1e-3 ? "right" : "left", x1[1] >-1e-3 && z1[1] > -1e-3 ? "top" : "bottom")
+                            this.label(y, [x_tick_min, y, z_tick_min], text_color, ...yaxis_anchor)
                     }
                     for (let [i, z] of z_ticks.entries()) {
                         lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
                         lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
                         if (z != z_tick_min)
-                            this.label(z, [x_tick_min, y_tick_min, z], text_color, y1[0] >-1e-3 && x1[0] > -1e-3 ? "right" : "left", y1[1] >-1e-3 && x1[1] > -1e-3 ? "top" : "bottom")
+                            this.label(z, [x_tick_min, y_tick_min, z], text_color, ...zaxis_anchor)
                     }
-                    this.label("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color)
-                    this.label("Y", [x_tick_min, y_tick_max + step, z_tick_min], text_color)
-                    this.label("Z", [x_tick_min, y_tick_min, z_tick_max + step], text_color)
+                    this.label("X", [(x_tick_min + x_tick_max) * 0.5, y_tick_min - 0.3 * r_step, z_tick_min - 0.3 * r_step], text_color, ...xaxis_anchor)
+                    this.label("Y", [x_tick_min - 0.3 * r_step, (y_tick_min + y_tick_max) * 0.5, z_tick_min - 0.3 * r_step], text_color, ...yaxis_anchor)
+                    this.label("Z", [x_tick_min - 0.3 * r_step, y_tick_min - 0.3 * r_step, (z_tick_min + z_tick_max) * 0.5], text_color, ...zaxis_anchor)
                     this.set_attribute("a_position", lines, 3)
                     this.set_attribute("a_color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
