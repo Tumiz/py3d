@@ -198,9 +198,15 @@
                     this.far = 100 * this.height
                     this.type = type
                     this.update_projection()
+                    this.update_world2ndc()
                 }
                 get position() {
                     return this.pose.slice(12, 15)
+                }
+                get rotation() {
+                    let rot = structuredClone(this.pose)
+                    rot[12] = rot[13] = rot[14] = 0
+                    return rot
                 }
                 position_str() {
                     let p = this.position
@@ -220,6 +226,12 @@
                         this.far,
                         this.height) : mat.perspective(this.fovy, this.aspect, 0.001, this.far)
                 }
+                update_world2ndc() {
+                    this.world2ndc = mat.mm(
+                        mat.I(this.pose), // world to camera
+                        this.projection, // camera to ndc
+                    )
+                }
                 reset() {
                     this.pose = this.origin_pose
                     this.height = this.origin_height
@@ -229,11 +241,12 @@
                     let p = mat.vm([1, 0, this.height], this.projection)
                     return Math.abs(2 * p[3] / p[0] / width)
                 }
-                world2ndc() {
-                    return mat.mm(
-                        mat.I(this.pose), // world to camera
-                        this.projection, // camera to ndc
-                    )
+                w2n(position) {
+                    let p = mat.vm(position, this.world2ndc)
+                    let nx = p[0] / p[3]
+                    let ny = p[1] / p[3]
+                    let nz = p[2] / p[3]
+                    return [nx, ny, nz]
                 }
             }
             class ToolBar {
@@ -347,14 +360,12 @@
                     this.canvas.style.width = "100%"
                     this.canvas.style.height = "100%"
                     this.canvas.style.outlineWidth = 0
-                    this.labeldiv = document.createElement("div")
-                    this.labeldiv.style.position = "absolute"
                     this.canvasdiv = document.createElement("div")
                     this.canvasdiv.style.height = data.size[0] + "px"
                     this.canvasdiv.style.width = data.size[1] + "px"
                     this.canvasdiv.style.overflow = "hidden"
                     this.canvasdiv.style.resize = "both"
-                    this.canvasdiv.append(this.labeldiv, this.canvas)
+                    this.canvasdiv.append(this.canvas)
                     this.canvasdiv.className = "py3d_canvasdiv"
                     this.canvasdiv.setAttribute("tooltip", `\
 rotate: press ctrl key and move mouse or press middle mouse button and move mouse
@@ -567,19 +578,14 @@ zoom: mouse wheel`)
                     this.gl.compileShader(shader)
                     this.gl.attachShader(program, shader)
                 }
-                drawText(text, position, color, world2ndc) {
+                label(text, position, color, xanchor = "left", yanchor = "top") {
                     let div = document.createElement("div")
-                    div.innerHTML = text
+                    div.textContent = text
                     div.style.position = "absolute"
-                    let p = mat.vm(position, world2ndc)
-                    let nx = p[0] / p[3]
-                    let ny = p[1] / p[3]
-                    let nz = p[2] / p[3]
+                    let [nx, ny, nz] = this.camera.w2n(position)
                     if (Math.abs(nx) <= 1 && Math.abs(ny) <= 1 && Math.abs(nz) <= 1) {
-                        let x = 0.5 * (1 + nx) * this.canvas.width
-                        let y = 0.5 * (1 - ny) * this.canvas.height
-                        div.style.left = x + "px"
-                        div.style.top = y + "px"
+                        div.style[xanchor] = 0.5 * (1 + (xanchor == "left" ? nx : -nx)) * this.canvas.width + "px"
+                        div.style[yanchor] = 0.5 * (1 + (yanchor == "top" ? -ny : ny)) * this.canvas.height + "px"
                         if (typeof (color) == "string") {
                             div.style.color = color
                         } else {
@@ -587,15 +593,16 @@ zoom: mouse wheel`)
                             div.style.opacity = color[color.length - 1]
                         }
                         div.style.pointerEvents = "none"
-                        this.labeldiv.append(div)
+                        this.canvasdiv.append(div)
                     }
                 }
                 render() {
-                    this.labeldiv.innerHTML = ""
+                    this.canvasdiv.textContent = ""
+                    this.canvasdiv.append(this.canvas)
                     this.gl.clearColor(0, 0, 0, 0)
                     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
-                    let world2ndc = this.camera.world2ndc()
-                    this.set_uniform("u_world2ndc", world2ndc)
+                    this.camera.update_world2ndc()
+                    this.set_uniform("u_world2ndc", this.camera.world2ndc)
                     this.set_uniform("u_light_dir", mat.normalize(this.camera.position))
                     let current_t = this.toolbar.ts[this.toolbar.ti]
                     for (let t in this.toolbar.cache) {
@@ -603,7 +610,7 @@ zoom: mouse wheel`)
                             let frame = this.toolbar.cache[t]
                             for (let obj of frame) {
                                 if (obj.mode == "TEXT") {
-                                    this.drawText(obj.text, obj.vertex, obj.color, world2ndc)
+                                    this.label(obj.text, obj.vertex, obj.color)
                                 } else if (obj.mode) {
                                     this.set_attribute("a_position", obj.vertex, 3)
                                     this.set_attribute("a_color", obj.color, 4)
@@ -616,40 +623,44 @@ zoom: mouse wheel`)
                                 }
                             }
                             if (this.toolbar.btn_grid.style.background == "grey")
-                                this.grid(world2ndc)
+                                this.grid()
                             break
                         }
                     }
                 }
-                grid(world2ndc) {
+                grid() {
                     let resolution = this.camera.resolution(this.canvas.width)
-                    let step = 50 * resolution// meter per pixel
+                    let step = 100 * resolution// meter per pixel
                     const [x_ticks, x_tick_min, x_tick_max] = mat.ticks(this.min[0], this.max[0], step)
                     const [y_ticks, y_tick_min, y_tick_max] = mat.ticks(this.min[1], this.max[1], step)
                     const [z_ticks, z_tick_min, z_tick_max] = mat.ticks(this.min[2], this.max[2], step)
                     let lines = []
                     let text_color = [0.3, 0.3, 0.3, 0.6]
+                    let ri = mat.I(this.camera.rotation)
+                    let x1 = mat.vm([1, 0, 0], ri)
+                    let y1 = mat.vm([0, 1, 0], ri)
+                    let z1 = mat.vm([0, 0, 1], ri)
                     for (let [i, x] of x_ticks.entries()) {
                         lines.push(x, y_tick_min, z_tick_min, x, y_tick_max, z_tick_min)
                         lines.push(x, y_tick_min, z_tick_min, x, y_tick_min, z_tick_max)
-                        if (x != x_tick_min && i % 2 == 0)
-                            this.drawText(x, [x, y_tick_min, z_tick_min], text_color, world2ndc)
+                        if (x != x_tick_min)
+                            this.label(x, [x, y_tick_min, z_tick_min], text_color, y1[0] >-1e-3 && z1[0] > -1e-3 ? "right" : "left", y1[1] >-1e-3 && z1[1] > -1e-3 ? "top" : "bottom")
                     }
                     for (let [i, y] of y_ticks.entries()) {
                         lines.push(x_tick_min, y, z_tick_min, x_tick_max, y, z_tick_min)
                         lines.push(x_tick_min, y, z_tick_min, x_tick_min, y, z_tick_max)
-                        if (y != y_tick_min && i % 2 == 0)
-                            this.drawText(y, [x_tick_min, y, z_tick_min], text_color, world2ndc)
+                        if (y != y_tick_min)
+                            this.label(y, [x_tick_min, y, z_tick_min], text_color, x1[0] >-1e-3 && z1[0] > -1e-3 ? "right" : "left", x1[1] >-1e-3 && z1[1] > -1e-3 ? "top" : "bottom")
                     }
                     for (let [i, z] of z_ticks.entries()) {
                         lines.push(x_tick_min, y_tick_min, z, x_tick_max, y_tick_min, z)
                         lines.push(x_tick_min, y_tick_min, z, x_tick_min, y_tick_max, z)
-                        if (z != z_tick_min && i % 2 == 0)
-                            this.drawText(z, [x_tick_min, y_tick_min, z], text_color, world2ndc)
+                        if (z != z_tick_min)
+                            this.label(z, [x_tick_min, y_tick_min, z], text_color, y1[0] >-1e-3 && x1[0] > -1e-3 ? "right" : "left", y1[1] >-1e-3 && x1[1] > -1e-3 ? "top" : "bottom")
                     }
-                    this.drawText("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color, world2ndc)
-                    this.drawText("Y", [x_tick_min, y_tick_max + step, z_tick_min], text_color, world2ndc)
-                    this.drawText("Z", [x_tick_min, y_tick_min, z_tick_max + step], text_color, world2ndc)
+                    this.label("X", [x_tick_max + step, y_tick_min, z_tick_min], text_color)
+                    this.label("Y", [x_tick_min, y_tick_max + step, z_tick_min], text_color)
+                    this.label("Z", [x_tick_min, y_tick_min, z_tick_max + step], text_color)
                     this.set_attribute("a_position", lines, 3)
                     this.set_attribute("a_color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
