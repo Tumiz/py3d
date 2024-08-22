@@ -1275,7 +1275,7 @@ class Point(Vector):
 
     def __new__(cls, data=[], pointsize=2, texture=""):
         ret = super().__new__(cls, data)
-        if not texture:
+        if numpy.any(data) and numpy.shape(data)[-1] < 7 and not texture:
             ret.color = Color.standard(ret.shape[:-2] + (1,))
             ret.color.a = 1
         ret.pointsize = pointsize
