@@ -12,6 +12,7 @@ import multiprocessing
 import http.server
 import socket
 import base64
+import scipy.spatial
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -113,6 +114,8 @@ class View:
                                         texture=texture)
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
+        if isinstance(color, Color):
+            color = f"rgb({color.r*255} {color.g*255} {color.b**255})"
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     vertex=position, color=color)
 
@@ -307,7 +310,28 @@ def rand(*n) -> Vector | Vector2 | Vector3 | Vector4:
     return numpy.random.rand(*n).view(vtype)
 
 
+def chamfer_distance(A: Vector, B: Vector, f_score_threshhold=None) -> float:
+    '''
+    chamfer distance between two nd points
+    '''
+    a = A.flatten()
+    b = B.flatten()
+    d1,_ = scipy.spatial.KDTree(a).query(b)
+    d2,_ = scipy.spatial.KDTree(b).query(a)
+    cd = (d1**2).mean() + (d2**2).mean()
+    if f_score_threshhold:
+        precision_1 = (d1 < f_score_threshhold).mean()
+        precision_2 = (d2 < f_score_threshhold).mean()
+        fscore = 2 * precision_1 * precision_2 / (precision_1 + precision_2)
+        return cd, fscore
+    else:
+        return cd
+
+
 class OBJ:
+    '''
+    class to parse obj file
+    '''
     def __init__(self, obj_path, texture_path="") -> None:
         f = open(obj_path)
         v = []
@@ -503,11 +527,20 @@ class Vector(numpy.ndarray):
     def M(self) -> Vector | Vector2 | Vector3 | Vector4:
         # mean vector
         return super().mean(axis=self.ndim-2)
+    
+    @property
+    def L2(self) -> Vector:
+        '''
+        Squared euclidean distance
+        '''
+        return (self**2).sum(axis=-1)
 
     @property
     def L(self) -> numpy.ndarray:
-        # length
-        return numpy.linalg.norm(self, axis=self.ndim - 1)
+        '''
+        Lengths of vectors, also known as euclidean distance or euclidean norm
+        '''
+        return numpy.sqrt(self.L2)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
@@ -678,18 +711,6 @@ class Vector3(Vector):
 
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
         return numpy.pi / 2 - self.angle_to_vector(normal)
-
-    def is_parallel_to_vector(self, v: numpy.ndarray) -> bool:
-        return self.U == v.U
-
-    def is_parallel_to_plane(self, normal: numpy.ndarray) -> bool:
-        return self.is_perpendicular_to_vector(normal)
-
-    def is_perpendicular_to_vector(self, v: numpy.ndarray) -> bool:
-        return self.dot(v) == 0
-
-    def is_perpendicular_to_plane(self, normal: numpy.ndarray) -> bool:
-        return self.is_parallel_to_vector(normal)
 
     def scalar_projection(self, v: numpy.ndarray) -> float:
         return self.dot(v) / Vector3(v).L
