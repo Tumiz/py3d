@@ -220,55 +220,8 @@ def read_pcd(path) -> Vector:
     return ret
 
 
-def read_ply(path) -> tuple[Vector3, Triangle]:
-    f = open(path, "rb")
-    n_vertex = 0
-    n_face = 0
-    for c in f:
-        c = c.strip().decode("utf-8")
-        if "format" in c:
-            data_type = c.split(" ", 1)[1]
-        elif "element vertex" in c:
-            n_vertex = int(c.split(" ")[-1])
-        elif "element face" in c:
-            n_face = int(c.split(" ")[-1])
-        elif "end_header" in c:
-            break
-    vertices = []
-    while n_vertex:
-        if "ascii" in data_type:
-            c = f.readline().decode("utf-8").strip()
-            vertices.append([float(v) for v in c.split(" ")])
-        else:
-            vertices.append([struct.unpack("f", f.read(4))[0]
-                            for i in range(3)])
-        n_vertex -= 1
-    faces = []
-    while n_face:
-        if "ascii" in data_type:
-            c = f.readline().decode("utf-8").strip()
-            size, *d = [int(v) for v in c.split(" ")]
-        else:
-            size, = struct.unpack("B", f.read(1))
-            d = struct.unpack("<" + "i" * size, f.read(4 * size))
-        if size > 3:
-            tmp = []
-            for i in range(size-2):
-                tmp.append([d[0], d[i+1], d[i+2]])
-            d = tmp
-        faces.append(d)
-        n_face -= 1
-    vertices = Vector3(vertices)
-    triangles: Vector3 = vertices[faces]
-    a = triangles[..., 0, :]
-    b = triangles[..., 1, :]
-    c = triangles[..., 2, :]
-    normals = (b - a).cross(c - b).U
-    mesh = numpy.empty((numpy.prod(triangles.shape[:-1]), 10)).view(Triangle)
-    mesh.xyz = triangles.flatten()
-    mesh.color = Color.standard((1,))
-    mesh.normal = normals.flatten().repeat(3, axis=-2)
-    return vertices, mesh
+def read_ply(path) -> Triangle:
+    return PLY(path)
 
 
 def read_obj(obj_path, texture_path=""):
@@ -327,6 +280,54 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshhold=None) -> float:
     else:
         return cd
 
+class PLY:
+    def __init__(self, path):
+        f = open(path, "rb")
+        n_vertex = 0
+        n_face = 0
+        for c in f:
+            c = c.strip().decode("utf-8")
+            if "format" in c:
+                data_type = c.split(" ", 1)[1]
+            elif "element vertex" in c:
+                n_vertex = int(c.split(" ")[-1])
+            elif "element face" in c:
+                n_face = int(c.split(" ")[-1])
+            elif "end_header" in c:
+                break
+        self.vertices = []
+        while n_vertex:
+            if "ascii" in data_type:
+                c = f.readline().decode("utf-8").strip()
+                self.vertices.append([float(v) for v in c.split(" ")])
+            else:
+                self.vertices.append([struct.unpack("f", f.read(4))[0]
+                                for i in range(3)])
+            n_vertex -= 1
+        self.faces = []
+        while n_face:
+            if "ascii" in data_type:
+                c = f.readline().decode("utf-8").strip()
+                size, *d = [int(v) for v in c.split(" ")]
+            else:
+                size, = struct.unpack("B", f.read(1))
+                d = struct.unpack("<" + "i" * size, f.read(4 * size))
+            if size > 3:
+                tmp = []
+                for i in range(size-2):
+                    tmp.append([d[0], d[i+1], d[i+2]])
+                d = tmp
+            self.faces.append(d)
+            n_face -= 1
+
+    def as_mesh(self):
+        mesh = Triangle(self.vertices, base_shape=(10,))[self.faces].flatten()
+        a = mesh.xyz[0::3, :]
+        b = mesh.xyz[1::3, :]
+        c = mesh.xyz[2::3, :]
+        mesh.normal = (b - a).cross(c - b).U.repeat(3, axis=-2)
+        mesh.color = Color.standard((1,))
+        return mesh
 
 class OBJ:
     '''
@@ -1291,10 +1292,10 @@ class Color(Vector):
 
 
 class Point(Vector):
-    BASE_SHAPE = 7,
     TYPE = "POINTS"
 
-    def __new__(cls, data=[], pointsize=2, texture=""):
+    def __new__(cls, data=[], pointsize=2, texture="", base_shape=(7,)):
+        cls.BASE_SHAPE = base_shape
         ret = super().__new__(cls, data)
         if numpy.any(data) and numpy.shape(data)[-1] < 7 and not texture:
             ret.color = Color.standard(ret.shape[:-2] + (1,))
@@ -1356,8 +1357,8 @@ class Point(Vector):
 class Triangle(Point):
     TYPE = "TRIANGLES"
 
-    def __new__(cls, data=[], texture=""):
-        ret = super().__new__(cls, data, 0, texture)
+    def __new__(cls, data=[], texture="", base_shape=(7,)):
+        ret = super().__new__(cls, data, 0, texture, base_shape)
         return ret
 
 
