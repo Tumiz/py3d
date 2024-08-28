@@ -597,7 +597,6 @@ zoom: mouse wheel`)
                 render() {
                     this.canvasdiv.textContent = ""
                     this.canvasdiv.append(this.canvas)
-                    this.gl.clearColor(0, 0, 0, 0)
                     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT)
                     this.camera.update_world2ndc()
                     this.set_uniform("u_world2ndc", this.camera.world2ndc)
@@ -666,6 +665,7 @@ zoom: mouse wheel`)
                     this.label("Z", [x_tick_min - 0.3 * r_step, y_tick_min - 0.3 * r_step, (z_tick_min + z_tick_max) * 0.5], text_color, ...zaxis_anchor)
                     this.set_attribute("a_position", lines, 3)
                     this.set_attribute("a_color", Array.from({ length: lines.length / 3 * 4 }, (v, i) => i % 4 == 3 ? 0.6 : 0.3), 4)
+                    this.set_uniform("u_pointsize", [0])
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
                 }
             }
