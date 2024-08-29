@@ -115,7 +115,7 @@ class View:
 
     def label(self, text: str, position: list = [0, 0, 0], color="grey", t=0):
         if isinstance(color, Color):
-            color = f"rgb({color.r*255} {color.g*255} {color.b**255})"
+            color = f"rgb({color.r*255} {color.g*255} {color.b*255})"
         return self.__render_args__(t=t, mode="TEXT", text=text,
                                     vertex=position, color=color)
 
