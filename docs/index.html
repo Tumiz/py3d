@@ -7654,7 +7654,7 @@ var _hmt = _hmt || [];
                 }
                 static normalize(array) {
                     let l = mat.norm(array)
-                    return array.map(x => x / l)
+                    return l ? array.map(x => x / l) : [0, 0, 1]
                 }
                 static identity() {
                     return [
@@ -7792,7 +7792,7 @@ var _hmt = _hmt || [];
                         viewpoint = [lookat[0], lookat[1], lookat[2] + height]
                     }
                     this.pose = mat.lookat(viewpoint, lookat, up ? up : [0, 1, 0])
-                    this.height = mat.norm(mat.sub(viewpoint, lookat))
+                    this.height = Math.max(1, mat.norm(mat.sub(viewpoint, lookat)))
                     this.origin_pose = structuredClone(this.pose)
                     this.origin_height = this.height
                     this.far = 100 * this.height
