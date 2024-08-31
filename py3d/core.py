@@ -263,22 +263,49 @@ def rand(*n) -> Vector | Vector2 | Vector3 | Vector4:
     return numpy.random.rand(*n).view(vtype)
 
 
-def chamfer_distance(A: Vector, B: Vector, f_score_threshhold=None) -> float:
+def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distances=False) -> float:
     '''
     chamfer distance between two nd points
+
+    Parameters
+    ----------
+    A, B: Vector
+        Two n D points
+    f_score_threshold: float | None, optional
+        If defined, F-Score will be returned. The default is None
+    return_distances: bool, optional
+        If True, distances between each point and its nearest neighbor will be returned. The default is False
+
+    Returns
+    -------
+    chamfer_distance: float
+        The average squared distance between pairs of nearest neighbors between A and B
+    f_score: float, optional
+        The F-Score, also known as the F-measure, returned only when `f_score_threshold` is defined as a number
+    distances_from_A_to_B: numpy.ndarray, optional
+        Distances between each point in A and its nearest neighbor in B, returned only when `return_distances` is True
+    distances_from_B_to_A: numpy.ndarray, optional
+        Distances between each point in B and its nearest neighbor in A, returned only when `return_distances` is True
     '''
     a = A.flatten()
     b = B.flatten()
-    d1,_ = scipy.spatial.KDTree(a).query(b)
-    d2,_ = scipy.spatial.KDTree(b).query(a)
-    cd = (d1**2).mean() + (d2**2).mean()
-    if f_score_threshhold:
-        precision_1 = (d1 < f_score_threshhold).mean()
-        precision_2 = (d2 < f_score_threshhold).mean()
-        fscore = 2 * precision_1 * precision_2 / (precision_1 + precision_2)
-        return cd, fscore
-    else:
-        return cd
+    b2a,_ = scipy.spatial.KDTree(a).query(b)
+    a2b,_ = scipy.spatial.KDTree(b).query(a)
+    ret = ((b2a**2).mean() + (a2b**2).mean()).item()
+    if f_score_threshold:
+        precision_1 = (a2b < f_score_threshold).mean().item()
+        precision_2 = (b2a < f_score_threshold).mean().item()
+        if precision_1 + precision_2:
+            f_score = 2 * precision_1 * precision_2 / (precision_1 + precision_2)
+        else:
+            f_score = 0
+        ret = (ret, f_score)
+    if return_distances:
+        if isinstance(ret, tuple):
+            ret += (a2b, b2a)
+        else:
+            ret = (ret, a2b, b2a)
+    return ret
 
 class PLY:
     def __init__(self, path):
