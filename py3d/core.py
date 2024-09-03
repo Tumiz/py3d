@@ -16,7 +16,7 @@ import scipy.spatial
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
-numpy.set_printoptions(linewidth=600)
+numpy.set_printoptions(linewidth=600, suppress=True)
 
 
 def sign(v):
@@ -418,6 +418,8 @@ class OBJ:
 class Vector(numpy.ndarray):
     '''
     Base class of Vector2, Vector3, Vector4 and Transform
+
+    See https://tumiz.github.io/py3d/Vector.html for examples.
     '''
     BASE_SHAPE = ()
 
@@ -575,10 +577,18 @@ class Vector(numpy.ndarray):
 
     def lerp(self, target_x, origin_x) -> Vector:
         '''
-        Linear interpolation
-        target_x: 1-D array, the series to be interpolated. For example, time series.
-        origin_x: 1-D array, the series to interpolate 'target_x' into, with same length as self. 
-        Only translation, rotation and scaling can be interpolated
+        Linear interpolation, only translation, rotation and scaling can be interpolated
+
+        Parameters
+        ----------
+        target_x: 1-D array
+            The series to be interpolated. For example, time series.
+        origin_x: 1-D array
+            The series to interpolate 'target_x' into, with same length as self. 
+
+        Returns
+        -------
+        Interpolated values
         '''
         x = numpy.array(target_x)
         xp = numpy.array(origin_x)
@@ -586,7 +596,8 @@ class Vector(numpy.ndarray):
         i = numpy.searchsorted(xp, x).clip(1, len(xp)-1)
         x0 = xp[i-1]
         x1 = xp[i]
-        d = ((x-x0)/(x1-x0)).reshape(-1, 1)
+        shape = (-1, 1) if self.ndim > 1 else (-1,)
+        d = ((x-x0)/(x1-x0)).reshape(*shape)
         f0 = self[i-1]
         f1 = self[i]
         return (1-d)*f0+d*f1
@@ -639,6 +650,12 @@ DATA ascii
         else:
             header = ...
         numpy.savetxt(path, self, delimiter=",", header=header, comments="")
+
+    def to_txt(self, path, delimiter=" ", fmt="%.7f", **arg):
+        '''
+        Convert to text file
+        '''
+        numpy.savetxt(path, self, delimiter=delimiter, fmt=fmt, **arg)
 
     def to_npy(self, path):
         numpy.save(path, self)
