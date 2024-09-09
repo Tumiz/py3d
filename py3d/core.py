@@ -559,18 +559,34 @@ class Vector(numpy.ndarray):
         return super().mean(axis=self.ndim-2)
     
     @property
-    def L2(self) -> Vector:
+    def L1(self) -> Vector:
         '''
-        Squared euclidean distance
+        L1 distance, alse known as Manhattan distance or Manhattan norm.
+        '''
+        return numpy.abs(self).sum(axis=-1)
+    
+    @property
+    def L(self) -> Vector:
+        '''
+        L2 distance, also known as Euclidean distance or Euclidean norm.
+        Same as `L2`
+        '''
+        return self.L2
+    
+    @property
+    def L2s(self) -> Vector:
+        '''
+        Squared L2 distance
         '''
         return (self**2).sum(axis=-1)
 
     @property
-    def L(self) -> numpy.ndarray:
+    def L2(self) -> numpy.ndarray:
         '''
-        Lengths of vectors, also known as euclidean distance or euclidean norm
+        L2 distance, also known as Euclidean distance or Euclidean norm.
+        Same as `L`
         '''
-        return numpy.sqrt(self.L2)
+        return numpy.sqrt(self.L2s)
 
     def diff(self, n=1) -> Vector:
         return numpy.diff(self, n, axis=self.ndim-2)
@@ -751,56 +767,19 @@ class Vector3(Vector):
         return numpy.cross(self, v).view(self.__class__)
 
     def angle_to_vector(self, to: numpy.ndarray) -> Vector3:
-        cos = self.dot(to) / self.L / Vector3(to).L
+        cos = self.dot(to) / self.L2 / Vector3(to).L2
         return numpy.arccos(cos)
 
     def angle_to_plane(self, normal: numpy.ndarray) -> float:
         return numpy.pi / 2 - self.angle_to_vector(normal)
 
     def scalar_projection(self, v: numpy.ndarray) -> float:
-        return self.dot(v) / Vector3(v).L
+        return self.dot(v) / Vector3(v).L2
 
     def vector_projection(self, v: numpy.ndarray) -> Vector3:
-        s = self.scalar_projection(v) / Vector3(v).L
+        s = self.scalar_projection(v) / Vector3(v).L2
         return s.reshape(-1, 1) * v
-
-    def distance_to_line(self, p0: numpy.ndarray, p1: numpy.ndarray) -> float:
-        v0 = p1 - p0
-        v1 = self - p0
-        return v0.cross(v1).L / v0.L
-
-    def distance_to_plane(self, n: numpy.ndarray, p: numpy.ndarray) -> float:
-        # n: normal vector of the plane
-        # p: a point on the plane
-        v = self - p
-        return v.scalar_projection(n)
-
-    def projection_on_line(
-        self, p0: numpy.ndarray, p1: numpy.ndarray
-    ) -> numpy.ndarray:
-        return p0 + (self - p0).vector_projection(p1 - p0)
-
-    def projection_on_plane(self, plane) -> numpy.ndarray:
-        return self + (plane.position[:, numpy.newaxis] - self).vector_projection(
-            plane.normal[:, numpy.newaxis]
-        )
-
-    def closest_point_to_points(self, points: Vector3 | numpy.ndarray | list) -> Vector3:
-        '''
-        return closest point indexes of one point cloud to another point cloud, and also return indexes of the pair points in the another point cloud
-        both self and points should be flattened
-        '''
-        pts = Vector3(points)
-        assert self.ndim < 3, "self should be flattened"
-        assert pts.ndim < 3, "parameter `points` should be flattened"
-        d: Vector = (self[..., numpy.newaxis, :] - pts).L
-        d = d.reshape(*d.shape[:-2], -1)
-        idx = d.argmin(d.ndim-1)
-        spts = sum(pts.n)
-        idx0 = idx//spts
-        idx1 = idx % spts
-        return idx0, idx1
-
+    
     def distance_to_points(self, points: Vector3) -> numpy.ndarray:
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
@@ -1034,7 +1013,7 @@ class Transform(Vector):
         '''
         rv = Vector3(xyz_list, x, y, z)
         axis_angle_list = Vector4().tile(*rv.n)
-        axis_angle_list.w = rv.L
+        axis_angle_list.w = rv.L2
         axis_angle_list.xyz = rv.U
         return cls.from_axis_angle(axis_angle_list)
 
