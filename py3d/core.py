@@ -220,7 +220,7 @@ def read_pcd(path) -> Vector:
     return ret
 
 
-def read_ply(path) -> Triangle:
+def read_ply(path):
     return PLY(path)
 
 
@@ -308,53 +308,78 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distan
     return ret
 
 class PLY:
-    def __init__(self, path):
-        f = open(path, "rb")
-        n_vertex = 0
-        n_face = 0
-        for c in f:
-            c = c.strip().decode("utf-8")
-            if "format" in c:
-                data_type = c.split(" ", 1)[1]
-            elif "element vertex" in c:
-                n_vertex = int(c.split(" ")[-1])
-            elif "element face" in c:
-                n_face = int(c.split(" ")[-1])
-            elif "end_header" in c:
-                break
+    def __init__(self, path=""):
         self.vertices = []
-        while n_vertex:
-            if "ascii" in data_type:
-                c = f.readline().decode("utf-8").strip()
-                self.vertices.append([float(v) for v in c.split(" ")])
-            else:
-                self.vertices.append([struct.unpack("f", f.read(4))[0]
-                                for i in range(3)])
-            n_vertex -= 1
         self.faces = []
-        while n_face:
-            if "ascii" in data_type:
-                c = f.readline().decode("utf-8").strip()
-                size, *d = [int(v) for v in c.split(" ")]
-            else:
-                size, = struct.unpack("B", f.read(1))
-                d = struct.unpack("<" + "i" * size, f.read(4 * size))
-            if size > 3:
-                tmp = []
-                for i in range(size-2):
-                    tmp.append([d[0], d[i+1], d[i+2]])
-                d = tmp
-            self.faces.append(d)
-            n_face -= 1
+        if path:
+            f = open(path, "rb")
+            n_vertex = 0
+            n_face = 0
+            for c in f:
+                c = c.strip().decode("utf-8")
+                if "format" in c:
+                    data_type = c.split(" ", 1)[1]
+                elif "element vertex" in c:
+                    n_vertex = int(c.split(" ")[-1])
+                elif "element face" in c:
+                    n_face = int(c.split(" ")[-1])
+                elif "end_header" in c:
+                    break     
+            while n_vertex:
+                if "ascii" in data_type:
+                    c = f.readline().decode("utf-8").strip()
+                    self.vertices.append([float(v) for v in c.split(" ")])
+                else:
+                    self.vertices.append([struct.unpack("f", f.read(4))[0]
+                                    for i in range(3)])
+                n_vertex -= 1
+            while n_face:
+                if "ascii" in data_type:
+                    c = f.readline().decode("utf-8").strip()
+                    size, *d = [int(v) for v in c.split(" ")]
+                else:
+                    size, = struct.unpack("B", f.read(1))
+                    d = struct.unpack("<" + "i" * size, f.read(4 * size))
+                self.faces.append(d)
+                n_face -= 1
 
     def as_mesh(self):
-        mesh = Triangle(self.vertices, base_shape=(10,))[self.faces].flatten()
+        tris = []
+        for d in self.faces:
+            s = len(d)
+            for i in range(s-2):
+                tris.append([d[0], d[i+1], d[i+2]])
+        mesh = Triangle(self.vertices, base_shape=(10,))[tris].flatten()
         a = mesh.xyz[0::3, :]
         b = mesh.xyz[1::3, :]
         c = mesh.xyz[2::3, :]
         mesh.normal = (b - a).cross(c - b).U.repeat(3, axis=-2)
         mesh.color = Color.standard((1,))
         return mesh
+    
+    def save(self, path):
+        f = open(path, "w")
+        header = f"""
+ply
+format ascii 1.0
+element vertex {len(self.vertices)}
+property float x           
+property float y           
+property float z
+"""
+        if self.faces:
+            header += f"""
+element face {len(self.faces)}
+property list uchar int vertex_index
+"""
+        header += "end_header\n"
+        f.write(header)
+        for x, y, z in self.vertices:
+            f.write(f"{x} {y} {z}\n")
+        for ids in self.faces:
+            f.write(f"{len(ids)} {' '.join([str(i) for i in ids])}\n")
+        f.close()
+
 
 class OBJ:
     '''
@@ -657,6 +682,11 @@ DATA ascii
             f.write(" ".join([str(a) for a in p]) + "\n")
         f.close()
 
+    def to_ply(self, path):
+        ply = PLY()
+        ply.vertices = self.xyz
+        ply.save(path)
+
     def to_csv(self, path):
         '''
         Save data to a csv file
@@ -665,6 +695,7 @@ DATA ascii
             header = ",".join(self.columns)
         else:
             header = ...
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         numpy.savetxt(path, self, delimiter=",", header=header, comments="")
 
     def to_txt(self, path, delimiter=" ", fmt="%.7f", **arg):
