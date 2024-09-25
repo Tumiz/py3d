@@ -470,13 +470,12 @@ class Vector(numpy.ndarray):
     def __imatmul__(self, value) -> Vector:
         return self @ value
 
-    def __getitem__(self, keys) -> Vector:
-        if hasattr(self, "columns"):
-            if isinstance(keys, str):
-                keys = ..., self.columns.index(keys)
-            elif isinstance(keys, tuple) and all(isinstance(k, str) for k in keys):
-                keys = ..., [self.columns.index(key) for key in keys]
-        return super().__getitem__(keys)
+    def a(self, *keys) -> Vector:
+        '''
+        Get attributes by column names
+        '''
+        idx = [self.columns.index(key) for key in keys]
+        return self[..., idx]
 
     def tile(self, *n) -> Vector:
         return numpy.tile(self, n + self.ndim * (1,))
@@ -702,7 +701,7 @@ DATA ascii
         ply.vertices = self.xyz
         ply.save(path)
 
-    def to_csv(self, path):
+    def to_csv(self, path, fmt="%.7f"):
         '''
         Save data to a csv file
         '''
@@ -711,13 +710,14 @@ DATA ascii
         else:
             header = ...
         pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
-        numpy.savetxt(path, self, delimiter=",", header=header, comments="")
+        numpy.savetxt(path, self, fmt, ",", header=header, comments="")
 
     def to_txt(self, path, delimiter=" ", fmt="%.7f", **arg):
         '''
         Convert to text file
         '''
-        numpy.savetxt(path, self, delimiter=delimiter, fmt=fmt, **arg)
+        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+        numpy.savetxt(path, self, fmt, delimiter, **arg)
 
     def to_npy(self, path):
         numpy.save(path, self)
