@@ -289,14 +289,15 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distan
     '''
     a = A.flatten()
     b = B.flatten()
-    b2a,_ = scipy.spatial.KDTree(a).query(b)
-    a2b,_ = scipy.spatial.KDTree(b).query(a)
+    b2a, _ = scipy.spatial.KDTree(a).query(b)
+    a2b, _ = scipy.spatial.KDTree(b).query(a)
     ret = ((b2a**2).mean() + (a2b**2).mean()).item()
     if f_score_threshold:
         precision_1 = (a2b < f_score_threshold).mean().item()
         precision_2 = (b2a < f_score_threshold).mean().item()
         if precision_1 + precision_2:
-            f_score = 2 * precision_1 * precision_2 / (precision_1 + precision_2)
+            f_score = 2 * precision_1 * precision_2 / \
+                (precision_1 + precision_2)
         else:
             f_score = 0
         ret = (ret, f_score)
@@ -306,6 +307,7 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distan
         else:
             ret = (ret, a2b, b2a)
     return ret
+
 
 class PLY:
     def __init__(self, path=""):
@@ -324,14 +326,14 @@ class PLY:
                 elif "element face" in c:
                     n_face = int(c.split(" ")[-1])
                 elif "end_header" in c:
-                    break     
+                    break
             while n_vertex:
                 if "ascii" in data_type:
                     c = f.readline().decode("utf-8").strip()
                     self.vertices.append([float(v) for v in c.split(" ")])
                 else:
                     self.vertices.append([struct.unpack("f", f.read(4))[0]
-                                    for i in range(3)])
+                                          for i in range(3)])
                 n_vertex -= 1
             while n_face:
                 if "ascii" in data_type:
@@ -356,15 +358,15 @@ class PLY:
         mesh.normal = (b - a).cross(c - b).U.repeat(3, axis=-2)
         mesh.color = Color.standard((1,))
         return mesh
-    
+
     def save(self, path):
         f = open(path, "w")
         header = f"""
 ply
 format ascii 1.0
 element vertex {len(self.vertices)}
-property float x           
-property float y           
+property float x
+property float y
 property float z
 """
         if self.faces:
@@ -385,6 +387,7 @@ class OBJ:
     '''
     class to parse obj file
     '''
+
     def __init__(self, obj_path, texture_path="") -> None:
         f = open(obj_path)
         v = []
@@ -422,7 +425,7 @@ class OBJ:
             m.color.xy = self.vt[self.vti]
             m.texture = self.texture
         return m
-    
+
     def as_wireframe(self):
         return self.v[self.vi].xyz.as_lineloop()
 
@@ -582,14 +585,14 @@ class Vector(numpy.ndarray):
     def M(self) -> Vector | Vector2 | Vector3 | Vector4:
         # mean vector
         return super().mean(axis=self.ndim-2)
-    
+
     @property
     def L1(self) -> Vector:
         '''
         L1 distance, alse known as Manhattan distance or Manhattan norm.
         '''
         return numpy.abs(self).sum(axis=-1)
-    
+
     @property
     def L(self) -> Vector:
         '''
@@ -597,7 +600,7 @@ class Vector(numpy.ndarray):
         Same as `L2`
         '''
         return self.L2
-    
+
     @property
     def L2s(self) -> Vector:
         '''
@@ -646,6 +649,18 @@ class Vector(numpy.ndarray):
     def fillna(self, value):
         self[numpy.isnan(self)] = value
         return self
+
+    def dropna(self, axis=None):
+        '''
+        Drop nan elements along an axis, default axis is None
+        '''
+        if axis is None:
+            return self[~numpy.isnan(self)]
+        else:
+            others = [i for i in range(self.ndim) if i != axis]
+            c = self.transpose(axis, *others).reshape(self.shape[axis], -1)
+            idx = numpy.where(~numpy.isnan(c).any(1))[0]
+            return self.take(idx, axis)
 
     def unique(self, axis=-2) -> Vector:
         return numpy.unique(self, axis=axis).view(Vector)
@@ -810,12 +825,12 @@ class Vector3(Vector):
     def vector_projection(self, v: numpy.ndarray) -> Vector3:
         s = self.scalar_projection(v) / Vector3(v).L2
         return s.reshape(-1, 1) * v
-    
+
     def distance_to_points(self, points: Vector3) -> numpy.ndarray:
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
-    def as_point(self, color=None, colormap=None, pointsize=2) -> Point:
-        entity = Point(self).paint(color, colormap, pointsize)
+    def as_point(self, color=None, colormap=None, pointsize=2, fillna_val=0) -> Point:
+        entity = Point(self.fillna(fillna_val)).paint(color, colormap, pointsize)
         return entity
 
     def as_line(self) -> LineSegment:
