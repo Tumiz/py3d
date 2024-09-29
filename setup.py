@@ -2,7 +2,6 @@
 from setuptools import setup, find_packages
 import urllib.request
 import json
-import sys
 
 rep = urllib.request.urlopen("https://pypi.org/pypi/py3d/json")
 rep_dict = json.loads(rep.read().decode())
@@ -25,14 +24,6 @@ def next_version(s):
             i -= 1
     return '.'.join(vs)
 
-def ipython_version(python_version):
-    if python_version==7:
-        return "7.*"
-    elif python_version==8:
-        return ">=8.0,<=8.12"
-    else:
-        return ">=8.13"
-
 setup(
     name="py3d",
     version=next_version(latest_version),
@@ -43,7 +34,7 @@ setup(
     author_email="hh11698@163.com",
     python_requires=">=3.7.0",
     url="https://tumiz.github.io/py3d/",
-    install_requires=["scipy", "pillow", "numpy", "ipython{}".format(ipython_version(sys.version_info.minor))],
+    install_requires=["scipy", "pillow", "numpy"],
     packages=find_packages(),
     data_files=[
         ("/py3d", ["py3d/viewer.html"])
