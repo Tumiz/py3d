@@ -3,7 +3,6 @@
 from __future__ import annotations
 import PIL.Image
 import numpy
-from IPython.display import display, HTML, clear_output
 from typing import Dict
 import pathlib
 import json
@@ -61,7 +60,7 @@ class View:
         self.size = (600, 1000)
         return html
 
-    def show(self, viewpoint=None, lookat=None, up=None, inplace=True, size=[], in_jupyter=True, name="py3d", port=9871):
+    def show(self, viewpoint=None, lookat=None, up=None, size=[], in_jupyter=True, name="py3d", port=9871):
         '''
         same as py3d.show
         '''
@@ -70,9 +69,7 @@ class View:
         self.up = up
         self.size = size
         if in_jupyter:
-            if inplace:
-                clear_output(True)
-            return display(HTML(self._repr_html_()))
+            return self
         else:
             index = f"{name}.html"
             open(index, "w").write(self._repr_html_())
@@ -133,7 +130,7 @@ def label(text, position: list = [0, 0, 0], color="grey", t=0):
     return default_view.label(text, position, color, t)
 
 
-def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
+def show(viewpoint=None, lookat=None, up=None, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
     """
     Display all rendered objects in one scene
 
@@ -161,7 +158,7 @@ def show(viewpoint=None, lookat=None, up=None, inplace=True, size=[600, 1000], i
     out: View
     Default view
     """
-    return default_view.show(viewpoint, lookat, up, inplace, size, in_jupyter, name, port)
+    return default_view.show(viewpoint, lookat, up, size, in_jupyter, name, port)
 
 
 def read_img(path) -> Vector:
