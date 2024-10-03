@@ -28,6 +28,68 @@ def launch_server(ip, port):
     server.serve_forever()
 
 
+class KDTree:
+    def __init__(self, K, split=None, parent=None) -> None:
+        self.left = None
+        self.right = None
+        self.K = K        
+        self.split = split
+        self.parent = parent
+
+    def __repr__(self) -> str:
+        ret = str(self.split) + "\n"
+        if self.left:
+            ret += str(self.left.split)
+        if self.right:
+            ret += str(self.right.split)
+        ret += "\n"
+        return ret
+
+    @classmethod
+    def load(cls, data):
+        shape = numpy.shape(data)
+        K = shape[-1] if len(shape) else 1
+        ret = cls._load(numpy.reshape(data, (-1, K)), 0, K)
+        return ret
+
+    @classmethod
+    def _load(cls, d, dim, K, parent=None):
+        size = len(d)
+        if size == 0:
+            return None
+        elif size == 1:
+            return KDTree(K, d[0], parent)
+        else:
+            idx = numpy.argsort(d[..., dim])
+            sd = d[idx]
+            node = KDTree(K, sd[size//2], parent)
+            next_dim = (dim+1) % K
+            node.left = cls._load(sd[:size//2], next_dim, K, node)
+            node.right = cls._load(sd[size//2:], next_dim, K, node)
+            return node
+
+    def locate(self, v, dim=0):
+        if v[dim] < self.split[dim]:
+            return self if self.left else self.left.search(v, (dim+1) % len(v))
+        else:
+            return self if self.right else self.right.search(v, (dim+1) % len(v))
+        
+    def search(self, v):            
+        d = (v - self.split).L
+        if self.left:  
+            dl = (v - self.left.split)
+        if self.left:
+            pass
+
+    def query(self, values):
+        ret = []
+        shape = numpy.shape(values)
+        values = numpy.reshape(values, (-1, self.K))
+        for v in values:
+            ret.append(self.search(v))
+        return numpy.reshape(ret, shape)
+
+
 class View:
     __preload__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
@@ -295,6 +357,61 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distan
     b = B.flatten()
     b2a, _ = scipy.spatial.KDTree(a).query(b)
     a2b, _ = scipy.spatial.KDTree(b).query(a)
+    ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
+    if return_distances:
+        ret += [a2b, b2a]
+    if f_score_threshold:
+        precision_a2b = (a2b < f_score_threshold).mean().item()
+        precision_b2a = (b2a < f_score_threshold).mean().item()
+        if precision_a2b + precision_b2a:
+            f_score = 2 * precision_a2b * precision_b2a / \
+                (precision_a2b + precision_b2a)
+        else:
+            f_score = 0
+        ret.append(f_score)
+        if return_precisions:
+            ret += [precision_a2b, precision_b2a]
+    if len(ret) == 1:
+        return ret[0]
+    else:
+        return tuple(ret)
+
+
+def cd(A: Vector, B: Vector, f_score_threshold=None, return_distances=False, return_precisions=False) -> float:
+    '''
+    chamfer distance between two nd points
+
+    Parameters
+    ----------
+    A, B: Vector
+        Two n D points
+    f_score_threshold: float | None, optional
+        If defined, F-Score will be returned. The default is None
+    return_distances: bool, optional
+        If True, distances between each point and its nearest neighbor will be returned. The default is False
+    return_precisions: bool, optional
+        If True, precisions between two points will be returned. The default is False
+
+    Returns
+    -------
+    chamfer_distance: float
+        The average squared distance between pairs of nearest neighbors between A and B
+    distances_from_A_to_B: numpy.ndarray, optional
+        Distances between each point in A and its nearest neighbor in B, returned only when `return_distances` is True
+    distances_from_B_to_A: numpy.ndarray, optional
+        Distances between each point in B and its nearest neighbor in A, returned only when `return_distances` is True
+    f_score: float, optional
+        The F-Score, also known as the F-measure, returned only when `f_score_threshold` is defined as a number
+    precision_from_A_to_B: numpy.ndarray, optional
+        Precision from A to B
+    precision_from_B_to_A: numpy.ndarray, optional
+        Precision from B to A
+    '''
+    ret = []
+    a = A.flatten()
+    b = B.flatten()
+    b2a = (KDTree.load(a).query(b) - b).L
+    a2b = (KDTree.load(b).query(a) - a).L
     ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
     if return_distances:
         ret += [a2b, b2a]
@@ -836,7 +953,8 @@ class Vector3(Vector):
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
     def as_point(self, color=None, colormap=None, pointsize=2, fillna_val=0) -> Point:
-        entity = Point(self.fillna(fillna_val)).paint(color, colormap, pointsize)
+        entity = Point(self.fillna(fillna_val)).paint(
+            color, colormap, pointsize)
         return entity
 
     def as_line(self) -> LineSegment:
