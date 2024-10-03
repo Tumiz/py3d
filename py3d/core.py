@@ -37,12 +37,24 @@ class KDTree:
         self.parent = parent
 
     def __repr__(self) -> str:
-        ret = str(self.split) + "\n"
-        if self.left:
-            ret += str(self.left.split)
-        if self.right:
-            ret += str(self.right.split)
-        ret += "\n"
+        ret = f"{self.split}\n"
+        nodes = [self]
+        while nodes:
+            tmp = []
+            for node in nodes:
+                if node.left:
+                    ret += str(node.left.split) + ","
+                    tmp.append(node.left)
+                else:
+                    ret += "-,"
+                if node.right:
+                    ret += str(node.right.split)
+                    tmp.append(node.right)
+                else:
+                    ret += "-"
+                ret += " "
+            ret += "\n"
+            nodes = tmp
         return ret
 
     @classmethod
@@ -70,24 +82,41 @@ class KDTree:
 
     def locate(self, v, dim=0):
         if v[dim] < self.split[dim]:
-            return self if self.left else self.left.search(v, (dim+1) % len(v))
+            return self if not self.left else self.left.locate(v, (dim+1) % len(v))
         else:
-            return self if self.right else self.right.search(v, (dim+1) % len(v))
+            return self if not self.right else self.right.locate(v, (dim+1) % len(v))
         
-    def search(self, v):            
+    def search(self, v):
+        ret = self.split            
         d = (v - self.split).L
-        if self.left:  
-            dl = (v - self.left.split)
         if self.left:
-            pass
+            dl = (v - self.left.split).L
+            if dl < d:
+                ret = self.left.split
+                d = dl
+        if self.right:
+            dr = (v - self.right.split).L
+            if dr < d:
+                ret = self.right.split
+                d = dr
+        if self.parent:
+            dp, retp = self.parent.search(v)
+            if dp < d:
+                d = dp
+                ret = retp
+        return d, ret
 
     def query(self, values):
+        ds = []
         ret = []
         shape = numpy.shape(values)
         values = numpy.reshape(values, (-1, self.K))
         for v in values:
-            ret.append(self.search(v))
-        return numpy.reshape(ret, shape)
+            loc = self.locate(v)
+            d, r = loc.search(v)
+            ds.append(d)
+            ret.append(r)
+        return numpy.reshape(ds, shape[:-1]), numpy.reshape(ret, shape)
 
 
 class View:
@@ -410,8 +439,8 @@ def cd(A: Vector, B: Vector, f_score_threshold=None, return_distances=False, ret
     ret = []
     a = A.flatten()
     b = B.flatten()
-    b2a = (KDTree.load(a).query(b) - b).L
-    a2b = (KDTree.load(b).query(a) - a).L
+    b2a, _ = KDTree.load(a).query(b)
+    a2b, _ = KDTree.load(b).query(a)
     ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
     if return_distances:
         ret += [a2b, b2a]
