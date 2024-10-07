@@ -28,13 +28,12 @@ def launch_server(ip, port):
     server.serve_forever()
 
 
-class KDTree:
-    def __init__(self, K, split=None, parent=None) -> None:
+class KDNode:
+    def __init__(self, K, parent:None|KDNode=None):
+        self.dim = (parent.dim+1) % K if parent else 0
+        self.split = 0
         self.left = None
         self.right = None
-        self.K = K        
-        self.split = split
-        self.parent = parent
 
     def __repr__(self) -> str:
         ret = f"{self.split}\n"
@@ -57,66 +56,56 @@ class KDTree:
             nodes = tmp
         return ret
 
-    @classmethod
-    def load(cls, data):
+
+class KDTree:
+    def __init__(self, data):
         shape = numpy.shape(data)
-        K = shape[-1] if len(shape) else 1
-        ret = cls._load(numpy.reshape(data, (-1, K)), 0, K)
-        return ret
+        self.K = shape[-1] if len(shape) else 1
+        self.data = numpy.reshape(data, (-1, self.K))
+        self.tree = self.load(numpy.arange(len(data)), None)
 
-    @classmethod
-    def _load(cls, d, dim, K, parent=None):
-        size = len(d)
+    def load(self, idx, parent:None|KDNode):
+        size = len(idx)
         if size == 0:
-            return None
+            node = None
         elif size == 1:
-            return KDTree(K, d[0], parent)
+            node = KDNode(self.K, parent)
+            node.split = idx[0]
         else:
-            idx = numpy.argsort(d[..., dim])
-            sd = d[idx]
-            node = KDTree(K, sd[size//2], parent)
-            next_dim = (dim+1) % K
-            node.left = cls._load(sd[:size//2], next_dim, K, node)
-            node.right = cls._load(sd[size//2:], next_dim, K, node)
-            return node
-
-    def locate(self, v, dim=0):
-        if v[dim] < self.split[dim]:
-            return self if not self.left else self.left.locate(v, (dim+1) % len(v))
-        else:
-            return self if not self.right else self.right.locate(v, (dim+1) % len(v))
+            node = KDNode(self.K, parent)
+            sidx = idx[numpy.argsort(self.data[idx, node.dim])]
+            mid = size//2
+            node.split = sidx[mid]
+            node.left = self.load(sidx[:mid], node)
+            node.right = self.load(sidx[mid+1:], node)
+        return node
         
-    def search(self, v):
-        ret = self.split            
-        d = (v - self.split).L
-        if self.left:
-            dl = (v - self.left.split).L
-            if dl < d:
-                ret = self.left.split
-                d = dl
-        if self.right:
-            dr = (v - self.right.split).L
-            if dr < d:
-                ret = self.right.split
-                d = dr
-        if self.parent:
-            dp, retp = self.parent.search(v)
-            if dp < d:
-                d = dp
-                ret = retp
-        return d, ret
+    def search(self, v, node:KDNode, visited:list):
+        i = node.split            
+        d = (v - self.data[node.split]).L
+        visited[i] = True
+        if node.left and not visited[node.left.split]:
+            td, ti = self.search(v, node.left, visited)
+            if td < d:
+                d, i = td, ti
+        if node.right and not visited[node.right.split]:
+            if abs(self.data[node.split, node.dim] - v[node.dim]) < d:
+                td, ti = self.search(v, node.right, visited)
+                if td < d:
+                    d, i = td, ti
+        return d, i
 
     def query(self, values):
         ds = []
-        ret = []
+        ids = []
         shape = numpy.shape(values)
         values = numpy.reshape(values, (-1, self.K))
         for v in values:
-            loc = self.locate(v)
-            d, r = loc.search(v)
+            visited = [False] * len(self.data)
+            d, i = self.search(v, self.tree, visited)
             ds.append(d)
-            ret.append(r)
-        return numpy.reshape(ds, shape[:-1]), numpy.reshape(ret, shape)
+            ids.append(i)
+        return numpy.reshape(ds, shape[:-1]), numpy.reshape(ids, shape[:-1])
 
 
 class View:
@@ -439,8 +428,8 @@ def cd(A: Vector, B: Vector, f_score_threshold=None, return_distances=False, ret
     ret = []
     a = A.flatten()
     b = B.flatten()
-    b2a, _ = KDTree.load(a).query(b)
-    a2b, _ = KDTree.load(b).query(a)
+    b2a, _ = KDTree(a).query(b)
+    a2b, _ = KDTree(b).query(a)
     ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
     if return_distances:
         ret += [a2b, b2a]
