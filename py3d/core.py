@@ -29,11 +29,12 @@ def launch_server(ip, port):
 
 
 class KDNode:
-    def __init__(self, K, parent:None|KDNode=None):
+    def __init__(self, K, parent: None | KDNode = None):
         self.dim = (parent.dim+1) % K if parent else 0
-        self.split = 0
+        self.split = None
         self.left = None
         self.right = None
+        self.leaves = []
 
     def __repr__(self) -> str:
         ret = f"{self.split}\n"
@@ -64,33 +65,42 @@ class KDTree:
         self.data = numpy.reshape(data, (-1, self.K))
         self.tree = self.load(numpy.arange(len(data)), None)
 
-    def load(self, idx, parent:None|KDNode):
+    def load(self, idx, parent: None | KDNode):
         size = len(idx)
         if size == 0:
             node = None
-        elif size == 1:
-            node = KDNode(self.K, parent)
-            node.split = idx[0]
         else:
             node = KDNode(self.K, parent)
-            sidx = idx[numpy.argsort(self.data[idx, node.dim])]
-            mid = size//2
-            node.split = sidx[mid]
-            node.left = self.load(sidx[:mid], node)
-            node.right = self.load(sidx[mid+1:], node)
+            if size <= 100:
+                node.leaves = idx
+            else:
+                sidx = idx[numpy.argsort(self.data[idx, node.dim])]
+                mid = size//2
+                node.split = sidx[mid]
+                node.left = self.load(sidx[:mid], node)
+                node.right = self.load(sidx[mid+1:], node)
         return node
-        
-    def search(self, v, node:KDNode, visited:list):
-        i = node.split            
-        d = (v - self.data[node.split]).L
-        visited[i] = True
-        if node.left and not visited[node.left.split]:
-            td, ti = self.search(v, node.left, visited)
-            if td < d:
-                d, i = td, ti
-        if node.right and not visited[node.right.split]:
-            if abs(self.data[node.split, node.dim] - v[node.dim]) < d:
-                td, ti = self.search(v, node.right, visited)
+
+    def search(self, v, node: KDNode):
+        if node.split is None:
+            ds = (v - self.data[node.leaves]).L
+            li = ds.argmin()
+            i = node.leaves[li]
+            d = ds[li]
+        else:
+            i = node.split
+            d = (v - self.data[node.split]).L
+            dd = self.data[node.split, node.dim] - v[node.dim]
+            if dd >= 0:
+                first, second = node.left, node.right
+            else:
+                first, second = node.right, node.left
+            if first:
+                td, ti = self.search(v, first)
+                if td < d:
+                    d, i = td, ti
+            if second and abs(dd) < d:
+                td, ti = self.search(v, second)
                 if td < d:
                     d, i = td, ti
         return d, i
@@ -101,8 +111,7 @@ class KDTree:
         shape = numpy.shape(values)
         values = numpy.reshape(values, (-1, self.K))
         for v in values:
-            visited = [False] * len(self.data)
-            d, i = self.search(v, self.tree, visited)
+            d, i = self.search(v, self.tree)
             ds.append(d)
             ids.append(i)
         return numpy.reshape(ds, shape[:-1]), numpy.reshape(ids, shape[:-1])
