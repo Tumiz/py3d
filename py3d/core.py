@@ -58,11 +58,36 @@ class KDNode:
         return ret
 
 
+class KDNode:
+    def __init__(self, K, parent = None):
+        self.dim = (parent.dim+1) % K if parent else 0
+        self.split = None
+        self.left = None
+        self.right = None
+        self.leaves = []
+
+    def __repr__(self) -> str:
+        ret = ""
+        nodes = [self]
+        while nodes:
+            tmp = []
+            for node in nodes:
+                if node.split is None:
+                    ret += f"{node.leaves}"
+                else:
+                    ret += f"{node.split}"
+                    tmp += [node.left, node.right]
+                ret += " "
+            ret += "\n"
+            nodes = tmp
+        return ret
+    
 class KDTree:
-    def __init__(self, data):
+    def __init__(self, data, leaf_size=60):
         shape = numpy.shape(data)
         self.K = shape[-1] if len(shape) else 1
         self.data = numpy.reshape(data, (-1, self.K))
+        self.leaf_size = leaf_size
         self.tree = self.load(numpy.arange(len(data)), None)
 
     def load(self, idx, parent: None | KDNode):
@@ -71,38 +96,34 @@ class KDTree:
             node = None
         else:
             node = KDNode(self.K, parent)
-            if size <= 100:
+            if size <= self.leaf_size:
                 node.leaves = idx
             else:
                 sidx = idx[numpy.argsort(self.data[idx, node.dim])]
                 mid = size//2
-                node.split = sidx[mid]
+                node.split = self.data[sidx[mid], node.dim]
                 node.left = self.load(sidx[:mid], node)
-                node.right = self.load(sidx[mid+1:], node)
+                node.right = self.load(sidx[mid:], node)
         return node
 
-    def search(self, v, node: KDNode):
+    def search(self, v, node: KDNode, d=float("inf"), i=-1):
         if node.split is None:
-            ds = (v - self.data[node.leaves]).L
-            li = ds.argmin()
-            i = node.leaves[li]
-            d = ds[li]
+            ds = numpy.sqrt(numpy.sum((v - self.data[node.leaves])**2, axis=-1))
+            li = numpy.argmin(ds).item()
+            ti = node.leaves[li].item()
+            td = ds[li]
+            if td < d:
+                d, i = td, ti
         else:
-            i = node.split
-            d = (v - self.data[node.split]).L
-            dd = self.data[node.split, node.dim] - v[node.dim]
-            if dd >= 0:
-                first, second = node.left, node.right
+            dd = node.split - v[node.dim]
+            if dd > 0:
+                d, i = self.search(v, node.left, d, i)
+                if dd < d:
+                    d, i = self.search(v, node.right, d, i)
             else:
-                first, second = node.right, node.left
-            if first:
-                td, ti = self.search(v, first)
-                if td < d:
-                    d, i = td, ti
-            if second and abs(dd) < d:
-                td, ti = self.search(v, second)
-                if td < d:
-                    d, i = td, ti
+                d, i = self.search(v, node.right, d, i)
+                if -dd < d:
+                    d, i = self.search(v, node.left, d, i)
         return d, i
 
     def query(self, values):
