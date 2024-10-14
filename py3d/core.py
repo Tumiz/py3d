@@ -11,7 +11,6 @@ import multiprocessing
 import http.server
 import socket
 import base64
-import scipy.spatial
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -109,8 +108,8 @@ class KDTree:
     def search(self, v, node: KDNode, d=float("inf"), i=-1):
         if node.split is None:
             ds = numpy.sqrt(numpy.sum((v - self.data[node.leaves])**2, axis=-1))
-            li = numpy.argmin(ds).item()
-            ti = node.leaves[li].item()
+            li = numpy.argmin(ds)
+            ti = node.leaves[li]
             td = ds[li]
             if td < d:
                 d, i = td, ti
@@ -371,61 +370,6 @@ def rand(*n) -> Vector | Vector2 | Vector3 | Vector4:
 
 
 def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distances=False, return_precisions=False) -> float:
-    '''
-    chamfer distance between two nd points
-
-    Parameters
-    ----------
-    A, B: Vector
-        Two n D points
-    f_score_threshold: float | None, optional
-        If defined, F-Score will be returned. The default is None
-    return_distances: bool, optional
-        If True, distances between each point and its nearest neighbor will be returned. The default is False
-    return_precisions: bool, optional
-        If True, precisions between two points will be returned. The default is False
-
-    Returns
-    -------
-    chamfer_distance: float
-        The average squared distance between pairs of nearest neighbors between A and B
-    distances_from_A_to_B: numpy.ndarray, optional
-        Distances between each point in A and its nearest neighbor in B, returned only when `return_distances` is True
-    distances_from_B_to_A: numpy.ndarray, optional
-        Distances between each point in B and its nearest neighbor in A, returned only when `return_distances` is True
-    f_score: float, optional
-        The F-Score, also known as the F-measure, returned only when `f_score_threshold` is defined as a number
-    precision_from_A_to_B: numpy.ndarray, optional
-        Precision from A to B
-    precision_from_B_to_A: numpy.ndarray, optional
-        Precision from B to A
-    '''
-    ret = []
-    a = A.flatten()
-    b = B.flatten()
-    b2a, _ = scipy.spatial.KDTree(a).query(b)
-    a2b, _ = scipy.spatial.KDTree(b).query(a)
-    ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
-    if return_distances:
-        ret += [a2b, b2a]
-    if f_score_threshold:
-        precision_a2b = (a2b < f_score_threshold).mean().item()
-        precision_b2a = (b2a < f_score_threshold).mean().item()
-        if precision_a2b + precision_b2a:
-            f_score = 2 * precision_a2b * precision_b2a / \
-                (precision_a2b + precision_b2a)
-        else:
-            f_score = 0
-        ret.append(f_score)
-        if return_precisions:
-            ret += [precision_a2b, precision_b2a]
-    if len(ret) == 1:
-        return ret[0]
-    else:
-        return tuple(ret)
-
-
-def cd(A: Vector, B: Vector, f_score_threshold=None, return_distances=False, return_precisions=False) -> float:
     '''
     chamfer distance between two nd points
 
