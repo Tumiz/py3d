@@ -11,7 +11,6 @@ import multiprocessing
 import http.server
 import socket
 import base64
-import scipy.spatial
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -26,6 +25,116 @@ def launch_server(ip, port):
     server = http.server.HTTPServer(
         (ip, port), http.server.SimpleHTTPRequestHandler)
     server.serve_forever()
+
+
+class KDNode:
+    def __init__(self, K, parent: None | KDNode = None):
+        self.dim = (parent.dim+1) % K if parent else 0
+        self.split = None
+        self.left = None
+        self.right = None
+        self.leaves = []
+
+    def __repr__(self) -> str:
+        ret = f"{self.split}\n"
+        nodes = [self]
+        while nodes:
+            tmp = []
+            for node in nodes:
+                if node.left:
+                    ret += str(node.left.split) + ","
+                    tmp.append(node.left)
+                else:
+                    ret += "-,"
+                if node.right:
+                    ret += str(node.right.split)
+                    tmp.append(node.right)
+                else:
+                    ret += "-"
+                ret += " "
+            ret += "\n"
+            nodes = tmp
+        return ret
+
+
+class KDNode:
+    def __init__(self, K, parent = None):
+        self.dim = (parent.dim+1) % K if parent else 0
+        self.split = None
+        self.left = None
+        self.right = None
+        self.leaves = []
+
+    def __repr__(self) -> str:
+        ret = ""
+        nodes = [self]
+        while nodes:
+            tmp = []
+            for node in nodes:
+                if node.split is None:
+                    ret += f"{node.leaves}"
+                else:
+                    ret += f"{node.split}"
+                    tmp += [node.left, node.right]
+                ret += " "
+            ret += "\n"
+            nodes = tmp
+        return ret
+    
+class KDTree:
+    def __init__(self, data, leaf_size=60):
+        shape = numpy.shape(data)
+        self.K = shape[-1] if len(shape) else 1
+        self.data = numpy.reshape(data, (-1, self.K))
+        self.leaf_size = leaf_size
+        self.tree = self.load(numpy.arange(len(data)), None)
+
+    def load(self, idx, parent: None | KDNode):
+        size = len(idx)
+        if size == 0:
+            node = None
+        else:
+            node = KDNode(self.K, parent)
+            if size <= self.leaf_size:
+                node.leaves = idx
+            else:
+                sidx = idx[numpy.argsort(self.data[idx, node.dim])]
+                mid = size//2
+                node.split = self.data[sidx[mid], node.dim]
+                node.left = self.load(sidx[:mid], node)
+                node.right = self.load(sidx[mid:], node)
+        return node
+
+    def search(self, v, node: KDNode, d=float("inf"), i=-1):
+        if node.split is None:
+            ds = numpy.sqrt(numpy.sum((v - self.data[node.leaves])**2, axis=-1))
+            li = numpy.argmin(ds)
+            ti = node.leaves[li]
+            td = ds[li]
+            if td < d:
+                d, i = td, ti
+        else:
+            dd = node.split - v[node.dim]
+            if dd > 0:
+                d, i = self.search(v, node.left, d, i)
+                if dd < d:
+                    d, i = self.search(v, node.right, d, i)
+            else:
+                d, i = self.search(v, node.right, d, i)
+                if -dd < d:
+                    d, i = self.search(v, node.left, d, i)
+        return d, i
+
+    def query(self, values):
+        ds = []
+        ids = []
+        shape = numpy.shape(values)
+        values = numpy.reshape(values, (-1, self.K))
+        for v in values:
+            d, i = self.search(v, self.tree)
+            ds.append(d)
+            ids.append(i)
+        return numpy.reshape(ds, shape[:-1]), numpy.reshape(ids, shape[:-1])
 
 
 class View:
@@ -293,8 +402,8 @@ def chamfer_distance(A: Vector, B: Vector, f_score_threshold=None, return_distan
     ret = []
     a = A.flatten()
     b = B.flatten()
-    b2a, _ = scipy.spatial.KDTree(a).query(b)
-    a2b, _ = scipy.spatial.KDTree(b).query(a)
+    b2a, _ = KDTree(a).query(b)
+    a2b, _ = KDTree(b).query(a)
     ret.append(((b2a**2).mean() + (a2b**2).mean()).item())
     if return_distances:
         ret += [a2b, b2a]
@@ -836,7 +945,8 @@ class Vector3(Vector):
         return (self[..., None, :] - points).L.min(axis=-1).mean()
 
     def as_point(self, color=None, colormap=None, pointsize=2, fillna_val=0) -> Point:
-        entity = Point(self.fillna(fillna_val)).paint(color, colormap, pointsize)
+        entity = Point(self.fillna(fillna_val)).paint(
+            color, colormap, pointsize)
         return entity
 
     def as_line(self) -> LineSegment:

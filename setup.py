@@ -34,7 +34,7 @@ setup(
     author_email="hh11698@163.com",
     python_requires=">=3.7.0",
     url="https://tumiz.github.io/py3d/",
-    install_requires=["scipy", "pillow", "numpy"],
+    install_requires=["pillow", "numpy"],
     packages=find_packages(),
     data_files=[
         ("/py3d", ["py3d/viewer.html"])
