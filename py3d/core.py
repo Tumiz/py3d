@@ -33,7 +33,7 @@ class KDNode:
         self.split = None
         self.left = None
         self.right = None
-        self.leaves = []
+        self.idx = []
 
     def __repr__(self) -> str:
         ret = f"{self.split}\n"
@@ -57,31 +57,32 @@ class KDNode:
         return ret
 
 
-class KDNode:
-    def __init__(self, K, parent = None):
-        self.dim = (parent.dim+1) % K if parent else 0
-        self.split = None
-        self.left = None
-        self.right = None
-        self.leaves = []
-
-    def __repr__(self) -> str:
-        ret = ""
-        nodes = [self]
-        while nodes:
-            tmp = []
-            for node in nodes:
-                if node.split is None:
-                    ret += f"{node.leaves}"
-                else:
-                    ret += f"{node.split}"
-                    tmp += [node.left, node.right]
-                ret += " "
-            ret += "\n"
-            nodes = tmp
-        return ret
-    
 class KDTree:
+    class KDNode:
+        def __init__(self, K, parent = None):
+            self.dim = (parent.dim+1) % K if parent else 0
+            self.split = None
+            self.left = None
+            self.right = None
+            self.idx = []
+            self.val = []
+
+        def __repr__(self) -> str:
+            ret = ""
+            nodes = [self]
+            while nodes:
+                tmp = []
+                for node in nodes:
+                    if node.split is None:
+                        ret += f"{node.idx}"
+                    else:
+                        ret += f"{node.split}"
+                        tmp += [node.left, node.right]
+                    ret += " "
+                ret += "\n"
+                nodes = tmp
+            return ret
+        
     def __init__(self, data, leaf_size=60):
         shape = numpy.shape(data)
         self.K = shape[-1] if len(shape) else 1
@@ -96,7 +97,8 @@ class KDTree:
         else:
             node = KDNode(self.K, parent)
             if size <= self.leaf_size:
-                node.leaves = idx
+                node.idx = idx
+                node.val = self.data[idx]
             else:
                 sidx = idx[numpy.argsort(self.data[idx, node.dim])]
                 mid = size//2
@@ -107,21 +109,20 @@ class KDTree:
 
     def search(self, v, node: KDNode, d=float("inf"), i=-1):
         if node.split is None:
-            ds = numpy.sqrt(numpy.sum((v - self.data[node.leaves])**2, axis=-1))
+            ds = numpy.linalg.norm(v - node.val, axis=1)
             li = numpy.argmin(ds)
-            ti = node.leaves[li]
             td = ds[li]
-            if td < d:
-                d, i = td, ti
+            if d - td > 0:
+                d, i = td, node.idx[li]
         else:
             dd = node.split - v[node.dim]
             if dd > 0:
                 d, i = self.search(v, node.left, d, i)
-                if dd < d:
+                if d - dd > 0:
                     d, i = self.search(v, node.right, d, i)
             else:
                 d, i = self.search(v, node.right, d, i)
-                if -dd < d:
+                if d + dd > 0:
                     d, i = self.search(v, node.left, d, i)
         return d, i
 
