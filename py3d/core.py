@@ -27,39 +27,9 @@ def launch_server(ip, port):
     server.serve_forever()
 
 
-class KDNode:
-    def __init__(self, K, parent: None | KDNode = None):
-        self.dim = (parent.dim+1) % K if parent else 0
-        self.split = None
-        self.left = None
-        self.right = None
-        self.idx = []
-
-    def __repr__(self) -> str:
-        ret = f"{self.split}\n"
-        nodes = [self]
-        while nodes:
-            tmp = []
-            for node in nodes:
-                if node.left:
-                    ret += str(node.left.split) + ","
-                    tmp.append(node.left)
-                else:
-                    ret += "-,"
-                if node.right:
-                    ret += str(node.right.split)
-                    tmp.append(node.right)
-                else:
-                    ret += "-"
-                ret += " "
-            ret += "\n"
-            nodes = tmp
-        return ret
-
-
 class KDTree:
     class KDNode:
-        def __init__(self, K, parent = None):
+        def __init__(self, K, parent=None):
             self.dim = (parent.dim+1) % K if parent else 0
             self.split = None
             self.left = None
@@ -82,7 +52,7 @@ class KDTree:
                 ret += "\n"
                 nodes = tmp
             return ret
-        
+
     def __init__(self, data, leaf_size=60):
         shape = numpy.shape(data)
         self.K = shape[-1] if len(shape) else 1
@@ -95,7 +65,7 @@ class KDTree:
         if size == 0:
             node = None
         else:
-            node = KDNode(self.K, parent)
+            node = self.KDNode(self.K, parent)
             if size <= self.leaf_size:
                 node.idx = idx
                 node.val = self.data[idx]
@@ -461,7 +431,13 @@ class PLY:
                 self.faces.append(d)
                 n_face -= 1
 
-    def as_mesh(self):
+    def _repr_html_(self) -> str:
+        if self.faces:
+            return self.as_mesh()._repr_html_()
+        else:
+            return self.as_point()._repr_html_()
+
+    def as_mesh(self) -> Triangle:
         tris = []
         for d in self.faces:
             s = len(d)
@@ -475,9 +451,12 @@ class PLY:
         mesh.color = Color.standard((1,))
         return mesh
 
+    def as_point(self) -> Point:
+        return Point(self.vertices)
+
     def save(self, path):
         f = open(path, "w")
-        header = f"""
+        header = f"""\
 ply
 format ascii 1.0
 element vertex {len(self.vertices)}
@@ -528,13 +507,21 @@ class OBJ:
         self.vti = Vector(vti)
         self.texture = texture_path
 
-    def as_point(self, color=None, colormap=None, pointsize=2):
+    def _repr_html_(self):
+        if self.texture:
+            return self.as_mesh()._repr_html_()
+        elif any(self.vi):
+            return self.as_wireframe()._repr_html_()
+        else:
+            return self.as_point()._repr_html_()
+
+    def as_point(self, color=None, colormap=None, pointsize=2) -> Point:
         p = self.v.xyz.as_point(color, colormap, pointsize)
         if self.v.shape[-1] > 3:
             p.color = Color(self.v[..., 3:])
         return p
 
-    def as_mesh(self):
+    def as_mesh(self) -> Triangle:
         m = self.v[self.vi].xyz.as_triangle()
         if self.texture:
             m.color = 0
@@ -542,7 +529,7 @@ class OBJ:
             m.texture = self.texture
         return m
 
-    def as_wireframe(self):
+    def as_wireframe(self) -> LineSegment:
         return self.v[self.vi].xyz.as_lineloop()
 
     def save(self, path):
