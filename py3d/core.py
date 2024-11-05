@@ -108,7 +108,26 @@ class KDTree:
         return numpy.reshape(ds, shape[:-1]), numpy.reshape(ids, shape[:-1])
 
 
-class View:
+class Viewer:
+    try:
+        __display__ = display
+    except:
+        __display__ = None
+
+    class JS:
+        def __init__(self, script) -> None:
+            self.script = script
+
+        def _repr_javascript_(self):
+            return self.script
+
+    class HTML:
+        def __init__(self, script) -> None:
+            self.script = script
+
+        def _repr_html_(self):
+            return self.script
+
     __preload__ = open(pathlib.Path(__file__).parent/"viewer.html").read()
 
     def __init__(self) -> None:
@@ -119,6 +138,7 @@ class View:
         self.lookat = None
         self.up = None
         self.size = (600, 1000)
+        self.handle = None
 
     def __render_args__(self, t, **args):
         t = round(t, 3)
@@ -129,8 +149,8 @@ class View:
         return self
 
     def _repr_html_(self):
-        html = self.__preload__.replace(
-            "PY#D_ARGS", json.dumps(self.__dict__))
+        self.handle = None
+        html = self.__preload__.replace("PY#D_ARGS", json.dumps(self.__dict__))
         self.cache.clear()
         self.max = []
         self.min = []
@@ -140,7 +160,7 @@ class View:
         self.size = (600, 1000)
         return html
 
-    def show(self, viewpoint=None, lookat=None, up=None, size=[], in_jupyter=True, name="py3d", port=9871):
+    def show(self, inplace=False, viewpoint=None, lookat=None, up=None, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
         '''
         same as py3d.show
         '''
@@ -148,8 +168,19 @@ class View:
         self.lookat = lookat
         self.up = up
         self.size = size
-        if in_jupyter:
-            return self
+        if in_jupyter and Viewer.__display__:
+            if inplace:
+                if self.handle:
+                    self.handle.update(Viewer.JS(
+                        f"viewer.toolbar.cache={self.cache};viewer.min={self.min};viewer.max={self.max};viewer.render()"))
+                else:
+                    Viewer.__display__(Viewer.HTML(self.__preload__.replace(
+                        "PY#D_ARGS", json.dumps(self.__dict__))))
+                    self.handle = Viewer.__display__(
+                        Viewer.JS(""), display_id=f"{id(self)}")
+                self.cache.clear()
+            else:
+                Viewer.__display__(self)
         else:
             index = f"{name}.html"
             open(index, "w").write(self._repr_html_())
@@ -197,25 +228,27 @@ class View:
                                     vertex=position, color=color)
 
 
-default_view = View()
+viewer = Viewer()
 
 
 def render(*objs, t=0):
     for obj in objs:
-        default_view.render(obj, t)
-    return default_view
+        viewer.render(obj, t)
+    return viewer
 
 
 def label(text, position: list = [0, 0, 0], color="grey", t=0):
-    return default_view.label(text, position, color, t)
+    return viewer.label(text, position, color, t)
 
 
-def show(viewpoint=None, lookat=None, up=None, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
+def show(inplace=False, viewpoint=None, lookat=None, up=None, size=[600, 1000], in_jupyter=True, name="py3d", port=9871):
     """
     Display all rendered objects in one scene
 
     Parameters
     ----------
+    inplace: bool, default False
+        If False, update the existing viewer, otherwise, display a new viewer.
     viewpoint : list[float] | None
         the position from where to view the scene.
     lookat: list[float] | None
@@ -235,10 +268,9 @@ def show(viewpoint=None, lookat=None, up=None, size=[600, 1000], in_jupyter=True
 
     Returns
     -------
-    out: View
-    Default view
+    out: None
     """
-    return default_view.show(viewpoint, lookat, up, size, in_jupyter, name, port)
+    return viewer.show(inplace, viewpoint, lookat, up, size, in_jupyter, name, port)
 
 
 def read_img(path) -> Vector:
@@ -853,9 +885,9 @@ DATA ascii
             [w, h, 0, 1, 0, 0, 0],
             [0, h, 0, 0, 0, 0, 0]
         ], texture=".py3d/texture.png")
-        default_view.viewpoint = [w/2, h/2, -w]
-        default_view.lookat = [w/2, h/2, 0]
-        default_view.up = [0, -1, 0]
+        viewer.viewpoint = [w/2, h/2, -w]
+        viewer.lookat = [w/2, h/2, 0]
+        viewer.up = [0, -1, 0]
         return m
 
 
@@ -1524,7 +1556,7 @@ class Point(Vector):
         return ret
 
     def _repr_html_(self):
-        return render(self)._repr_html_()
+        return viewer.render(self)._repr_html_()
 
 
 class Triangle(Point):

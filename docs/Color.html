@@ -7810,6 +7810,11 @@ a.anchor-link {
                 constructor(type, fovy, aspect, min, max, viewpoint, lookat, up) {
                     this.fovy = fovy
                     this.aspect = aspect
+                    console.log(min, max, viewpoint, lookat, up)
+                    if (!min) {
+                        min = [0, 0, 0]
+                        max = [0, 0, 0]
+                    }
                     if (!lookat) {
                         lookat = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2]
                     }
@@ -7826,6 +7831,7 @@ a.anchor-link {
                     this.type = type
                     this.update_projection()
                     this.update_world2ndc()
+                    console.log(this)
                 }
                 get position() {
                     return this.pose.slice(12, 15)
@@ -8298,7 +8304,7 @@ zoom: mouse wheel`)
                     this.gl.drawArrays(this.gl.LINES, 0, lines.length / 3)
                 }
             }
-            new Viewer({"cache": {"0": [{"mode": "POINTS", "vertex": [1.0, 0.0, 1.0], "color": [1.0, 0.5, 0.0, 1.0], "normal": [], "pointsize": 10, "texture": ""}]}, "min": [1.0, 0.0, 1.0], "max": [1.0, 0.0, 1.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000]})
+            viewer = new Viewer({"cache": {"0": [{"mode": "POINTS", "vertex": [1.0, 0.0, 1.0], "color": [1.0, 0.5, 0.0, 1.0], "normal": [], "pointsize": 10, "texture": ""}]}, "min": [1.0, 0.0, 1.0], "max": [1.0, 0.0, 1.0], "viewpoint": null, "lookat": null, "up": null, "size": [600, 1000], "handle": null})
         }
     </script>
 </div>
