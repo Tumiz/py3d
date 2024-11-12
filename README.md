@@ -1,48 +1,56 @@
-# py3d
-
-**py3d** is a pure and lightweight python library of 3d data structures and functions, which can deal with points, lines, planes and 3d meshes in batches, and also visualize them. All the actions can be done in a jupyter notebook.
-
+# PY3D - 3D data analysis toolkit
 [Code](https://github.com/Tumiz/py3d) | [Docs](https://tumiz.github.io/py3d)
 
-Now supported features includes:
+## What is it?
 
-* read/visualize ply
-* read/write/visualize npy
-* read/write/visualize csv
-* read/write/visualize pcd
-* apply rotation/translation/scaling on vectors
-* compose or decompose different transforms
-* conversion between rotation matrix, angle axis, quaternion, euler angle and rotation vector
+**py3d** is a pure and lightweight Python library dedicated to 3D data structures and functions. It enables batch processing of 3D points, lines, planes, and 3D meshes. Moreover, it provides interactive visualization capabilities for these elements. It is advisable to use it in Jupyter for visualization purposes.
 
-It is under development and unstable currently. But it is designed to be simple, stable and customizable:
+## Main features
 
-* simple means api will be less than usual and progressive
-* stable means it will have less dependeces and modules, and it will be fully tested
-* customizable means it will be a libaray rather than an application, it only provide data structures and functions handling basic geometry concepts
+* Supports the reading, writing, and visualization of multiple 3D data formats such as the popular PLY, NPY, CSV, PCD, and OBJ. [Demos](https://tumiz.github.io/py3d/IO.html)
+* Perform rotation, translation, and scaling operations on 3D geometries. [Demos](https://tumiz.github.io/py3d/Transform.html)
+* Conversion among diverse rotation representations, [Demos](https://tumiz.github.io/py3d/Rotation.html) 
+    * Rotation matrix
+    * Angle - axis
+    * Quaternion
+    * Euler angle
+    * Rotation vector
 
-### Installation
+## How to install it?
 ```
 pip install py3d
 ```
 
-## Example
+## How to use it?
+
+Here are some small examples:
+
+1. Visualize a pcd file in jupyter
 
 
 ```python
 import py3d
-import numpy
-cars = py3d.cube(0.5,0.2,0.3) @ py3d.Transform.from_translation(y=range(1,6), z=0.15)
-cars.paint()
-t = 0
-dt = 0.1
-while t<3:
-    py3d.render(cars, t=t)
-    cars @= py3d.Transform.from_rpy(py3d.Vector3(z=dt * numpy.linspace(0.1,1,5)))
-    t += dt
-py3d.show()
+pcd = py3d.read_pcd("binary.pcd")
+print("min", pcd.min())
+print("max", pcd.max())
+pcd.xyz.as_point(colormap=pcd.w)
 ```
 
-![example](docs/index.gif)
+2. Visualize an image in jupyter
+
+
+```python
+import py3d
+py3d.read_img("./20220917214012.jpg").as_image()
+```
+
+3. Convert euler angles to rotation matrix 
+
+
+```python
+import py3d
+py3d.Transform.from_euler("xyz", [0.4, -0.2, 0])
+```
 
 ## API reference
 

@@ -1215,7 +1215,7 @@ class Transform(Vector):
     @classmethod
     def from_quaternion(cls, xyzw_list: list | numpy.ndarray) -> Transform:
         '''
-        Initialize a `Transform` from quaternions
+        Initialize a 4x4 rotation matrix from quaternions
 
         Parameters
         ----------
@@ -1258,6 +1258,23 @@ class Transform(Vector):
 
     @classmethod
     def from_euler(cls, sequence: str, angles_list: list | numpy.ndarray) -> Transform:
+        '''
+        Initialize a 4x4 rotation matrix from euler angles
+
+        Parameters
+        ----------
+        sequence: str
+            Specifies sequence of axes for rotations. 
+            Up to 3 characters belonging to the set {‘X’, ‘Y’, ‘Z’} for intrinsic rotations, or {‘x’, ‘y’, ‘z’} for extrinsic rotations. 
+            Extrinsic and intrinsic rotations cannot be mixed in one function call.
+        angles_list: list | numpy.ndarray
+            Euler angles specified in radians
+
+        Returns
+        -------
+        transform: Transform
+            4x4 rotation matrix
+        '''
         lo = sequence.lower()
         v = numpy.array(angles_list)
         m = {a: getattr(cls, "R" + a.lower()) for a in 'xyz'}
