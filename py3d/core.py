@@ -11,6 +11,7 @@ import multiprocessing
 import http.server
 import socket
 import base64
+import io
 
 pi = numpy.arccos(-1)
 __module__ = __import__(__name__)
@@ -207,9 +208,8 @@ class Viewer:
                 self.min = numpy.min(
                     [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
             if hasattr(obj, "texture") and obj.texture:
-                ext = pathlib.Path(obj.texture).suffix
-                texture = f"data:image/{ext};base64," + base64.b64encode(
-                    open(obj.texture, "rb").read()).decode('utf-8')
+                texture = f"data:image/png;base64," + \
+                    base64.b64encode(obj.texture).decode("utf-8")
             else:
                 texture = ""
             return self.__render_args__(t=t,
@@ -857,7 +857,7 @@ DATA ascii
     def to_npy(self, path):
         numpy.save(path, self)
 
-    def to_image(self, path):
+    def to_image(self, path=""):
         pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
         data = self
         if data.dtype != numpy.uint8:
@@ -869,13 +869,18 @@ DATA ascii
         if data.ndim == 2:
             data = data[..., None].repeat(3, -1)
         mode = "RGBA" if data.shape[-1] > 3 else "RGB"
-        PIL.Image.fromarray(data, mode).save(path)
+        img = PIL.Image.fromarray(data, mode)
+        if path:
+            img.save(path)
+        else:
+            buf = io.BytesIO()
+            img.save(buf, "png")
+            return buf.getvalue()
 
     def as_image(self):
         '''
         Visualize the vector as an image, with mapped colors from black to yellow or the image's own colors
         '''
-        self.to_image(".py3d/texture.png")
         h, w, *_ = self.shape
         m = Triangle([
             [0, 0, 0, 0, 1, 0, 0],
@@ -884,7 +889,7 @@ DATA ascii
             [0, 0, 0, 0, 1, 0, 0],
             [w, h, 0, 1, 0, 0, 0],
             [0, h, 0, 0, 0, 0, 0]
-        ], texture=".py3d/texture.png")
+        ], texture=self.to_image())
         viewer.viewpoint = [w/2, h/2, -w]
         viewer.lookat = [w/2, h/2, 0]
         viewer.up = [0, -1, 0]
@@ -1563,6 +1568,14 @@ class Point(Vector):
     def __iadd__(self, v: Point) -> Point:
         self = self.__add__(v)
         return self
+
+    def __mul__(self, v) -> Point:
+        xyz = self.xyz * v
+        ret = self.__class__(xyz)
+        ret.color = self.color
+        if hasattr(self, "texture"):
+            ret.texture = self.texture
+        return ret
 
     def __matmul__(self, transform: Transform) -> Point:
         xyz = self.xyz @ transform
