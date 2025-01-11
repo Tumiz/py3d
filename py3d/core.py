@@ -208,8 +208,7 @@ class Viewer:
                 self.min = numpy.min(
                     [self.min, obj.xyz.flatten().min(-2)], axis=0).tolist()
             if hasattr(obj, "texture") and obj.texture:
-                texture = f"data:image/png;base64," + \
-                    base64.b64encode(obj.texture).decode("utf-8")
+                texture = obj.texture
             else:
                 texture = ""
             return self.__render_args__(t=t,
@@ -271,6 +270,20 @@ def show(inplace=False, viewpoint=None, lookat=None, up=None, size=[600, 1000], 
     out: None
     """
     return viewer.show(inplace, viewpoint, lookat, up, size, in_jupyter, name, port)
+
+
+def image(path):
+    img = PIL.Image.open(path)
+    w, h = img.width, img.height
+    return Triangle([
+        [0, 0, 0, 0, 0, 0, 0],
+        [w, 0, 0, 1, 0, 0, 0],
+        [w, h, 0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0],
+        [w, h, 0, 1, 1, 0, 0],
+        [0, h, 0, 0, 1, 0, 0]
+    ], texture=f"data:image/{img.format};base64," +
+        base64.b64encode(open(path, "rb").read()).decode())
 
 
 def read_img(path) -> Vector:
@@ -537,7 +550,9 @@ class OBJ:
         self.vt = Vector(vt)
         self.vi = Vector(vi)
         self.vti = Vector(vti)
-        self.texture = texture_path
+        img = PIL.Image.open(texture_path)
+        self.texture = f"data:image/{img.format};base64," + \
+            base64.b64encode(open(texture_path, "rb").read()).decode()
 
     def _repr_html_(self):
         if self.texture:
@@ -883,16 +898,14 @@ DATA ascii
         '''
         h, w, *_ = self.shape
         m = Triangle([
-            [0, 0, 0, 0, 1, 0, 0],
-            [w, 0, 0, 1, 1, 0, 0],
-            [w, h, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0],
-            [w, h, 0, 1, 0, 0, 0],
-            [0, h, 0, 0, 0, 0, 0]
-        ], texture=self.to_image())
-        viewer.viewpoint = [w/2, h/2, -w]
-        viewer.lookat = [w/2, h/2, 0]
-        viewer.up = [0, -1, 0]
+            [0, 0, 0, 0, 0, 0, 0],
+            [w, 0, 0, 1, 0, 0, 0],
+            [w, h, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [w, h, 0, 1, 1, 0, 0],
+            [0, h, 0, 0, 1, 0, 0]
+        ], texture="data:image/png;base64," +
+            base64.b64encode(self.to_image()).decode())
         return m
 
 

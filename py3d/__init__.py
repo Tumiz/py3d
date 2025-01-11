@@ -10,6 +10,7 @@ from .core import (
     render,
     label,
     show,
+    image,
     read_img,
     read_pcd,
     read_ply,
