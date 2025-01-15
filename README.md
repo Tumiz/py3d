@@ -41,15 +41,38 @@ pcd.xyz.as_point(colormap=pcd.w)
 
 ```python
 import py3d
-py3d.read_img("./20220917214012.jpg").as_image()
+py3d.image("./20220917214012.jpg")
 ```
 
-3. Convert euler angles to rotation matrix 
+3. Visualize images with poses in jupyter
+
+
+```python
+import py3d
+py3d.render(
+    py3d.image("797.jpg") @ py3d.Transform.from_translation([0, 100, 0]),
+    py3d.image("971.jpg") @ py3d.Transform.from_rpy([0, 0.9, 0.2]) @ py3d.Transform.from_translation([-1000, 500, 0])
+)
+```
+
+4. Convert euler angles to rotation matrix 
 
 
 ```python
 import py3d
 py3d.Transform.from_euler("xyz", [0.4, -0.2, 0])
+```
+
+5. Visualize a 2d matrix
+
+
+```python
+import py3d
+py3d.Vector([
+    [1,2,3],
+    [4,5,6],
+    [7,8,9]
+]).as_image()
 ```
 
 ## API reference
