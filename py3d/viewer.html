@@ -525,7 +525,14 @@ zoom: mouse wheel`)
                         } 
                     `)
                     this.gl.useProgram(this.program)
-                    this.textures = new Set()
+                    this.texture = this.gl.createTexture()
+                    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture)
+                    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1)
+                    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
+                    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
+                    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST)
+                    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
+                    this.textures = {}
                 }
                 create_program(vertex_shader_code, fragment_shader_code) {
                     const program = this.gl.createProgram()
@@ -547,26 +554,17 @@ zoom: mouse wheel`)
                 }
                 set_uniform(name, array) {
                     const location = this.gl.getUniformLocation(this.program, name)
-                    if (typeof (array) == "string" && array.length && !this.textures.has(array)) {
-                        this.textures.add(array)
-                        const texture = this.gl.createTexture()
-                        const image = new Image()
-                        image.src = array
-                        image.onload = () => {
-                            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
-                            this.gl.activeTexture(this.gl.TEXTURE0)
-                            this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
+                    if (typeof (array) == "string" && array.length) {
+                        if (array in this.textures) {
+                            const image = this.textures[array]
                             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image)
-                            this.gl.uniform1i(location, 0)
-                            if (mat.is_2power(image.width) && mat.is_2power(image.height)) {
-                                this.gl.generateMipmap(this.gl.TEXTURE_2D)
-                            } else {
-                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
-                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
-                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST)
-                                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
+                        } else {
+                            const image = new Image()
+                            this.textures[array] = image
+                            image.onload = () => {                                                          
+                                this.render()
                             }
-                            this.render()
+                            image.src = array
                         }
                     } else if (array.length == 16) {
                         this.gl.uniformMatrix4fv(location, false, array)
