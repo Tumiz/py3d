@@ -1192,6 +1192,14 @@ class Transform(Vector):
         return cls.from_quaternion(q)
 
     def as_axis_angle(self):
+        '''
+        Represent as axis angles from 4x4 rotation matrices
+
+        Returns
+        -------
+        xyz_angle_list: array_like
+            rotation axises and angles
+        '''
         return self.as_quaternion().from_quaternion_to_axis_angle()
 
     @classmethod
