@@ -1259,6 +1259,14 @@ class Transform(Vector):
         return ret
 
     def as_quaternion(self) -> Vector4:
+        '''
+        Represent as quaternions from 4x4 rotation matrices
+
+        Returns
+        -------
+        xyzw_list: list | numpy.ndarray
+            quaternions
+        '''
         q = Vector4().tile(*self.n)
         q.w = numpy.sqrt(1+self[..., 0, 0]+self[..., 1, 1] + self[..., 2, 2])/2
         m0 = self[q.w == 0]
@@ -1302,6 +1310,20 @@ class Transform(Vector):
             return m[lo[2]](v[..., 2]) @ m[lo[1]](v[..., 1]) @ m[lo[0]](v[..., 0])
 
     def as_euler(self, sequence: str):
+        '''
+        Represent as Euler angles.
+
+        Parameters
+        ----------
+        sequence: str
+            Specifies sequence of axes for rotations. 
+            Up to 3 characters belonging to the set {‘X’, ‘Y’, ‘Z’} for intrinsic rotations, or {‘x’, ‘y’, ‘z’} for extrinsic rotations. 
+            Extrinsic and intrinsic rotations cannot be mixed in one function call.
+
+        Returns
+        -------
+        euler angles: ndarray, shape (3,) or (N, 3)
+        '''
         extrinsic = sequence.islower()
         lo = sequence.lower()
         ret = Vector3().tile(*self.n)
@@ -1327,10 +1349,16 @@ class Transform(Vector):
 
     @classmethod
     def from_rpy(cls, angles_list: list | numpy.ndarray = [], r=0, p=0, y=0) -> Transform:
-        return cls.from_euler('XYZ', Vector3(angles_list, r, p, y))
+        '''
+        Initialize a 4x4 rotation matrix from extrinsic Euler angles, in order of Roll, Pitch and Yaw
+        '''
+        return cls.from_euler('xyz', Vector3(angles_list, r, p, y))
 
     def as_rpy(self):
-        return self.as_euler('XYZ')
+        '''
+        Represent as extrinsic Euler angles, in order of Roll, Pitch and Yaw
+        '''
+        return self.as_euler('xyz')
 
     @property
     def translation_vector(self) -> Vector3:
