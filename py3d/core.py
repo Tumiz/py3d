@@ -765,8 +765,22 @@ class Vector(numpy.ndarray):
         '''
         return numpy.sqrt(self.L2s)
 
-    def diff(self, n=1) -> Vector:
-        return numpy.diff(self, n, axis=self.ndim-2)
+    def diff(self, periods=1, axis=0) -> Vector:
+        """Compute the difference between consecutive elements of a NumPy array.
+
+        Parameters
+        ----------
+        periods : int, default 1
+            Periods to shift for calculating difference, accepts negative values.
+        axis: int, default 0
+            The axis along which the difference is taken, default is the first axis.
+        Returns
+        -------
+        diff_values : ndarray
+            Array containing the differences between elements separated by `period` steps.
+        """
+        return numpy.take(self, range(periods, self.shape[axis]), axis=axis) - \
+        numpy.take(self, range(self.shape[axis] - periods), axis=axis)
 
     def lerp(self, target_x, origin_x) -> Vector:
         '''
@@ -799,9 +813,9 @@ class Vector(numpy.ndarray):
         self[numpy.isnan(self)] = value
         return self
 
-    def dropna(self, axis=None):
+    def dropna(self, axis=0):
         '''
-        Drop nan elements along an axis, default axis is None
+        Drop nan elements along an axis, default axis is 0
         '''
         if axis is None:
             return self[~numpy.isnan(self)]
